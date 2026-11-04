@@ -1,0 +1,31 @@
+:root{--bg:#fff;--s2:#F6F8FB;--b:#E3E9F0;--t1:#072B40;--t2:#3A5068;--t3:#5F7790;--acc:#E57E12;--warn:rgba(233,174,28,.16);color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0F1C26;--s2:#152634;--b:#22384A;--t1:#E6EEF5;--t2:#B4C4D2;--t3:#8FA6B8;--acc:#F59A3C;--warn:rgba(242,193,78,.18)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--b)}
+.hd b{color:var(--acc)}
+.sp{flex:1}
+.muted{color:var(--t3)}
+.small{font-size:11.5px}
+.tabs{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid var(--b);background:var(--bg);position:sticky;top:45px;z-index:1}
+.tabs button{flex:1;border:0;background:none;color:var(--t2);font:inherit;font-weight:600;padding:6px 4px;border-radius:8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--s2);color:var(--t1)}
+.tabs button:focus-visible,.mini:focus-visible,.btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+main{padding:10px 12px 24px}
+.msg{color:var(--t2)}
+.verdict{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px;font-size:14px}
+.badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--t2);text-transform:capitalize}
+.sum{color:var(--t2);margin:0 0 8px}
+.kv{margin:8px 0;display:flex;flex-direction:column;gap:5px}
+.kv div{display:grid;grid-template-columns:104px minmax(0,1fr);gap:6px}
+.kv dt{color:var(--t3);font-weight:600}
+.kv dd{margin:0}
+.sec{margin-top:12px;padding-top:10px;border-top:1px solid var(--b)}
+.sec h3{margin:0 0 6px;font-size:13px}
+.sec ol,.sec ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.list{list-style:none;padding-left:0 !important}
+.list li{padding:4px 0;border-bottom:1px solid var(--b)}
+.say{white-space:pre-wrap;word-break:break-word;font:inherit;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin:0 0 6px}
+.warn{background:var(--warn);border-radius:8px;padding:6px 10px;color:var(--t2)}
+.mini,.btn{font:inherit;font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;border:1px solid var(--b);background:var(--s2);color:var(--t1);cursor:pointer;text-decoration:none;display:inline-block}
+a{color:var(--acc)}

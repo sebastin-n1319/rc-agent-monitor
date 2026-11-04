@@ -110,6 +110,48 @@
     rail.appendChild(h('h3', { text: 'Product' })); rail.appendChild(modList);
     rail.appendChild(h('h3', { text: 'Asked a lot this week' })); rail.appendChild(popBox);
     rail.appendChild(h('h3', { text: 'Your recent questions' })); rail.appendChild(recBox);
+    // Batch 242 (from Aria): questions Expert answers on a schedule and sends you in Google Chat.
+    var schedBox = h('div', { class: 'ax-sched' });
+    rail.appendChild(h('h3', { text: 'Scheduled questions' })); rail.appendChild(schedBox);
+    var SFREQ = { weekdays: 'Weekdays', daily: 'Every day', weekly: 'Weekly' }, WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    function loadSched() {
+      ctx.api('/api/guides/expert/schedules').then(function (r) {
+        clear(schedBox);
+        (r.schedules || []).forEach(function (x) {
+          var when = SFREQ[x.freq] + (x.freq === 'weekly' ? ' ' + WD[x.weekday] : '') + ' ' + x.time + ' CT';
+          schedBox.appendChild(h('div', { class: 'ax-sched-i' + (x.enabled ? '' : ' off') }, [
+            h('b', { text: x.name || x.question.slice(0, 60) }), h('span', { class: 'ax-muted', text: when + (x.lastError ? ' · last run failed' : '') }),
+            h('div', { class: 'ax-row' }, [
+              h('button', { type: 'button', class: 'ax-mini', title: 'Answer it now and show it here (nothing is sent)', onclick: function (ev) { var b = ev.currentTarget; b.disabled = true; b.lastChild.textContent = 'Working...'; ctx.api('/api/guides/expert/schedules/' + x.id + '/run', {}).then(function (rr) { if (rr.link) location.hash = 'ask/share/' + rr.link.split('/share/')[1]; }).catch(function (e) { ctx.toast && ctx.toast(e.message); }).then(function () { b.disabled = false; b.lastChild.textContent = 'Run now'; }); } }, [icon('send', 'sm'), h('span', { text: 'Run now' })]),
+              h('button', { type: 'button', class: 'ax-mini', onclick: function () { schedForm(x); } }, [icon('edit', 'sm'), 'Edit']),
+              h('button', { type: 'button', class: 'ax-mini', 'aria-label': 'Delete', onclick: function () { if (!confirm('Delete this scheduled question?')) return; ctx.api('/api/guides/expert/schedules/' + x.id, null, 'DELETE').then(loadSched).catch(function (e) { ctx.toast && ctx.toast(e.message); }); } }, [icon('x', 'sm')])])]));
+        });
+        schedBox.appendChild(h('button', { type: 'button', class: 'gd-btn ax-sched-add', onclick: function () { schedForm(null); } }, [icon('plus', 'sm'), 'New scheduled question']));
+        if (!r.dm) schedBox.appendChild(h('p', { class: 'ax-muted', text: 'Chat messages are not set up on the server, so answers are kept here only.' }));
+      }).catch(function () { clear(schedBox); });
+    }
+    function schedForm(x) {
+      x = x || { question: 'Which open T1 tickets from yesterday are part of a problem other practices have too, or were sent a fix that did not work before? List each with the next step.', name: 'Morning T1 check', mode: 'answer', freq: 'weekdays', time: '08:00', weekday: 1, enabled: true };
+      var dlg = h('dialog', { class: 'ax-dlg', 'aria-label': 'Scheduled question' });
+      var nm = h('input', { class: 'ax-in', type: 'text', value: x.name || '', placeholder: 'Name (optional)' });
+      var qq = h('textarea', { class: 'ax-in', rows: '4' }); qq.value = x.question || '';
+      var fr = h('select', { class: 'ax-in' }, Object.keys(SFREQ).map(function (k) { return h('option', { value: k, selected: x.freq === k ? 'selected' : null, text: SFREQ[k] }); }));
+      var wd = h('select', { class: 'ax-in' }, WD.map(function (d, i) { return h('option', { value: String(i), selected: Number(x.weekday) === i ? 'selected' : null, text: d }); }));
+      var tm = h('input', { class: 'ax-in', type: 'time', value: x.time || '08:00' });
+      var on = h('input', { type: 'checkbox', checked: x.enabled !== false ? 'checked' : null, id: 'ax-sched-on' });
+      var msg = h('p', { class: 'ax-err-t', role: 'status' });
+      dlg.appendChild(h('form', { class: 'ax-dlg-in', method: 'dialog', onsubmit: function (ev) { ev.preventDefault();
+        ctx.api('/api/guides/expert/schedules', { id: x.id || 0, name: nm.value, question: qq.value, mode: 'answer', freq: fr.value, weekday: Number(wd.value), time: tm.value, enabled: on.checked })
+          .then(function () { dlg.close(); dlg.remove(); loadSched(); }).catch(function (e) { msg.textContent = e.message; }); } }, [
+        h('h2', { text: x.id ? 'Edit scheduled question' : 'New scheduled question' }),
+        h('p', { class: 'ax-muted', text: 'Expert answers this on the schedule and sends you the answer and a link in Google Chat.' }),
+        dlab('Name', nm), dlab('Question', qq),
+        h('div', { class: 'ax-2' }, [dlab('How often', fr), dlab('Time (Central)', tm)]), dlab('Day (weekly only)', wd),
+        h('label', { class: 'ax-tog' }, [on, h('span', { text: 'On' })]), msg,
+        h('div', { class: 'ax-row' }, [h('span', { class: 'ax-sp' }), h('button', { type: 'button', class: 'gd-btn', onclick: function () { dlg.close(); dlg.remove(); } }, ['Cancel']), h('button', { type: 'submit', class: 'gd-btn primary' }, ['Save'])])]));
+      document.body.appendChild(dlg); dlg.showModal(); qq.focus();
+    }
+    loadSched();
     root.appendChild(rail);
     S.folded = store.get('fold', null);
     function setFold(v, byHand) {
@@ -155,9 +197,15 @@
     var modeBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Where is the client?' });
     function paintModes() { clear(modeBox); MODES.forEach(function (m) { modeBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.mode === m[0]), title: m[2], onclick: function () { S.mode = S.mode === m[0] ? '' : m[0]; paintModes(); } }, [m[1]])); }); }
     paintModes();
+    // Batch 242 (from Aria): Auto / Fast / Thinking.
+    var DEPTHS = [['auto', 'Auto', 'Fast for a plain how-to, Thinking for a ticket or a why / what-to-do question'], ['fast', 'Fast', 'An answer in seconds, without the wider searches and the second check'], ['thinking', 'Thinking', 'The full review: wider searches, past cases and a second check']];
+    S.depth = store.get('depth', 'auto'); if (!DEPTHS.some(function (d) { return d[0] === S.depth; })) S.depth = 'auto';
+    var depthBox = h('div', { class: 'ax-seg ax-depth', role: 'radiogroup', 'aria-label': 'How deep' });
+    function paintDepth() { clear(depthBox); DEPTHS.forEach(function (d) { depthBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.depth === d[0]), title: d[2], onclick: function () { S.depth = d[0]; store.set('depth', S.depth); paintDepth(); } }, [d[1]])); }); }
+    paintDepth();
     var scopeChip = h('span', { class: 'ax-scope' });
     var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
-      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
+      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, depthBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
     // As soon as the agent types, the side bar folds and the suggestions fade, so the page is about the conversation.
@@ -225,7 +273,7 @@
       thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
       var first = box.querySelector('button'); if (first) first.focus();
     }
-    function submit(again, fresh, reuse) {
+    function submit(again, fresh, reuse, depthOnce) {
       var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
       var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
       if (!S.mode && !hasTicket && !reuse) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
@@ -239,7 +287,7 @@
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0 }).then(function (j) {
+      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthOnce || S.depth }).then(function (j) {
         pg.stop(); j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -254,7 +302,9 @@
         h('span', { class: 'ax-badge conf-' + conf, title: 'How sure the answer is, given the sources' }, [conf === 'high' ? 'High confidence' : conf === 'low' ? 'Low confidence' : 'Medium confidence']),
         j.verified ? h('span', { class: 'ax-badge ver', title: j.review && j.review.issues && j.review.issues.length ? 'Second check: ' + j.review.issues.join('; ') : 'A second AI checked every step against the sources' }, [icon('shield', 'sm'), j.review && j.review.verdict === 'fixed' ? 'Double-checked and corrected' : 'Double-checked']) : null,
         !j.found ? h('span', { class: 'ax-badge conf-low' }, ['Not in the sources']) : null,
-        j.plan && j.plan.module ? h('span', { class: 'ax-badge mod' }, [j.plan.module]) : null]);
+        j.plan && j.plan.module ? h('span', { class: 'ax-badge mod' }, [j.plan.module]) : null,
+        j.depth === 'fast' ? h('span', { class: 'ax-badge mod', title: 'A quick answer: no wider searches and no second check' }, ['Fast']) : null,
+        j.depth === 'fast' ? h('button', { type: 'button', class: 'ax-mini', title: 'Ask the same question again with the full review', onclick: function () { if (S.busy) return; submit(q, true, 0, 'thinking'); } }, [icon('refresh', 'sm'), 'Think it through']) : null]);
       var card = h('article', { class: 'ax-card ax-ans' + (j.found ? '' : ' nf') });
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
@@ -503,6 +553,31 @@
             h('button', { type: 'button', class: 'gd-btn', onclick: function () { ctx.api('/api/guides/expert/feedback/' + f.id, { action: 'dismiss' }).then(load); } }, ['Dismiss'])])]));
       });
       root.appendChild(fb);
+      // Batch 242 (from Aria's fixes): questions Expert could not answer, the search it ran, and the note it proposes.
+      var fx = h('section', { class: 'ax-card' }, [h('h2', { text: 'Fixes Expert proposes' }), h('p', { class: 'ax-muted', text: 'When Expert cannot answer, it searches how the team solved it before and proposes a note (up to 5 a day). Approve it and Expert learns it, asks the question again and sends the new answer to whoever asked.' })]);
+      root.appendChild(fx);
+      ctx.api('/api/guides/expert/fixes').then(function (r) {
+        var list = r.fixes || [];
+        if (!list.length) { fx.appendChild(h('p', { class: 'ax-muted', text: 'Nothing yet.' })); return; }
+        list.forEach(function (f) {
+          var P = f.proposal || {}, st = { queued: 'Searching soon', proposed: P.fix ? 'Proposed note' : 'Needs a lead', failed: 'Search failed', approved: 'Approved', rejected: 'Rejected' }[f.status] || f.status;
+          var tt = h('input', { type: 'text', value: P.title || '', 'aria-label': 'Note title' }), bb = h('textarea', { rows: '4', 'aria-label': 'Note' }); bb.value = P.body || '';
+          var box = h('div', { class: 'ax-q' }, [h('div', { class: 'ax-q-hd' }, [h('b', { text: f.question }), h('span', { class: 'ax-badge mod', text: st }), h('span', { class: 'ax-muted', text: (f.email || '') + (f.others ? ' +' + f.others + ' more asked' : '') + ' · ' + f.gap })]),
+            P.why_failed ? h('p', { class: 'ax-q-a' }, [h('em', { text: 'Why it failed: ' }), P.why_failed]) : null,
+            P.evidence && P.evidence.length ? h('ul', { class: 'ax-muted' }, P.evidence.map(function (e) { return h('li', null, [linkTickets(e)]); })) : null,
+            !P.fix && P.ask_lead ? h('p', { class: 'ax-q-c' }, [h('em', { text: 'A lead needs to answer: ' }), P.ask_lead]) : null,
+            f.error ? h('p', { class: 'ax-muted', text: f.error }) : null]);
+          if (f.status === 'proposed' && P.fix) { box.appendChild(h('label', null, ['Title', tt])); box.appendChild(h('label', null, ['Note', bb])); }
+          var row = h('div', { class: 'ax-row' });
+          if (f.status === 'proposed' && P.fix) row.appendChild(h('button', { type: 'button', class: 'gd-btn primary', onclick: function (ev) { ev.currentTarget.disabled = true; ctx.api('/api/guides/expert/fixes/' + f.id + '/approve', { title: tt.value, body: bb.value, module: P.module || '' }).then(function () { ctx.toast('Learned. Expert is asking it again and will message whoever asked.'); load(); }).catch(function (e) { ctx.toast(e.message); }); } }, ['Approve and teach']));
+          if (f.status === 'proposed' && !P.fix) row.appendChild(h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { noteDialog(ctx, modules, load, null, { title: f.question.slice(0, 120), body: '', module: P.module || '' }); } }, ['Write the note']));
+          if (['proposed', 'failed'].includes(f.status)) row.appendChild(h('button', { type: 'button', class: 'gd-btn', onclick: function () { ctx.api('/api/guides/expert/fixes/' + f.id + '/retry', {}).then(load); } }, ['Search again']));
+          if (['queued', 'proposed', 'failed'].includes(f.status)) row.appendChild(h('button', { type: 'button', class: 'gd-btn', onclick: function () { ctx.api('/api/guides/expert/fixes/' + f.id + '/reject', {}).then(load); } }, ['Reject']));
+          if (f.rerunShare) row.appendChild(h('a', { class: 'gd-btn', href: '/guides#ask/share/' + f.rerunShare, target: '_blank', rel: 'noopener', text: 'New answer' }));
+          if (row.children.length) box.appendChild(row);
+          fx.appendChild(box);
+        });
+      }).catch(function () { /* section stays with its intro */ });
       // gaps
       var gp = h('section', { class: 'ax-card' }, [h('h2', { text: 'Gaps: questions it could not answer well' })]);
       if (!d.insights.gaps.length) gp.appendChild(h('p', { class: 'ax-muted', text: 'None in the last 30 days.' }));

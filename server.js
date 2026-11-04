@@ -118,6 +118,7 @@ async function verifyGoogleIdentity({ credential, accessToken }) {
 // ── CORS, restrict to allowlisted origins when ALLOWED_ORIGINS env var is set ─
 // Set ALLOWED_ORIGINS=https://your-app.up.railway.app in Railway env vars.
 // If unset, all origins are permitted (backward-compat for existing deploys).
+const EXT_ORIGINS = ['igelfiicjagpofoncmipfepfkocilhpa'].concat(String(process.env.EXPERT_EXTENSION_IDS || '').split(',').map(x => x.trim()).filter(Boolean)).map(id => 'chrome-extension://' + id);
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .split(',').map(o => o.trim()).filter(Boolean);
 if (ALLOWED_ORIGINS.length === 0) {
@@ -130,6 +131,8 @@ app.use(cors({
     // If no allowlist configured, fall back to permissive (backward compat)
     if (ALLOWED_ORIGINS.length === 0) return cb(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    // Batch 242: the "Adit Expert for Zoho Desk" Chrome extension (its id is fixed by the key in its manifest).
+    if (EXT_ORIGINS.includes(origin)) return cb(null, true);
     cb(new Error('CORS: origin not allowed'));
   },
   credentials: true,
@@ -752,6 +755,17 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const et = require('./lib/expert-ticket'); et.setDesk(require('./lib/desk-service')); et.setAI(require('./lib/ai')); expert.setDeps({ ticket: et, client: require('./lib/client-lookup'), localAll: (sql, params) => dbAllLocal(sql, params) }); }
       expert.setDeps({ ai: require('./lib/ai'), guides, productUpdates, query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kb: (t, o) => escalationWatch.kb(t, o) });
       await expert.initSchema();
+      // Batch 242 (from Aria): self-fixing gaps and scheduled questions.
+      { const gf = require('./lib/expert-gapfix'), sq = require('./lib/expert-schedule'), dmMod = require('./lib/gchat-dm');
+        const deps = { ask: (o) => expert.ask(o), share: expertShareSave, publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
+          dm: dmMod.available() ? (o) => dmMod.sendBotDM(o) : null };
+        gf.setDB(db); gf.setDeps(Object.assign({ ai: require('./lib/ai'), investigate: require('./lib/expert-investigate'), saveNote: (id, b, by) => expert.saveNote(id, b, by),
+          admins: () => new Promise((rs) => db.all(`SELECT email FROM app_roles WHERE role = 'admin'`, [], (e, r) => rs(e ? [] : (r || []).map(x => String(x.email).toLowerCase())))) }, deps));
+        sq.setDB(db); sq.setDeps(deps);
+        await gf.initSchema(); await sq.initSchema();
+        expert.setDeps({ onGap: (g) => { gf.enqueue(g).catch(e => console.warn('expert gap queue:', e.message)); } });
+        setInterval(() => { gf.work().catch(e => console.warn('expert gap fix:', e.message)); }, 5 * 60 * 1000);
+        setInterval(() => { sq.runDue().catch(e => console.warn('expert schedule:', e.message)); }, 60 * 1000); }
       // Batch 185: the Help Center is read live from help.adit.com, 30 seconds after start and then every 30 minutes.
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
         setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
@@ -2179,7 +2193,7 @@ app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
 app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {}, ai = require('./lib/ai');
-    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0,
+    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
@@ -2205,17 +2219,56 @@ app.get('/api/admin/busy', requireAdmin, async (req, res) => {
     res.json({ success: true, busy, longRequests: by, assessmentsInProgress: assess, openChats: chats, ctNow: new Date().toLocaleTimeString('en-US', { timeZone: 'America/Chicago' }) });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 242: one place that saves a shared Expert conversation (used by Share, scheduled questions and gap fixes).
+async function expertShareSave(byEmail, items) {
+  const json = JSON.stringify(items); if (json.length > 600000) throw Object.assign(new Error('This conversation is too long to share'), { status: 413 });
+  const id = require('crypto').randomBytes(9).toString('base64url');
+  await new Promise((rs, rj) => _sharedDb.run(`CREATE TABLE IF NOT EXISTS expert_shares (id TEXT PRIMARY KEY, by_email TEXT, json TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`, [], e => e ? rj(e) : rs()));
+  await new Promise((rs, rj) => _sharedDb.run(`INSERT INTO expert_shares (id, by_email, json) VALUES (?,?,?)`, [id, String(byEmail || '').toLowerCase(), json], e => e ? rj(e) : rs()));
+  return id;
+}
+const gapMod = () => require('./lib/expert-gapfix'), schedMod = () => require('./lib/expert-schedule');
+app.get('/api/guides/expert/fixes', requireAdmin, async (req, res) => { try { res.json({ success: true, fixes: await gapMod().list(), perDay: gapMod().MAX_PER_DAY }); } catch (e) { expertErr(res, e, 'Could not load the fixes'); } });
+app.post('/api/guides/expert/fixes/:id/approve', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { res.json({ success: true, ...(await gapMod().approve(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not approve'); } });
+app.post('/api/guides/expert/fixes/:id/reject', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await gapMod().reject(req.params.id, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not reject'); } });
+app.post('/api/guides/expert/fixes/:id/retry', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await gapMod().retry(req.params.id)) }); } catch (e) { expertErr(res, e, 'Could not retry'); } });
+app.get('/api/guides/expert/schedules', requireAuth, async (req, res) => { try { res.json({ success: true, schedules: await schedMod().list(req.session.email), dm: require('./lib/gchat-dm').available() }); } catch (e) { expertErr(res, e, 'Could not load'); } });
+app.post('/api/guides/expert/schedules', requireAuth, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, id: await schedMod().save(req.session.email, b, b.id) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.delete('/api/guides/expert/schedules/:id', requireAuth, async (req, res) => { try { res.json({ success: true, ...(await schedMod().remove(req.session.email, req.params.id)) }); } catch (e) { expertErr(res, e, 'Could not delete'); } });
+app.post('/api/guides/expert/schedules/:id/run', requireAuth, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, ...(await schedMod().runNow(req.session.email, req.params.id)) }); } catch (e) { expertErr(res, e, 'Could not run it'); } });
+// Batch 242 (from Aria for Zoho): Expert's ticket review beside the ticket in Zoho Desk (Chrome extension side panel).
+// The panel sends the ticket id from the Desk address bar; the review is kept until the ticket changes in Desk, so it
+// opens at once the next time. ?refresh=1 reviews it again.
+const _panelRun = new Map();
+app.get('/api/guides/expert/panel', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const id = String(req.query.id || '').replace(/\D/g, '').slice(0, 24);
+    if (id.length < 10) return res.status(400).json({ success: false, error: 'Open a ticket in Zoho Desk' });
+    const t = await require('./lib/desk-service').fetchRaw(`/tickets/${id}`);
+    if (!t || !t.ticketNumber) return res.status(404).json({ success: false, error: 'Ticket not found in Zoho Desk' });
+    const number = String(t.ticketNumber), modified = String(t.modifiedTime || '');
+    await new Promise((rs) => _sharedDb.run(`CREATE TABLE IF NOT EXISTS expert_panel (ticket_id TEXT PRIMARY KEY, number TEXT, modified TEXT, json TEXT, by_email TEXT, at TEXT DEFAULT (datetime('now')))`, [], () => rs()));
+    const row = await new Promise((rs) => _sharedDb.get(`SELECT * FROM expert_panel WHERE ticket_id = ?`, [id], (e, r) => rs(e ? null : r)));
+    if (row && row.modified === modified && req.query.refresh !== '1') return res.json({ success: true, number, cached: true, at: row.at, review: JSON.parse(row.json) });
+    if (req.query.peek === '1') return res.json({ success: true, number, subject: t.subject || '', status: t.status || '', changed: !!row, review: null });
+    const key = id + ':' + modified;
+    if (!_panelRun.has(key)) _panelRun.set(key, expertMod().ask({ question: `#${number} - how should I handle this ticket?`, email: req.session.email, fresh: true, depth: 'thinking' })
+      .finally(() => setTimeout(() => _panelRun.delete(key), 1000)));
+    const v = await _panelRun.get(key);
+    const json = JSON.stringify(v);
+    if (json.length < 900000) await new Promise((rs) => _sharedDb.run(`INSERT INTO expert_panel (ticket_id, number, modified, json, by_email, at) VALUES (?,?,?,?,?,datetime('now'))
+      ON CONFLICT(ticket_id) DO UPDATE SET number=excluded.number, modified=excluded.modified, json=excluded.json, by_email=excluded.by_email, at=excluded.at`, [id, number, modified, json, String(req.session.email || '').toLowerCase()], () => rs()));
+    if (Math.random() < 0.05) _sharedDb.run(`DELETE FROM expert_panel WHERE datetime(at) < datetime('now', '-30 days')`, [], () => {});
+    res.json({ success: true, number, cached: false, at: new Date().toISOString(), review: v });
+  } catch (e) { expertErr(res, e, 'Expert could not review this ticket right now'); }
+});
 // Batch 188: share a conversation. A snapshot of the questions and answers is kept under a random id; anyone signed in
 // to the tool (or on the guides guest list) can open it and carry on from there.
 app.post('/api/guides/expert/share', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const items = (Array.isArray((req.body || {}).items) ? req.body.items : []).slice(0, 25).map(x => ({ q: String((x && x.q) || '').slice(0, 2000), mode: String((x && x.mode) || '').slice(0, 20), j: x && x.j && typeof x.j === 'object' ? x.j : null })).filter(x => x.q && x.j);
     if (!items.length) throw Object.assign(new Error('Nothing to share yet'), { status: 400 });
-    const json = JSON.stringify(items); if (json.length > 600000) throw Object.assign(new Error('This conversation is too long to share'), { status: 413 });
-    const id = require('crypto').randomBytes(9).toString('base64url');
-    await new Promise((rs, rj) => _sharedDb.run(`CREATE TABLE IF NOT EXISTS expert_shares (id TEXT PRIMARY KEY, by_email TEXT, json TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`, [], e => e ? rj(e) : rs()));
-    await new Promise((rs, rj) => _sharedDb.run(`INSERT INTO expert_shares (id, by_email, json) VALUES (?,?,?)`, [id, String(req.session.email || '').toLowerCase(), json], e => e ? rj(e) : rs()));
-    res.json({ success: true, id });
+    res.json({ success: true, id: await expertShareSave(req.session.email, items) });
   } catch (e) { expertErr(res, e, 'Could not share'); }
 });
 app.get('/api/guides/expert/share/:id', requireAuth, async (req, res) => {

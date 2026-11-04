@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Adit Expert for Zoho Desk",
+  "version": "1.0.0",
+  "description": "Adit Expert's review of the Zoho Desk ticket you have open, in a side panel: verdict, findings, other practices with the same problem, the reply and the private note.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3FsDxkL36+NQ37ph6h7jg9h0JESfwcfVBtrwFNty+RMRGPn2e8Y04UMulGrbGhBSkCj2HE8xzd/fcXM7GQhBg6AGXkHmzaRAljwtSy4VTik4IOw+tLxPfA6wzZL3lpxuYAhp0lLpt8ivjkXtvu4dfLYa8XUqgo4v7Hm2Iv8NC18eMKJ77la4ZsgSEefH2hL0VyF78FaUZFPVP7Lcs9EAuM0D/kuAdPToidjSzx2MdJrPTQA0UoiwQ5rHzqBIqitg8uch6w4hvlNoQVR+xUTYBURvHEqbvSiDO0FQwoujON6mUwilEuNs2Zcr35vGIsqgRCXpWgXDndxWcxrGEztZWQIDAQAB",
+  "permissions": ["sidePanel", "tabs"],
+  "host_permissions": ["https://desk.zoho.com/*", "https://help.adit.com/*", "https://rc-t1cs-monitor.up.railway.app/*"],
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "panel.html" },
+  "action": { "default_title": "Adit Expert" },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" }
+}

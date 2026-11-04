@@ -26,6 +26,14 @@ describe.skipIf(!sqlite3)('expert ask: channel and rewrite (Batch 238)', () => {
     expect(b.answer.say).toMatch(/^Hi there/);
     expect(calls.some(c => /route/.test(c))).toBe(false); // no new plan or search
   });
+  it('Fast skips the second check; Auto picks Thinking for a why question', async () => {
+    calls = [];
+    const f = await ex.ask({ question: 'Where do I change the reminder time for appointments?', email: 'a@adit.com', depth: 'fast', fresh: true });
+    expect(f.depth).toBe('fast');
+    expect(calls.some(c => /second reviewer/.test(c) || /You are the s/.test(c))).toBe(false);
+    const t = await ex.ask({ question: 'Why do reminder texts go out at the wrong time for some offices?', email: 'a@adit.com', fresh: true });
+    expect(t.depth).toBe('thinking');
+  });
   it('does not reuse another person\'s answer', async () => {
     const a = await ex.ask({ question: 'How do reminders work for new patients?', email: 'a@adit.com', mode: 'chat' });
     const b = await ex.ask({ question: 'How do reminders work for new patients?', email: 'b@adit.com', mode: 'email', reuse: a.logId });

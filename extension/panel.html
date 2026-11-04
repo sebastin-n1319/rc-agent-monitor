@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adit Expert</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<header class="hd">
+  <b>Adit Expert</b>
+  <span id="tk" class="muted"></span>
+  <span class="sp"></span>
+  <button id="refresh" type="button" class="mini" hidden>Review again</button>
+</header>
+<nav id="tabs" class="tabs" role="tablist" hidden>
+  <button role="tab" data-tab="ticket" aria-selected="true">Ticket</button>
+  <button role="tab" data-tab="customer" aria-selected="false">Customer</button>
+  <button role="tab" data-tab="timeline" aria-selected="false">Timeline</button>
+  <button role="tab" data-tab="similar" aria-selected="false">Similar</button>
+</nav>
+<main id="main" aria-live="polite"></main>
+<script src="panel.js"></script>
+</body>
+</html>
