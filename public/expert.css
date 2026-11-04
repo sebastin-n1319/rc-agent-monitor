@@ -235,7 +235,7 @@ html.widget .gd-nav button{padding:0 10px;font-size:13px}
 .ax.folded .ax-rail{padding:14px 11px;overflow:hidden}
 .ax.folded .ax-rail-top{flex-direction:column}
 .ax.folded .ax-new{width:40px;height:40px;padding:0;flex:none}
-.ax.folded .ax-new span,.ax.folded .ax-rail h3,.ax.folded .ax-mods,.ax.folded .ax-pop{display:none}
+.ax.folded .ax-new span,.ax.folded .ax-rail>:not(.ax-rail-top){display:none} /* Batch 249: everything below the two buttons, scheduled questions included */
 .ax-col{max-width:1180px}
 .ax.folded .ax-col{max-width:1240px}
 @media (prefers-reduced-motion:reduce){.ax{transition:none}}
