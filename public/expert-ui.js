@@ -259,8 +259,10 @@
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
+      if (j.unverified && j.unverified.length) card.appendChild(h('p', { class: 'ax-unv', role: 'note' }, [icon('warn', 'sm'), 'Not found in what Expert read, so treat as unverified: ' + j.unverified.map(function (n) { return '#' + n; }).join(', ')]));
       if (j.investigation && j.investigation.summary) card.appendChild(invBox(j.investigation));
       if (j.precedent && j.precedent.summary) card.appendChild(invBox(j.precedent, 'Expert checked how the team solved this before'));
+      if (j.pattern && j.pattern.summary) card.appendChild(invBox(j.pattern, 'Expert checked other practices and past cases'));
       if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
@@ -296,11 +298,26 @@
         if (cf.length) box.appendChild(h('p', { class: 'ax-tk-facts ax-tk-crm', text: 'CRM: ' + cf.join(' · ') })); }
       if (T.related && T.related.length) box.appendChild(h('p', { class: 'ax-tk-facts' }, ['Also read: '].concat(T.related.map(function (r, i) { return h('span', null, [i ? ', ' : '', tk(r.number), ' ' + (r.subject || '')]); }))));
       if (R) {
+        // Batch 240 (from Aria): verdict, evidence-backed findings, the same problem at other practices, the fix check,
+        // ranked actions and what the data could not show.
+        if (R.verdict) box.appendChild(h('p', { class: 'ax-tk-verdict' }, [h('b', { text: R.verdict }), R.confidence ? h('span', { class: 'ax-badge conf-' + R.confidence, text: R.confidence.charAt(0).toUpperCase() + R.confidence.slice(1) + ' confidence' }) : null]));
         if (R.summary) box.appendChild(h('p', { class: 'ax-tk-sum', text: R.summary }));
-        var kv = [['Reply goes to', R.reply_to], ['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });
+        if (R.findings && R.findings.length) box.appendChild(h('div', { class: 'ax-fds' }, R.findings.map(function (f, i) {
+          var row = function (k, v) { return v ? h('div', { class: 'ax-fd-r' }, [h('dt', { text: k }), h('dd', null, [linkTickets(v)])]) : null; };
+          return h('section', { class: 'ax-fd' }, [h('h5', null, [h('span', { class: 'ax-fd-n', text: 'Finding ' + (i + 1) }), f.title]), h('dl', null, [row('Evidence', f.evidence), row('Likely cause', f.driver), row('Impact', f.impact), row('Do', f.recommendation), row('Confidence', f.confidence)])]);
+        })));
+        if (R.cluster && R.cluster.length) box.appendChild(h('div', { class: 'ax-cl' }, [h('h5', null, [icon('warn', 'sm'), 'Same problem at other practices (' + R.cluster.length + ')']),
+          h('table', { class: 'ax-cl-t' }, [h('thead', null, [h('tr', null, ['Ticket', 'Practice', 'Status', 'Note'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]),
+            h('tbody', null, R.cluster.map(function (c) { return h('tr', null, [h('td', null, [tk(c.number)]), h('td', { text: c.account }), h('td', { text: c.status }), h('td', { text: c.note })]); }))])]));
+        if (R.fix_check || R.classification) box.appendChild(h('dl', { class: 'ax-tk-kv' }, [['Fix check', R.fix_check], ['Classification', R.classification]].filter(function (x) { return x[1]; }).map(function (x) { return h('div', null, [h('dt', { text: x[0] }), h('dd', null, [linkTickets(x[1])])]); })));
+        var rp = R.repeat && (R.repeat.note || R.repeat.same_issue) ? ('Same issue ' + (R.repeat.same_issue || '0') + ', same area ' + (R.repeat.same_area || '0') + ' in 12 months' + (R.repeat.note ? '. ' + R.repeat.note : '')) : '';
+        var kv = [['Reply goes to', R.reply_to], ['Happened before?', rp], ['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });
         if (kv.length) box.appendChild(h('dl', { class: 'ax-tk-kv' }, kv.map(function (x) { return h('div', null, [h('dt', { text: x[0] }), h('dd', { text: x[1] })]); })));
-        var cols = [['Next best steps', R.next, 'list', 'ol'], ['Do better', R.improve, 'warn', 'ul'], ['Went well', R.went_well, 'check', 'ul']].filter(function (x) { return x[1] && x[1].length; });
+        var KIND = { immediate: 'Now', investigate: 'Investigate', process: 'Process', coaching: 'Coaching' };
+        var acts = (R.actions || []).map(function (a) { return (a.kind ? KIND[a.kind] + ': ' : '') + a.text + (a.who ? ' (' + a.who + ')' : ''); });
+        var cols = [[acts.length ? 'Recommended actions' : 'Next best steps', acts.length ? acts : R.next, 'list', 'ol'], ['Do better', R.improve, 'warn', 'ul'], ['Went well', R.went_well, 'check', 'ul']].filter(function (x) { return x[1] && x[1].length; });
         if (cols.length) box.appendChild(h('div', { class: 'ax-tk-cols' }, cols.map(function (c) { return h('div', { class: 'ax-tk-col' }, [h('h5', null, [icon(c[2], 'sm'), c[0]]), h(c[3], null, c[1].map(function (x) { return h('li', { text: x }); }))]); })));
+        if (R.limits && R.limits.length) box.appendChild(h('details', { class: 'ax-lim' }, [h('summary', { text: 'What the data could not show (' + R.limits.length + ')' }), h('ul', null, R.limits.map(function (x) { return h('li', { text: x }); }))]));
       }
       if (T.timeline && T.timeline.length) {
         var tl = h('details', { class: 'ax-tk-tl' }, [h('summary', { text: 'Timeline (' + (T.msgCount || 0) + ' message' + (T.msgCount === 1 ? '' : 's') + ', ' + (T.commentCount || 0) + ' internal note' + (T.commentCount === 1 ? '' : 's') + (T.images ? ', ' + T.images + ' screenshot' + (T.images === 1 ? '' : 's') + ' read' : '') + (!T.images && T.imageInfo && T.imageInfo.found ? ', screenshots could not be read' : '') + ')' })]);
@@ -321,7 +338,9 @@
     }
     function plain(a, j) {
       var out = [];
-      if (a.ticket) { out.push('Ticket #' + ((j.ticket && j.ticket.meta && j.ticket.meta.number) || '') + ': ' + a.ticket.summary); if (a.ticket.waiting) out.push('Waiting for: ' + a.ticket.waiting); if (a.ticket.next && a.ticket.next.length) out.push('Next: ' + a.ticket.next.join('; ')); if (a.ticket.improve && a.ticket.improve.length) out.push('Do better: ' + a.ticket.improve.join('; ')); out.push(''); }
+      if (a.ticket) { out.push('Ticket #' + ((j.ticket && j.ticket.meta && j.ticket.meta.number) || '') + ': ' + (a.ticket.verdict ? a.ticket.verdict + ' ' : '') + a.ticket.summary);
+        (a.ticket.findings || []).forEach(function (f, i) { out.push('Finding ' + (i + 1) + ': ' + f.title + (f.evidence ? ' Evidence: ' + f.evidence : '') + (f.recommendation ? ' Do: ' + f.recommendation : '')); });
+        if (a.ticket.cluster && a.ticket.cluster.length) out.push('Same problem at other practices: ' + a.ticket.cluster.map(function (c) { return '#' + c.number + ' ' + c.account + ' (' + c.status + ')'; }).join('; ')); if (a.ticket.waiting) out.push('Waiting for: ' + a.ticket.waiting); if (a.ticket.next && a.ticket.next.length) out.push('Next: ' + a.ticket.next.join('; ')); if (a.ticket.improve && a.ticket.improve.length) out.push('Do better: ' + a.ticket.improve.join('; ')); out.push(''); }
       out.push(a.answer);
       if (a.checks && a.checks.length) out.push('', 'Check first:', a.checks.map(function (c) { return '- ' + c; }).join('\n'));
       if (a.steps && a.steps.length) out.push('', 'Steps:', a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'));
@@ -488,7 +507,7 @@
       var gp = h('section', { class: 'ax-card' }, [h('h2', { text: 'Gaps: questions it could not answer well' })]);
       if (!d.insights.gaps.length) gp.appendChild(h('p', { class: 'ax-muted', text: 'None in the last 30 days.' }));
       d.insights.gaps.slice(0, 20).forEach(function (g) {
-        gp.appendChild(h('div', { class: 'ax-gap' }, [h('span', { class: 'ax-badge conf-' + (g.found ? g.confidence : 'low'), text: g.found ? g.confidence : 'not found' }), h('span', { class: 'ax-gap-q', text: g.question }),
+        gp.appendChild(h('div', { class: 'ax-gap' }, [h('span', { class: 'ax-badge conf-' + (g.found ? g.confidence : 'low'), text: g.gap || (g.found ? g.confidence : 'not found') }), h('span', { class: 'ax-gap-q', text: g.question }),
           h('button', { type: 'button', class: 'ax-mini', onclick: function () { noteDialog(ctx, modules, load, null, { title: g.question.slice(0, 120), body: '', module: g.module || '' }); } }, [icon('edit', 'sm'), 'Answer it'])]));
       });
       root.appendChild(gp);

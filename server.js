@@ -134,6 +134,17 @@ app.use(cors({
   },
   credentials: true,
 }));
+// Batch 241 (from Aria: deploys wait for work in progress): count requests in flight, so a push can be held while an
+// Expert answer, an assessment or a long report is being worked on. /api/admin/busy reads it.
+const _reqLive = new Map(); let _reqLiveN = 0;
+app.use((req, res, next) => {
+  if (req.path === '/api/live-stream' || !req.path.startsWith('/api/')) return next();
+  const id = ++_reqLiveN, key = req.path.replace(/\/\d+(?=\/|$)/g, '/:n').slice(0, 80);
+  _reqLive.set(id, { key, at: Date.now() });
+  const done = () => _reqLive.delete(id);
+  res.on('finish', done); res.on('close', done);
+  next();
+});
 app.use(express.json());
 app.use(cookieParser());
 // Session 86: Speed check. Records how long each API route takes (in memory only, no
@@ -2183,6 +2194,16 @@ app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) =>
     const out = q ? await inv.investigate({ question: q, budgetMs: 85000 }) : null;
     res.json({ success: true, configured: true, tools, allowed: tools.filter(n => inv.ALLOW.has(n)), result: out });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }
+});
+app.get('/api/admin/busy', requireAdmin, async (req, res) => {
+  try {
+    const now = Date.now(), slow = [..._reqLive.values()].filter(x => now - x.at > 3000 && !/admin\/busy/.test(x.key));
+    const by = {}; slow.forEach(x => { by[x.key] = (by[x.key] || 0) + 1; });
+    const assess = await new Promise((rs) => _sharedDb.get(`SELECT COUNT(*) AS n FROM assess_attempts WHERE status = 'in_progress' AND COALESCE(preview,0) = 0 AND datetime(COALESCE(current_served_at, started_at)) >= datetime('now', '-30 minutes')`, [], (e, r) => rs(e ? null : (r ? r.n : 0))));
+    const chats = await liveChat().openAll().then(l => l.length).catch(() => null);
+    const busy = slow.length > 0 || (assess || 0) > 0;
+    res.json({ success: true, busy, longRequests: by, assessmentsInProgress: assess, openChats: chats, ctNow: new Date().toLocaleTimeString('en-US', { timeZone: 'America/Chicago' }) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 188: share a conversation. A snapshot of the questions and answers is kept under a random id; anyone signed in
 // to the tool (or on the guides guest list) can open it and carry on from there.

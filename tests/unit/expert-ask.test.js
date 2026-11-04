@@ -22,6 +22,7 @@ describe.skipIf(!sqlite3)('expert ask: channel and rewrite (Batch 238)', () => {
     const b = await ex.ask({ question: 'How can the office forward text messages to another number?', email: 'a@adit.com', mode: 'email', modeLocked: true, reuse: a.logId });
     expect(b.mode).toBe('email');
     expect(b.rewritten).toBe(true);
+    expect(b.gap).toBe('');
     expect(b.answer.say).toMatch(/^Hi there/);
     expect(calls.some(c => /route/.test(c))).toBe(false); // no new plan or search
   });
@@ -36,5 +37,35 @@ describe.skipIf(!sqlite3)('expert learns the #422530 lessons (Batch 239)', () =>
   it('seeds the reply-to, act-first and onboarding rules', async () => {
     const titles = (await ex.rules()).map(r => r.title);
     expect(titles).toEqual(expect.arrayContaining(['Reply to the practice, not the person who forwarded it', 'Act first, then reply with what was arranged', 'Onboarding complaints and a change of onboarding specialist']));
+  });
+});
+
+describe.skipIf(!sqlite3)('analyst-style ticket review (Batch 240)', () => {
+  it('runs the pattern check for a ticket and returns findings, cluster and ranked actions', async () => {
+    const goals = [];
+    const inv2 = { isConfigured: () => true, needsLookup: () => false, investigate: async (o) => { goals.push(o.goal || ''); return { summary: 'CLUSTER:\n#423436 | Align Dental Care | Pending Adit | DST\nPATTERN: one platform issue', steps: [{ what: 'Looked up desk_tickets', ok: true }], ms: 1000 }; } };
+    const tk = { meta: { number: '423761', subject: 'Time incorrect on Reminder Text', channel: 'Chat', account: 'Sage Dental' }, text: 'Client: messages go out for the wrong time', lastClient: 'wrong time', prior: [], timeline: [] };
+    let seenUser = '';
+    const ai2 = { anyConfigured: () => true, isAnthropicConfigured: () => true, chatJSON: async () => ({ json: { verdict: 'ok' } }),
+      bestJSON: async (o) => { if (/route questions/.test(o.system)) return { json: { search: 'reminder time', alt: [], intent: 'troubleshoot' } };
+        if (!/in-house/.test(o.system)) return { json: { verdict: 'ok' } };
+        seenUser = o.user;
+        return { provider: 'anthropic', json: { answer: 'Defect, part of a cluster with #423436, like #999999.', steps: [], say: 'Hi Kristyn,', found: true, confidence: 'high', ticket: { summary: 's', verdict: 'A product defect, part of a live cluster', confidence: 'high',
+          findings: [{ title: 'Part of a cluster', evidence: '#423436 also', driver: 'DST', impact: 'wrong texts', recommendation: 'one engineering report', confidence: 'high' }],
+          cluster: [{ number: '#423436', account: 'Align Dental Care', status: 'Pending Adit', note: 'DST' }], fix_check: 'Settings link is the wrong fix', classification: 'Technical Issues and Bugs',
+          actions: [{ kind: 'immediate', text: 'Restore reminders' }, { kind: 'bogus', text: 'x' }], limits: ['root cause not confirmed'] } } }; } };
+    ex.setDeps({ ai: ai2, investigate: inv2, ticket: { detect: (q) => (/\d{6}/.exec(q) || [null])[0], load: async () => tk } });
+    const r = await ex.ask({ question: '#423761 - how to handle this ticket?', email: 'a@adit.com' });
+    expect(goals).toContain('pattern');
+    expect(seenUser).toMatch(/same problem across Adit/i);
+    expect(r.pattern.summary).toMatch(/423436/);
+    const T = r.answer.ticket;
+    expect(T.verdict).toMatch(/defect/);
+    expect(T.cluster[0].number).toBe('423436');
+    expect(T.actions.map(a => a.kind)).toEqual(['immediate', '']);
+    expect(T.findings[0].title).toBe('Part of a cluster');
+    expect(T.limits).toEqual(['root cause not confirmed']);
+    expect(r.unverified).toEqual(['999999']);
+    expect(r.gap).toBe('');
   });
 });

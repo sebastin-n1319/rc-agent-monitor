@@ -739,3 +739,23 @@ html.ax-full .ax-cbar{top:0}
 .ax-pick-q{margin:0;font-weight:600;color:var(--t1)}
 .ax-pick-sub{margin:0;font-size:12.5px;color:var(--t3)}
 .ax-rechan{margin-top:10px;align-items:center;flex-wrap:wrap;gap:6px}
+/* Batch 240: analyst-style ticket review (verdict, findings, cluster, limits) */
+.ax-tk-verdict{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 4px;font-size:14px;line-height:1.45;color:var(--t1)}
+.ax-fds{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.ax-fd{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface-2)}
+.ax-fd h5{margin:0 0 6px;font-size:13.5px;line-height:1.4;color:var(--t1);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.ax-fd-n{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
+.ax-fd dl{margin:0;display:flex;flex-direction:column;gap:4px}
+.ax-fd-r{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;font-size:12.5px;line-height:1.45}
+.ax-fd-r dt{color:var(--t3);font-weight:600}
+.ax-fd-r dd{margin:0;color:var(--t2)}
+.ax-cl{margin:10px 0}
+.ax-cl h5{margin:0 0 6px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t1)}
+.ax-cl-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.ax-cl-t th{text-align:left;font-weight:600;color:var(--t3);padding:4px 8px;border-bottom:1px solid var(--border)}
+.ax-cl-t td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--t2);vertical-align:top}
+.ax-lim{margin-top:8px;font-size:12.5px;color:var(--t3)}
+.ax-lim summary{cursor:pointer;font-weight:600}
+.ax-lim ul{margin:6px 0 0;padding-left:18px}
+@media (max-width:560px){.ax-fd-r{grid-template-columns:1fr;gap:0}.ax-cl-t{display:block;overflow-x:auto}}
+.ax-unv{display:flex;align-items:center;gap:6px;margin:8px 0;padding:6px 10px;border-radius:8px;font-size:12.5px;color:var(--t2);background:rgba(233,174,28,.14)}
