@@ -108,6 +108,12 @@
       var big = h('div', { class: 'vp-hero-main' }, [h('span', { class: 'vp-eyebrow', text: 'T1 CS handled it' }),
         h('p', { class: 'vp-hero-n' }, [h('b', { text: String(T.closedT1) }), ' VoIP ticket' + (T.closedT1 === 1 ? '' : 's') + ' resolved by T1, with no transfer']),
         h('p', { class: 'vp-hero-sub', text: pc(T.closedT1Pct) + ' of the ' + T.handled + ' VoIP tickets T1 handled' + (P.handled ? ' (' + pc(P.closedT1Pct) + ' in the ' + D.range.days + ' days before).' : '.') + ' The VoIP team did not need to touch them' + (comp && comp.total ? ', ' + pc(comp.t1Pct) + ' of every VoIP ticket at Adit.' : '.') })]);
+      // Batch 252: fill the left side with how T1 resolved them: by channel, and the issue it resolves most.
+      var ch = D.current.byChannel || {}, topCat = D.current.byCategory.filter(function (c) { return c.closedT1 > 0 && c.key !== 'other'; }).sort(function (a, b) { return b.closedT1 - a.closedT1; })[0];
+      big.appendChild(h('div', { class: 'vp-hero-split' }, [['call', 'On calls'], ['chat', 'In chats'], ['email', 'By email']].map(function (k) {
+        var x = ch[k[0]] || {}; return h('div', null, [h('b', { text: String(x.closedT1 || 0) }), h('span', { text: k[1] }), h('span', { class: 'vp-muted', text: pc(x.closedT1Pct) + ' of ' + (x.handled || 0) })]);
+      }).concat([h('div', null, [h('b', { text: String(T.fcr) }), h('span', { text: 'First contact' }), h('span', { class: 'vp-muted', text: 'closed, not reopened' })])])));
+      if (topCat) big.appendChild(h('p', { class: 'vp-hero-top' }, [h('span', { class: 'vp-muted', text: 'Resolved most: ' }), h('b', { text: topCat.label }), ' (' + topCat.closedT1 + ')']));
       var kpi = function (label, value, prev, cur, goodUp, sub, onclick) {
         return h(onclick ? 'button' : 'div', { type: onclick ? 'button' : null, class: 'vp-kpi' + (onclick ? ' act' : ''), onclick: onclick }, [h('span', { class: 'vp-tl', text: label }), h('b', { class: 'vp-tv', text: value }),
           h('span', { class: 'vp-tc' }, [goodUp == null ? null : delta(prev, cur, goodUp, 'pct'), sub ? h('span', { class: 'vp-muted', text: (goodUp == null ? '' : ' ') + sub }) : null])]);
@@ -120,7 +126,7 @@
         kpi('Leaks to fix', String(nLeak), null, null, null, nLeak ? 'Open the fix list' : 'Nothing to fix', nLeak ? function () { S.view = 'fix'; paint(); } : null)])]);
     }
     function shineCard(D) {
-      var C = D.current, cats = C.byCategory.filter(function (c) { return c.closedT1 > 0; }).sort(function (a, b) { return b.closedT1 - a.closedT1; }).slice(0, 5);
+      var C = D.current, cats = C.byCategory.filter(function (c) { return c.closedT1 > 0; }).sort(function (a, b) { return b.closedT1 - a.closedT1; }).slice(0, 7);
       var ags = C.byAgent.filter(function (a) { return a.handled >= 3; }).sort(function (a, b) { return (b.closedT1Pct || 0) - (a.closedT1Pct || 0) || b.closedT1 - a.closedT1; }).slice(0, 3);
       var max = Math.max.apply(null, cats.map(function (c) { return c.closedT1; }).concat([1]));
       return card('Where T1 shines', 'Issues T1 now resolves itself, and the agents closing the most without a transfer.', [
@@ -131,7 +137,7 @@
     function leakCard(D) {
       var C = D.current, rs = C.leakReasons || [], max = Math.max.apply(null, rs.map(function (r) { return r.n; }).concat([1])), n = openLeaks(D).length;
       return card('Where it leaks', n ? n + ' ticket' + (n === 1 ? '' : 's') + ' where T1 handling fell short of the VoIP guide.' : 'No leaks found in this range.', [
-        rs.length ? h('ul', { class: 'vp-bars' }, rs.map(function (r) { return h('li', null, [h('button', { type: 'button', class: 'vp-bl link', onclick: function () { S.view = 'fix'; S.fx.reason = r.key; paint(); } }, [r.label]), h('span', { class: 'vp-bt' }, [h('i', { class: 'bad', style: 'width:' + Math.max(4, r.n / max * 100) + '%' })]), h('b', { text: String(r.n) })]); })) : null,
+        rs.length ? h('ul', { class: 'vp-bars' }, rs.map(function (r) { return h('li', null, [h('button', { type: 'button', class: 'vp-bl link', onclick: function () { S.view = 'fix'; S.fx.reason = r.key; paint(); } }, [r.label]), h('span', { class: 'vp-bt' }, [h('i', { class: 'bad', style: 'width:' + Math.max(4, r.n / max * 100) + '%' })]), h('b', { text: String(r.n) }), h('span', { class: 'vp-muted', title: 'Share of the VoIP tickets T1 handled', text: pc(C.totals.handled ? r.n / C.totals.handled * 100 : null) })]); })) : null,
         C.topMissing.length ? h('p', { class: 'vp-line' }, [h('b', { text: 'Most skipped step: ' }), C.topMissing[0].step + ' (' + C.topMissing[0].n + ')']) : null,
         n && opts.mode === 'admin' ? h('button', { type: 'button', class: 'vp-btn primary', onclick: function () { S.view = 'fix'; paint(); } }, ['Open the fix list']) : null]);
     }
