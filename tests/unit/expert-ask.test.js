@@ -93,3 +93,13 @@ describe('Aria thesis brief for support (Batch 244)', () => {
     expect(b).not.toMatch(/\[C|\[E:|\[T4/);
   });
 });
+
+describe('cut-off AI answers are kept (Batch 245)', () => {
+  it('closes an answer cut off at the length limit instead of losing it', () => {
+    const ai = require('../../lib/ai');
+    const j = ai._parseJSONLoose('{"answer":"a","say":"Hi Dr. Perry,","ticket":{"findings":[{"title":"t","evidence":"cut here');
+    expect(j.say).toBe('Hi Dr. Perry,');
+    expect(j.ticket.findings[0].evidence).toBe('cut here');
+    expect(j._truncated).toBe(true);
+  });
+});
