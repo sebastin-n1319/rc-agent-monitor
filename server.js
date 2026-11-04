@@ -740,9 +740,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       vp.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
         roster: () => deskLifecycleAgentRoster(), dayWindow: getDateWindow });
       setTimeout(() => {
-        const tick = () => vp.work({ max: 20 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
-        tick(); setInterval(tick, 2 * 60 * 1000);
-      }, 3 * 60 * 1000); }
+        const tick = () => vp.work({ max: 30 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
+        tick(); setInterval(tick, 90 * 1000);
+      }, 60 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
     { const expert = require('./lib/expert'); expert.setDB(db);
       { const et = require('./lib/expert-ticket'); et.setDesk(require('./lib/desk-service')); et.setAI(require('./lib/ai')); expert.setDeps({ ticket: et, client: require('./lib/client-lookup'), localAll: (sql, params) => dbAllLocal(sql, params) }); }
@@ -9220,8 +9220,14 @@ const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false
 function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10) }; }
 async function vpWithin(p) { p.catch(() => {}); return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read, press Refresh in a minute.'), { status: 503 })), 45000))]); }
 app.get('/api/voip-project', requireAdmin, rateLimit(30, 60000), async (req, res) => {
-  try { res.json({ success: true, ...(await vpWithin(vpMod().summary(vpRange(req.query)))) }); } catch (e) { vpErr(res, e, 'Could not build the VoIP report'); }
+  try { res.set('Cache-Control', 'no-store'); res.json({ success: true, ...(await vpWithin(vpMod().summary(vpRange(req.query)))) }); } catch (e) { vpErr(res, e, 'Could not build the VoIP report'); }
 });
+// Batch 251: the fix list. Mark a leak as coached or not a leak, or ask AI to read the ticket again.
+app.post('/api/voip-project/fix', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const b = req.body || {}; const r = await vpMod().setFix({ ticketId: b.ticketId, status: b.status, note: b.note }, req.session.email); insertAuditLog(req.session.email, 'voip_fix', r.ticketId, r.status).catch(() => {}); res.json({ success: true, ...r }); }
+  catch (e) { vpErr(res, e, 'Could not save'); }
+});
+app.post('/api/voip-project/recheck', requireAdmin, rateLimit(30, 60000), async (req, res) => { try { res.json({ success: true, ...(await vpMod().recheck((req.body || {}).ticketId)) }); } catch (e) { vpErr(res, e, 'Could not queue it'); } });
 app.get('/api/voip-project/shares', requireAdmin, async (req, res) => { try { res.json({ success: true, shares: await vpMod().listShares() }); } catch (e) { vpErr(res, e, 'Could not load the links'); } });
 app.post('/api/voip-project/shares', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { const b = req.body || {}; const r = await vpMod().createShare({ label: b.label, ...vpRange(b) }, req.session.email); insertAuditLog(req.session.email, 'voip_share_created', r.token.slice(0, 8), String(b.label || '')).catch(() => {}); res.json({ success: true, ...r }); }
