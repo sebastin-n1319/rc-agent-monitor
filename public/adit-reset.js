@@ -38,6 +38,7 @@
     'notice-center.css', // Session 68
     'app-header.css', // Batch 159: new header and profile menu
     'voip-project.css', // Batch 250: T1 CS VoIP
+    'call-qa.css', // Batch 265: Call QA
     'bonus-calc.css', // Batch 166: T1 CS bonus calculator
     'appraisal.css', // Batch 193: agent appraisals
     'updates.css', // process and product updates

@@ -747,6 +747,24 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         const tick = () => vp.work({ max: 30 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
         tick(); setInterval(tick, 90 * 1000);
       }, 60 * 1000); }
+    // Batch 265: Call QA (Call Logs > Call QA). The AI audits every recorded T1 call the way the human QA team does. Scores stay here.
+    { const cq = require('./lib/call-qa'); cq.setDB(db); await cq.initSchema();
+      let _deskIds = { at: 0, m: null };
+      cq.setDeps({ ai: require('./lib/ai'), kbq: (sql, limit) => require('./lib/aditkb-service').query(sql, limit), crmCoql: (q) => require('./lib/crm-qa').coql(q),
+        rc: { listRecordedCalls: (ext, a, b) => require('./rc-service').listRecordedCalls(ext, a, b), fetchRecording: (u) => require('./rc-service').fetchRecording(u) },
+        agents: () => getMonitoredAgents(), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
+        deskIdOf: async (email) => {
+          if (!_deskIds.m || Date.now() - _deskIds.at > 3600e3) {
+            const byName = new Map(); for (const [id, n] of await require('./lib/desk-lifecycle').agentNameById()) byName.set(String(n).trim().toLowerCase(), String(id).replace(/\D/g, ''));
+            const m = new Map(); for (const a of await getMonitoredAgents()) if (a.email) { const id = byName.get(String(a.name || '').trim().toLowerCase()); if (id) m.set(a.email.toLowerCase(), id); }
+            _deskIds = { at: Date.now(), m };
+          }
+          return _deskIds.m.get(String(email || '').toLowerCase()) || null;
+        } });
+      setTimeout(() => {
+        const tick = () => cq.work({ max: 4 }).then(r => { if (r && (r.audited || r.discovered)) console.log('🎧 Call QA:', JSON.stringify(r)); }).catch(e => console.warn('call qa work failed:', e.message));
+        tick(); setInterval(tick, 120 * 1000);
+      }, 180 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
     { const expert = require('./lib/expert'); expert.setDB(db);
       { const et = require('./lib/expert-ticket'); et.setDesk(require('./lib/desk-service')); et.setAI(require('./lib/ai')); expert.setDeps({ ticket: et, client: require('./lib/client-lookup'), localAll: (sql, params) => dbAllLocal(sql, params) }); }
@@ -9267,6 +9285,46 @@ app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), as
 
 // Batch 250: T1 CS VoIP report and its share links. The report answers within 45 seconds; a slow read carries on
 // and is ready on the next refresh.
+// ── Batch 265: Call QA (admins only) ──────────────────────────────────────
+const cqMod = () => require('./lib/call-qa');
+const cqErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : (msg + (e.message ? ': ' + String(e.message).slice(0, 160) : '')) });
+function cqRange(q) {
+  const ok = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ''));
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const to = ok(q.to) ? q.to : today;
+  const from = ok(q.from) ? q.from : new Date(Date.parse(to + 'T12:00:00Z') - 6 * 864e5).toISOString().slice(0, 10);
+  return { from: new Date(getDateWindow(from, 'America/Chicago').start).toISOString(), to: new Date(getDateWindow(to, 'America/Chicago').end).toISOString(), fromDay: from, toDay: to };
+}
+app.get('/api/call-qa/summary', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const r = cqRange(req.query); res.json({ success: true, range: r, status: await cqMod().status(), ...(await cqMod().summary(r)) }); } catch (e) { cqErr(res, e, 'Could not load Call QA'); }
+});
+app.get('/api/call-qa/calls', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const r = cqRange(req.query); res.json({ success: true, calls: await cqMod().list({ ...r, agent: String(req.query.agent || ''), status: String(req.query.status || ''), fatal: String(req.query.fatal || ''), q: String(req.query.q || '').slice(0, 80) }) }); } catch (e) { cqErr(res, e, 'Could not load calls'); }
+});
+app.get('/api/call-qa/calls/:id', requireAdmin, rateLimit(120, 60000), async (req, res) => {
+  try { res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not load the call'); }
+});
+app.post('/api/call-qa/calls/:id/override', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { res.json({ success: true, call: await cqMod().override(Number(req.params.id), { email: req.session && req.session.email }, req.body || {}) }); } catch (e) { cqErr(res, e, 'Could not save the correction'); }
+});
+app.post('/api/call-qa/calls/:id/reaudit', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { await cqMod().reaudit(Number(req.params.id)); res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not audit the call again'); }
+});
+app.get('/api/call-qa/calibration', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try { const m = cqMod(); res.json({ success: true, status: await m.status(), agreement: await m.agreement(), guide: await m.guide(), human: await m.humanStats(180) }); } catch (e) { cqErr(res, e, 'Could not load the calibration'); }
+});
+app.post('/api/call-qa/calibration/run', requireAdmin, rateLimit(5, 60000), async (req, res) => {
+  try { const n = Math.max(10, Math.min(200, Number((req.body || {}).n) || 60)); res.json({ success: true, ...(await cqMod().queueCalibration(n)) }); } catch (e) { cqErr(res, e, 'Could not queue the calibration'); }
+});
+app.post('/api/call-qa/relearn', requireAdmin, rateLimit(2, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await cqMod().relearn()) }); } catch (e) { cqErr(res, e, 'Could not relearn from human QA'); }
+});
+app.post('/api/call-qa/backfill', requireAdmin, rateLimit(3, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await cqMod().backfill(Math.max(2, Math.min(31, Number((req.body || {}).days) || 7)))) }); } catch (e) { cqErr(res, e, 'Could not find older calls'); }
+});
+app.post('/api/call-qa/enabled', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { res.json({ success: true, status: await cqMod().setEnabled(!!(req.body || {}).on) }); } catch (e) { cqErr(res, e, 'Could not change Call QA'); }
+});
 const vpMod = () => require('./lib/voip-project');
 const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && (e.status < 500 || e.status === 503) ? e.message : (msg + (e.message ? ': ' + String(e.message).replace(/aditkb/ig, 'data service').slice(0, 140) : '')) });
 function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10), fresh: q.fresh === '1' }; }

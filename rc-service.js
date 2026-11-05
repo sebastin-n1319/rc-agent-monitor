@@ -2290,7 +2290,19 @@ async function fetchAuditTrail(fromIso, toIso, maxPages = 40) {
   return records;
 }
 
+// Batch 265: Call QA. A T1 agent's recorded calls for a window, and one recording's audio.
+async function listRecordedCalls(extensionId, dateFrom, dateTo) {
+  return listExtensionCallLogRecords(extensionId, { dateFrom, dateTo, withRecording: true, type: 'Voice', view: 'Simple', perPage: 250 });
+}
+async function fetchRecording(contentUri) {
+  const r = await rcCall('get', contentUri);
+  const buf = Buffer.from(await r.arrayBuffer());
+  let mime = 'audio/mpeg'; try { mime = (r.headers && r.headers.get && r.headers.get('content-type')) || mime; } catch (e) { /* keep mp3 */ }
+  return { buf, mime };
+}
+
 module.exports = {
+  listRecordedCalls, fetchRecording, // Batch 265
   agentCallCountsFromRC, // Batch 166b
   fetchAuditTrail,
   rcGet, // Batch 187: 1025 Call Flow reads the company call log with legs
