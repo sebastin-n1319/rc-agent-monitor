@@ -48,6 +48,7 @@
   // ── shell ────────────────────────────────────────────────────────────
   var VERDICT_LABEL = { good: 'Approved', invalid: 'Needs rework', ignored: 'Skipped' }, VERDICT_CLS = { good: 'st-approved', invalid: 'st-returned', ignored: 'st-closed' };
   function verdictPill(r) {
+    if (r.verdict === 'good' && r.ai_auto) return pill('AI approved', 'st-approved', 'Approved by AI because it leaned approve and the destination fits. A SPOC can undo it.');
     if (r.verdict === 'invalid') return (r.severity || 'fatal') === 'fatal' ? pill('Needs rework: fatal', 'sev-high', 'Counts as a strike') : pill('Needs rework: feedback', 'sev-medium', 'No strike');
     return pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat');
   }
@@ -301,8 +302,8 @@
       var over = j.waiting.filter(function (r) { return r.minutes >= buf; }).length;
       var tiles = h('div', { class: 'tka-tiles' }, [
         tileBox('Waiting for review', j.waiting.length, over ? over + ' over ' + buf + ' min' : 'all within ' + buf + ' min', over ? 'hot' : ''),
-        tileBox('Moved, verdict missing', j.moved.length, 'left the status without a verdict', j.moved.length ? 'warn' : ''),
-        tileBox('Reviewed today', (j.today.good || 0) + (j.today.invalid || 0), (j.today.good || 0) + ' approved, ' + (j.today.invalid || 0) + ' need rework'),
+        tileBox('Moved, verdict missing', j.movedTotal != null ? j.movedTotal : j.moved.length, 'last 14 days' + (j.movedTotal > j.moved.length ? ', newest ' + j.moved.length + ' listed' : ''), (j.movedTotal || j.moved.length) ? 'warn' : ''),
+        tileBox('Reviewed today', (j.today.good || 0) + (j.today.invalid || 0), (j.today.good || 0) + ' approved' + (j.aiApprovedToday ? ' (' + j.aiApprovedToday + ' by AI)' : '') + ', ' + (j.today.invalid || 0) + ' need rework'),
         tileBox('Average review time', j.today.avgMin == null ? 'none' : j.today.avgMin + ' min', 'today')]);
       var bar = h('div', { class: 'tka-inline between' }, [
         h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes (counted between ' + (st.startHour == null ? 7 : st.startHour) + ':00 and ' + (st.endHour == null ? 19 : st.endHour) + ':00 Central): move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
@@ -332,14 +333,15 @@
         kids.push(sl);
       }
       if (j.moved.length) {
-        kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Moved, verdict missing' }), h('span', { class: 'tka-sech-n warn', text: String(j.moved.length) }), h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' })]));
+        kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Moved, verdict missing' }), h('span', { class: 'tka-sech-n warn', text: String(j.movedTotal != null ? j.movedTotal : j.moved.length) }), h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' + (st.aiAutoApprove !== false ? ' The AI reads each one and approves it when the destination clearly fits; the rest stay here with the AI\'s view.' : '') + (j.movedTotal > j.moved.length ? ' Showing the newest ' + j.moved.length + '.' : '') })]));
         kids.push(movedList(j.moved, buf, j.me));
       }
       if (j.done.length) {
         var d = h('details', { class: 'tka-fold' }, [h('summary', { text: 'Reviewed in the last 24 hours (' + j.done.length + ')' })]);
         j.done.forEach(function (r) {
           d.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(r.reviewed_at).replace(' ', 'T') + 'Z') }),
-            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', verdictPill(r), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.comment ? ' ' + r.comment : ''])]));
+            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', verdictPill(r), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.comment ? ' ' + r.comment : '',
+              r.ai_auto ? btn('Undo', 'ghost sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Undoing...'); api('/api/review/' + r.id + '/undo-ai', {}).then(function (x) { busy(b, false, 'Undo'); toast(x.success ? 'Back in Moved, verdict missing' : (x.error || 'Failed'), x.success ? 'success' : 'error'); if (x.success) load(); }); }, { 'aria-label': 'Undo the AI approval of #' + r.ticket_number }) : null])]));
         });
         kids.push(d);
       }
@@ -619,7 +621,8 @@
             h('div', { class: 'tka-lr-t' }, [numEl, h('span', { class: 'tka-sub', text: r.subject || '', title: r.subject || null })]),
             h('span', { class: 'tka-lr-ag', text: nameOf(r.agent_email, r.agent_name) }),
             h('span', { class: 'tka-lr-ch' }, [r.channel ? pill(r.channel, 'dest') : null]),
-            h('span', { class: 'tka-lr-st' }, [pill(r.source === 'bypass' ? 'Skipped review' : 'Left status', r.source === 'bypass' ? 'sev-high' : 'sev-medium')]),
+            h('span', { class: 'tka-lr-st' }, [pill(r.source === 'bypass' ? 'Skipped review' : 'Left status', r.source === 'bypass' ? 'sev-high' : 'sev-medium'),
+              r.ai_lean === 'rework' ? pill('AI: rework', 'sev-medium', r.ai_why || 'The AI thinks this transfer needs rework. Your call.') : r.ai_lean === 'unclear' ? pill('AI: unsure', 'cat', r.ai_why || 'The AI could not decide. Your call.') : null]),
             h('span', { class: 'tka-lr-to', title: destTxt || null, text: destTxt || 'Not recorded' }),
             h('div', { class: 'tka-lr-act' }, [anBtn, dealBtn, vrow])]),
           showDeal ? lineHost : null, priorBox, anShell, shell, form].filter(Boolean));
@@ -680,12 +683,12 @@
       var hrFrom = num(st.startHour == null ? 7 : st.startHour, 0, 23, 'Review hours start'), hrTo = num(st.endHour == null ? 19 : st.endHour, 1, 24, 'Review hours end');
       var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the review window passes', placeholder: 'name@adit.com, name@adit.com' }); esc.addEventListener('input', touch);
       var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' }); stName.addEventListener('input', touch);
-      var on = toggle('Review is on', st.enabled !== false, 'Watch the Zoho status and list tickets for review'), alOn = toggle('Idle review alerts', st.alertsOn !== false, 'Tag the people below in the review alerts space');
+      var on = toggle('Review is on', st.enabled !== false, 'Watch the Zoho status and list tickets for review'), alOn = toggle('Idle review alerts', st.alertsOn !== false, 'Tag the people below in the review alerts space'), aiOn = toggle('AI approves clear moved tickets', st.aiAutoApprove !== false, 'Only when the AI leans approve and the destination fits. It never records rework or a strike.');
       var c1 = card('Review window and reminders', 'How long a ticket may wait, who is tagged when it waits too long, and the hours the clock runs.', [
         h('div', { class: 'tka-fgrid' }, [field('Review within', buf, 'minutes before the first alert'), field('Remind every', rep, 'minutes'), field('Stop after', mx, 'reminders (0 means no limit)'),
           field('Review hours start', hrFrom, 'Central time, 24 hour clock'), field('Review hours end', hrTo, '7 to 19 is 7 AM to 7 PM'), field('Zoho status', stName, 'the status agents set to request review')]),
         field('Tag these people', esc, 'comma separated emails, tagged in the review alerts space'),
-        h('div', { class: 'tka-swrow' }, [on.el, alOn.el])]);
+        h('div', { class: 'tka-swrow' }, [on.el, alOn.el, aiOn.el])]);
 
       // 2. Webhooks
       var chans = {}; ((hub && hub.channels) || []).forEach(function (c) { chans[c.key] = c; });
@@ -737,7 +740,7 @@
           var b = ev.currentTarget, spacesMap = {};
           Array.prototype.forEach.call(rows.children, function (r) { var t = r.querySelector('select').value, u = r.querySelector('input').value.trim(); if (t && u) spacesMap[t] = u; });
           busy(b, true, 'Saving...');
-          api('/api/review/settings', { excludedTeams: Object.keys(picked).filter(function (k) { return picked[k]; }), bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.cb.checked, startHour: Number(hrFrom.value), endHour: Number(hrTo.value), repeatMin: Number(rep.value), maxReminders: Number(mx.value), alertsOn: alOn.cb.checked, deptSpaces: spacesMap }, 'PUT').then(function (r) {
+          api('/api/review/settings', { excludedTeams: Object.keys(picked).filter(function (k) { return picked[k]; }), bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.cb.checked, startHour: Number(hrFrom.value), endHour: Number(hrTo.value), repeatMin: Number(rep.value), maxReminders: Number(mx.value), alertsOn: alOn.cb.checked, aiAutoApprove: aiOn.cb.checked, deptSpaces: spacesMap }, 'PUT').then(function (r) {
             busy(b, false, 'Save settings');
             if (!r.success) return toast(r.error || 'Could not save', 'error');
             toast('Settings saved', 'success'); dirty = false; saveBar.classList.remove('dirty'); TA.tab = 'reviewSettings'; render();

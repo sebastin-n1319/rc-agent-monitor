@@ -716,6 +716,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     setTimeout(() => {
       setInterval(() => { transferReview.poll().catch(e => console.warn('transfer review poll failed:', e.message)); }, 60 * 1000);
     }, 40000);
+    // Batch 263: AI approves clear moved tickets, a few every 2 minutes.
+    setTimeout(() => {
+      setInterval(() => { transferReview.autoApprove().then(r => { if (r && r.approved) console.log('🤖 Transfer review AI approved', r.approved); }).catch(e => console.warn('transfer review AI approval failed:', e.message)); }, 120 * 1000);
+    }, 90000);
     // Session 90: escalation watch, every 15 minutes (does nothing until enabled with a webhook)
     escalationWatch.setDB(db);
     await escalationWatch.initSchema();
@@ -9919,6 +9923,7 @@ app.post('/api/review/:id/assist', requireAuth, requireAuditAccess, rateLimit(40
 app.post('/api/review/:id/message-draft', requireAuth, requireAuditAccess, rateLimit(40, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.messageDraft(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.post('/api/review/:id/message', requireAuth, requireAuditAccess, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.sendMessage(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.post('/api/review/:id/verdict', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.verdict(Number(req.params.id), req.audit, req.body || {})) }); }));
+app.post('/api/review/:id/undo-ai', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.undoAi(Number(req.params.id), req.audit)) }); }));
 app.get('/api/review/people', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, people: await transferReview.people(String(req.query.q || '').slice(0, 60), 30) }); }));
 app.post('/api/review/people/refresh', requireAuth, requireAuditAdmin, rateLimit(3, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.refreshPeople()) }); }));
 app.get('/api/review/settings', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, settings: await transferReview.settings(), teams: await transferReview.teamOptions(), peopleRefreshedAt: await transferReview.getSetting('people_refreshed_at') }); }));
