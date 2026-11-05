@@ -35,13 +35,32 @@
     var head = h('div', { class: 'vp-head' }), body = h('div', { class: 'vp-body', 'aria-live': 'polite' });
     root.appendChild(head); root.appendChild(body);
 
-    function load(fresh) {
-      if (S.busy) return; S.busy = true; paintHead();
+    // Batch 258: while AI is still reading (or the server is building newer numbers) the page updates itself every
+    // 45 seconds, keeping the tab and scroll position; Refresh asks the server for a fresh build.
+    var pollT = null;
+    function schedule() {
+      clearTimeout(pollT); var D = S.data; if (!D) return;
+      var rd = D.reading || {}, more = D.refreshing || (rd.total && rd.done < rd.total);
+      if (!more) return;
+      pollT = setTimeout(function () {
+        if (!root.isConnected) return;
+        if (document.hidden || !root.offsetParent) { schedule(); return; }
+        load(false, true);
+      }, D.refreshing ? 15000 : 45000);
+    }
+    function load(fresh, silent) {
+      if (S.busy) return; S.busy = true; if (!silent) paintHead();
       if (!S.data) { clear(body); body.appendChild(h('div', { class: 'vp-card vp-wait' }, [h('span', { class: 'vp-spin', 'aria-hidden': 'true' }), 'Reading the VoIP tickets from Zoho Desk...'])); }
-      var url = opts.mode === 'share' ? '/api/voip-share/' + encodeURIComponent(opts.token) : '/api/voip-project?preset=' + S.preset + (S.preset === 'custom' ? '&from=' + S.from + '&to=' + S.to : '') + '&t=' + Date.now();
-      api(url).then(function (j) { S.data = j; S.busy = false; paintHead(); paint(); })
+      var url = opts.mode === 'share' ? '/api/voip-share/' + encodeURIComponent(opts.token) : '/api/voip-project?preset=' + S.preset + (S.preset === 'custom' ? '&from=' + S.from + '&to=' + S.to : '') + (fresh ? '&fresh=1' : '') + '&t=' + Date.now();
+      api(url).then(function (j) {
+        var y = window.scrollY, open = [].map.call(root.querySelectorAll('details[open]'), function (d) { var sm = d.querySelector('summary'); return sm ? sm.textContent : ''; });
+        S.data = j; S.busy = false; paintHead(); paint();
+        if (silent) { [].forEach.call(root.querySelectorAll('details'), function (d) { var sm = d.querySelector('summary'); if (sm && open.indexOf(sm.textContent) >= 0) d.open = true; }); window.scrollTo(0, y); }
+        schedule();
+      })
         .catch(function (e) {
           S.busy = false; paintHead();
+          if (silent && S.data) { schedule(); return; }
           if (opts.mode === 'share' && e.data && e.data.signIn) return opts.onSignIn && opts.onSignIn(e.data.clientId, load);
           clear(body); body.appendChild(h('div', { class: 'vp-card vp-err', role: 'alert' }, [e.message || 'Could not load the report.', ' ', h('button', { type: 'button', class: 'vp-btn', onclick: function () { load(true); } }, ['Try again'])]));
         });
@@ -84,9 +103,9 @@
       // Batch 251: AI reads each ticket's conversation to confirm it is VoIP, sort the issue and check the basic support.
       if (rd.total && rd.done < rd.total) {
         var pctDone = Math.floor(rd.done / rd.total * 100);
-        body.appendChild(h('div', { class: 'vp-prog', role: 'status' }, [h('div', { class: 'vp-prog-hd' }, [h('b', { text: 'AI review ' + pctDone + '% done' }), h('span', { class: 'vp-muted', text: rd.done + ' of ' + rd.total + ' tickets read' })]),
+        body.appendChild(h('div', { class: 'vp-prog', role: 'status' }, [h('div', { class: 'vp-prog-hd' }, [h('b', { text: 'AI review ' + pctDone + '% done' }), h('span', { class: 'vp-muted', text: rd.done + ' of ' + rd.total + ' tickets read' + (rd.last && rd.last.at ? ' \u00b7 last pass ' + new Date(rd.last.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT' : '') + ' \u00b7 this page updates itself' })]),
           h('div', { class: 'vp-prog-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rd.total), 'aria-valuenow': String(rd.done), 'aria-label': 'AI review progress' }, [h('i', { style: 'width:' + Math.max(2, pctDone) + '%' })]),
-          h('p', { class: 'vp-muted vp-small', text: 'AI reads each ticket\'s conversation to confirm it is a VoIP query, sort the issue and check the basic support before a transfer. Until a ticket is read, only tickets already classified VoIP Support are counted, so closed-by-T1 numbers rise as it goes. About 30 tickets every 90 seconds; press Refresh to update.' })]));
+          h('p', { class: 'vp-muted vp-small', text: 'AI reads each ticket\'s conversation to confirm it is a VoIP query, sort the issue and check the basic support before a transfer. Until a ticket is read, only tickets already classified VoIP Support are counted, so closed-by-T1 numbers rise as it goes. About 30 tickets every 90 seconds.' + (rd.error ? ' The last pass hit a problem (' + rd.error.message + '); it tries again on its own.' : '') })]));
       }
       // Batch 253: the fix list is its own page (Tickets > VoIP fix list), not part of the report.
       if (opts.mode === 'fix') { body.appendChild(h('div', { class: 'vp-grid2 eq' }, [leakCard(D), agentLeakCard(D)])); body.appendChild(fixCard(D)); return; }
@@ -520,7 +539,7 @@
       loadList();
     }
     paintHead(); load();
-    return { reload: function () { load(true); } };
+    return { reload: function () { load(true); }, refresh: function () { load(false, true); } };
   }
   window.VoipProject = { mount: mount };
 })();

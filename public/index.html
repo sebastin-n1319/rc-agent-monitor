@@ -90,7 +90,7 @@
 <script src="/expert-widget.js?v=1.3.0" defer></script>
 <link rel="stylesheet" href="/app-header.css?v=1.4.0">
 <link rel="stylesheet" href="/voip-project.css?v=1.5.0">
-<script src="/voip-project.js?v=1.5.0" defer></script>
+<script src="/voip-project.js?v=1.6.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
 <script src="/bonus-calc.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
@@ -9361,8 +9361,8 @@ function switchTab(tab,el){
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='settings') { if(typeof openSettingsAdmin==='function') openSettingsAdmin(); }
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
-  if(tab==='voip-fix') { if(window.VoipProject && !window._vpfMounted) { window._vpfMounted = window.VoipProject.mount(document.getElementById('vpf-root'), { mode: 'fix' }); } else if (window._vpfMounted) window._vpfMounted.reload(); }
-  if(tab==='voip-project') { if(window.VoipProject && !window._vpMounted) { window._vpMounted = window.VoipProject.mount(document.getElementById('vp-root'), { mode: 'admin' }); } }
+  if(tab==='voip-fix') { if(window.VoipProject && !window._vpfMounted) { window._vpfMounted = window.VoipProject.mount(document.getElementById('vpf-root'), { mode: 'fix' }); } else if (window._vpfMounted) window._vpfMounted.refresh(); }
+  if(tab==='voip-project') { if(window.VoipProject && !window._vpMounted) { window._vpMounted = window.VoipProject.mount(document.getElementById('vp-root'), { mode: 'admin' }); } else if (window._vpMounted) window._vpMounted.refresh(); }
   if(tab==='custom-reports') { if(window.CustomReports) window.CustomReports.mount(document.getElementById('crp-root')); }
   if(tab==='bonus-calc') { if(typeof openBonusCalc==='function') openBonusCalc(); }
   if(tab==='appraisals') { if(typeof openAppraisals==='function') openAppraisals(); }

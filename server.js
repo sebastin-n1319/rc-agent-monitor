@@ -9265,10 +9265,16 @@ app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), as
 // and is ready on the next refresh.
 const vpMod = () => require('./lib/voip-project');
 const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && (e.status < 500 || e.status === 503) ? e.message : (msg + (e.message ? ': ' + String(e.message).replace(/aditkb/ig, 'data service').slice(0, 140) : '')) });
-function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10) }; }
+function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10), fresh: q.fresh === '1' }; }
 async function vpWithin(p) { p.catch(() => {}); return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read, press Refresh in a minute.'), { status: 503 })), 45000))]); }
 app.get('/api/voip-project', requireAdmin, rateLimit(30, 60000), async (req, res) => {
-  try { res.set('Cache-Control', 'no-store'); res.json({ success: true, ...(await vpWithin(vpMod().summary(vpRange(req.query)))) }); } catch (e) { vpErr(res, e, 'Could not build the VoIP report'); }
+  try {
+    res.set('Cache-Control', 'no-store');
+    const q = vpRange(req.query);
+    // Refresh asks for a fresh build; if that takes too long, answer with the last one and keep building.
+    let data; try { data = await vpWithin(vpMod().summary(q)); } catch (e) { if (!q.fresh) throw e; data = await vpWithin(vpMod().summary(Object.assign({}, q, { fresh: false }))); }
+    res.json({ success: true, ...data });
+  } catch (e) { vpErr(res, e, 'Could not build the VoIP report'); }
 });
 // Batch 251: the fix list. Mark a leak as coached or not a leak, or ask AI to read the ticket again.
 app.post('/api/voip-project/fix', requireAdmin, rateLimit(60, 60000), async (req, res) => {
