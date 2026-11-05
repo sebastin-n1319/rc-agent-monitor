@@ -26,6 +26,11 @@ describe('voip project: what happened to a ticket', () => {
     const t = V.trace({ log: '', assignee: 'Talia Adams', team: 'T1 - VoIP CSM', status_type: 'Open', hands: ['leo@adit.com'] }, ctx);
     expect(t).toMatchObject({ agent: 'Leo Clayton', outcome: 'open_dept', dest: 'VoIP Support' });
   });
+  it('a ticket a T1 agent created straight into the VoIP queue, with no owner log, counts for that agent', () => {
+    const c2 = Object.assign({}, ctx, { nameById: new Map([['555', 'Sabrina Quinn']]) });
+    const t = V.trace({ log: 'Owner: Unassigned\nRole: Agent', assignee: null, created_by: '555', team: 'T2 - VoIP BOPS', status_type: 'Closed', closed_time: 'x' }, c2);
+    expect(t).toMatchObject({ agent: 'Sabrina Quinn', outcome: 'closed_dept', dest: 'VoIP BOPS' });
+  });
   it('skips tickets T1 never touched', () => {
     expect(V.trace({ log: log(['Talia Adams', 22, 'VoIP Support']), assignee: 'Talia Adams', team: 'T1 - VoIP CSM' }, ctx)).toBeNull();
   });
