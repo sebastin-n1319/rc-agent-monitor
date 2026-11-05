@@ -9311,13 +9311,13 @@ app.post('/api/call-qa/calls/:id/reaudit', requireAdmin, rateLimit(10, 60000), a
   try { await cqMod().reaudit(Number(req.params.id)); res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not audit the call again'); }
 });
 app.get('/api/call-qa/calibration', requireAdmin, rateLimit(30, 60000), async (req, res) => {
-  try { const m = cqMod(); res.json({ success: true, status: await m.status(), agreement: await m.agreement(), guide: await m.guide(), human: await m.humanStats(180) }); } catch (e) { cqErr(res, e, 'Could not load the calibration'); }
+  try { const m = cqMod(); res.json({ success: true, status: await m.status(), agreement: await m.agreement(), guide: await m.guide(), human: await m.humanStats(180), learning: await m.learning() }); } catch (e) { cqErr(res, e, 'Could not load the calibration'); }
 });
 app.post('/api/call-qa/calibration/run', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   try { const n = Math.max(10, Math.min(200, Number((req.body || {}).n) || 60)); res.json({ success: true, ...(await cqMod().queueCalibration(n)) }); } catch (e) { cqErr(res, e, 'Could not queue the calibration'); }
 });
 app.post('/api/call-qa/relearn', requireAdmin, rateLimit(2, 60000), async (req, res) => {
-  try { res.json({ success: true, ...(await cqMod().relearn()) }); } catch (e) { cqErr(res, e, 'Could not relearn from human QA'); }
+  try { res.json({ success: true, ...(await cqMod().relearnAll()) }); } catch (e) { cqErr(res, e, 'Could not relearn from human QA'); }
 });
 app.post('/api/call-qa/backfill', requireAdmin, rateLimit(3, 60000), async (req, res) => {
   try { res.json({ success: true, ...(await cqMod().backfill(Math.max(2, Math.min(31, Number((req.body || {}).days) || 7)))) }); } catch (e) { cqErr(res, e, 'Could not find older calls'); }

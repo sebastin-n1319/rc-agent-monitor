@@ -135,3 +135,25 @@ describe('Call QA rules that hold whatever the AI says', () => {
     expect(out.params.documentation.r).toBe('na');
   });
 });
+
+describe('Call QA shadow learning', () => {
+  it('links a human audit to the live audit of the same recording, or queues the AI on it', async () => {
+    await q(`UPDATE cq_calls SET human_id = NULL`);
+    await q(`INSERT INTO cq_human (id, name, agent_email, stage, total, fields, recording_id, created_at, completed) VALUES ('h2', 'CA - 2', 'audrey.miles@adit.com', 'Resolved', 90, '{}', 'r2', '2026-11-02T16:00:00Z', '2026-11-03'), ('h3', 'CA - 3', 'audrey.miles@adit.com', 'Resolved', 70, '{}', 'r77', '2026-11-02T17:00:00Z', '2026-11-03')`);
+    const r = await cq.queueHuman('2026-11-01');
+    expect(r.linked).toBe(2); // h1 (Avoma av1) and h2 (recording r2)
+    expect(r.queued).toBe(1); // h3: a recording the AI has not audited
+    const [c] = await q(`SELECT kind, content_uri, duration FROM cq_calls WHERE call_key = 'Hh3'`);
+    expect(c.kind).toBe('calib'); expect(c.content_uri).toContain('/recording/r77/content'); expect(c.duration).toBe(null);
+    expect((await cq.queueHuman('2026-11-01')).queued).toBe(0);
+  });
+  it('writes lessons from the disagreements', async () => {
+    let seen = '';
+    cq.setDeps({ ai: { anyConfigured: () => true, bestJSON: async ({ user }) => { seen = user; return { json: { lessons: ['When the agent checks the ticket first, human QA marks Probing met.'] } }; } } });
+    await q(`UPDATE cq_calls SET audited_at = datetime('now') WHERE status = 'done'`);
+    const r = await cq.learnLessons();
+    expect(r.lessons).toBe(1);
+    expect(seen).toContain('She asked for the ticket number');
+    expect((await cq.learning()).lessons.list.length).toBe(1);
+  });
+});

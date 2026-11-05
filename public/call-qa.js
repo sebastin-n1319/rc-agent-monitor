@@ -67,7 +67,7 @@
     function overview(d) {
       var t = d.totals, st = d.status || {}, kids = [];
       if (st.enabled === false) kids.push(h('div', { class: 'cq-note', text: 'Call QA is paused. New calls are not audited until it is resumed.' }));
-      if (st.rcError) kids.push(h('div', { class: 'cq-note', text: 'RingCentral recordings could not be read: ' + st.rcError + '. Calls with an Avoma transcript are still audited.' }));
+      if (st.rcErr && st.rcErr.at && Date.now() - Date.parse(st.rcErr.at) < 2 * 3600e3) kids.push(h('div', { class: 'cq-note', text: 'RingCentral was busy at ' + when(st.rcErr.at) + ' CST (' + st.rcErr.msg + '). Recordings are read one agent at a time and retried by themselves' + (st.rcQueue ? ', ' + st.rcQueue + ' agent-days still to read' : '') + '. Calls with an Avoma transcript are audited meanwhile.' }));
       if (st.humanError) kids.push(h('div', { class: 'cq-note', text: 'Human QA audits could not be read from CRM: ' + st.humanError }));
       var done = t.audited, all = t.calls || 0;
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Audit progress' }), h('p', { text: 'Calls are found every 30 minutes and audited about 20 minutes after they end, so Avoma has posted its transcript.' })]),
@@ -120,7 +120,13 @@
 
     function calibView() {
       var c = S.calib; if (!c) return [h('div', { class: 'cq-card cq-empty', text: 'Loading calibration...' })];
-      var a = c.agreement, st = c.status || {}, hu = st.human || {}, kids = [];
+      var a = c.agreement, st = c.status || {}, hu = st.human || {}, kids = [], L = c.learning || {};
+      if (L.start) {
+        var dayN = Math.min(14, Math.max(1, Math.ceil((Date.now() - Date.parse(L.start)) / 864e5)));
+        kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: L.active ? 'Learning period: day ' + dayN + ' of 14' : 'Learning period finished' }),
+          h('p', { text: 'Until ' + when(L.until) + ' CST. Every call human QA audits is audited by the AI too: it transcribes the RingCentral recording (or uses the Avoma transcript), reviews the ticket and Adit knowledge, scores without seeing the human score, then compares. Each day it rewrites its lessons from the differences and from your corrections, and uses them on every audit.' })]),
+          a.byDay && a.byDay.length ? table([['Audited on'], ['Calls compared', 'n'], ['Average score gap', 'n'], ['Within 10 points', 'n']], a.byDay.slice(-14).map(function (d) { return h('tr', null, [h('td', { text: d.day }), h('td', { class: 'n', text: String(d.pairs) }), h('td', { class: 'n', text: String(d.avgDiff) }), h('td', { class: 'n', text: pc(d.within10Pct) })]); })) : h('p', { class: 'cq-small cq-muted', text: 'The first comparisons appear as the AI finishes the human-audited calls.' })]));
+      }
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'How closely the AI agrees with human QA' }), h('p', { text: 'The AI audits calls the human QA team already audited, without seeing their score. Read only from CRM Call Audits: ' + (hu.n || 0) + ' human audits (' + (hu.first || '') + ' to ' + (hu.last || '') + '), ' + (hu.paired || 0) + ' matched to an Avoma transcript.' })]),
         h('div', { class: 'cq-kpis' }, [
           h('div', { class: 'cq-kpi' }, [h('b', { text: pc(a.overall) }), h('span', { text: 'Parameter agreement' }), h('small', { text: a.calls + ' calls compared' })]),
@@ -128,7 +134,7 @@
           h('div', { class: 'cq-kpi' }, [h('b', { text: pc(a.fatalAgreePct) }), h('span', { text: 'Fatal agreement' })]),
           h('div', { class: 'cq-kpi' }, [h('b', { text: pc(a.stageAgreePct) }), h('span', { text: 'Same stage' })])]),
         h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn primary sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/calibration/run', { n: 60 }).then(function (r) { b.disabled = false; toast(r.success ? r.queued + ' human-audited calls queued for the AI' : r.error, r.success ? 'success' : 'error'); }); }, text: 'Compare 60 more calls' }),
-          h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = 'Learning...'; api('/api/call-qa/relearn', {}).then(function (r) { b.disabled = false; b.textContent = 'Relearn from human QA'; toast(r.success ? 'Learned again from ' + (r.added || 0) + ' new human audits' : r.error, r.success ? 'success' : 'error'); S.calib = null; loadCalib(); }); }, text: 'Relearn from human QA' })])]));
+          h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = 'Learning...'; api('/api/call-qa/relearn', {}).then(function (r) { b.disabled = false; b.textContent = 'Relearn from human QA'; toast(r.success ? 'Learned again: ' + (r.added || 0) + ' new human audits, ' + (r.queued || 0) + ' calls queued for the AI, ' + (r.lessons || 0) + ' lessons' : r.error, r.success ? 'success' : 'error'); S.calib = null; loadCalib(); }); }, text: 'Relearn from human QA' })])]));
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Per parameter' }), h('p', { text: 'Caught: of the calls human QA marked missed, how many the AI also marked missed. Extra: of the AI\'s misses, how many human QA passed.' })]),
         table([['Parameter'], ['Calls', 'n'], ['Agree', 'n'], ['Human missed', 'n'], ['Caught', 'n'], ['AI missed', 'n'], ['Extra', 'n']], a.params.map(function (p) {
           return h('tr', null, [h('td', null, h('b', { text: p.label })), h('td', { class: 'n', text: String(p.pairs) }), h('td', { class: 'n', text: pc(p.agreePct) }), h('td', { class: 'n', text: String(p.humanMiss) }), h('td', { class: 'n', text: pc(p.caughtPct) }), h('td', { class: 'n', text: String(p.aiMiss) }), h('td', { class: 'n', text: pc(p.falseMissPct) })]);
@@ -144,8 +150,11 @@
       var c = S.calib; if (!c) return [h('div', { class: 'cq-card cq-empty', text: 'Loading...' })];
       var g = c.guide, hs = c.human || {};
       if (!g) return [h('div', { class: 'cq-card cq-empty', text: 'The AI has not learned from human QA yet. It reads CRM Call Audits within a few minutes of starting.' })];
+      var LS = c.learning && c.learning.lessons;
+      var lessonsCard = h('div', { class: 'cq-card cq-guide' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Lessons from comparing with human QA' }), h('p', { text: LS ? 'Rewritten ' + when(LS.at) + ' CST from ' + LS.from + ' calls where the AI and human QA differed and ' + LS.corrections + ' of your corrections. Used on every audit.' : 'Written once the AI has audited calls human QA also audited, then every day during the learning period.' })]),
+        LS && LS.list.length ? h('ul', null, LS.list.map(function (x) { return h('li', { text: x }); })) : null]);
       var P = (c.agreement && c.agreement.params) || [];
-      return [h('div', { class: 'cq-card cq-guide' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'How Adit QA applies the rubric' }), h('p', { text: 'Written by the AI from ' + g.from + ' human audits and their improvement notes, ' + when(g.at) + '. Relearned every week. Human QA, last 6 months: average ' + (hs.avg == null ? 'none' : hs.avg) + ', fatal ' + pc(hs.fatalPct) + ' on ' + (hs.scored || 0) + ' scored calls.' })]),
+      return [lessonsCard, h('div', { class: 'cq-card cq-guide' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'How Adit QA applies the rubric' }), h('p', { text: 'Written by the AI from ' + g.from + ' human audits and their improvement notes, ' + when(g.at) + '. Relearned every week. Human QA, last 6 months: average ' + (hs.avg == null ? 'none' : hs.avg) + ', fatal ' + pc(hs.fatalPct) + ' on ' + (hs.scored || 0) + ' scored calls.' })]),
         g.general ? h('p', null, [h('b', { text: 'Reviewer habits. ' }), g.general]) : null, g.fatal ? h('p', null, [h('b', { text: 'Fatal errors. ' }), g.fatal]) : null,
         h('h3', { text: 'Per parameter' })].concat(P.map(function (p) { return g.params[p.key] ? h('p', null, [h('b', { text: p.label + ' (' + p.weight + ' pts, human QA misses it on ' + pc((hs.missPct || {})[p.key]) + '). ' }), g.params[p.key]]) : null; })))];
     }
