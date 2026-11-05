@@ -426,15 +426,23 @@
     function movedList(rows, buf, me) {
       var q = h('input', { class: 'tka-input tka-lf-q', type: 'search', placeholder: 'Search ticket #, subject, agent, destination', 'aria-label': 'Search moved tickets', value: TA.mvQ || '' });
       var chips = h('div', { class: 'tka-lf-chips', role: 'group', 'aria-label': 'Filter by agent' });
+      var aiChips = h('div', { class: 'tka-lf-chips', role: 'group', 'aria-label': 'Filter by the AI view' });
       var count = h('span', { class: 'tka-when tka-lf-n' });
       var head = h('div', { class: 'tka-lr-cols', 'aria-hidden': 'true' }, ['Ticket', 'Agent', 'Channel', 'Status', 'Now with', 'Decision'].map(function (t) { return h('span', { text: t }); }));
       var list = h('div', { class: 'tka-lr-list' });
       var byAgent = {}; rows.forEach(function (r) { var n = nameOf(r.agent_email, r.agent_name); byAgent[n] = (byAgent[n] || 0) + 1; });
       var names = Object.keys(byAgent).sort(function (a, b) { return byAgent[b] - byAgent[a]; });
       if (TA.mvAgent && !byAgent[TA.mvAgent]) TA.mvAgent = '';
-      function match(r) {
+      // Batch 264: filter by what the AI made of the ticket.
+      function aiOf(r) { return r.ai_lean === 'rework' ? 'rework' : r.ai_lean === 'unclear' ? 'unsure' : 'unread'; }
+      var AI_F = [['', 'All AI views'], ['rework', 'AI: rework'], ['unsure', 'AI: unsure'], ['unread', 'Not read by AI yet']];
+      TA.mvSel = TA.mvSel || {};
+      var ids = {}; rows.forEach(function (r) { ids[r.id] = 1; });
+      Object.keys(TA.mvSel).forEach(function (k) { if (!ids[k]) delete TA.mvSel[k]; });
+      function match(r, skipAi) {
         var n = nameOf(r.agent_email, r.agent_name);
         if (TA.mvAgent && n !== TA.mvAgent) return false;
+        if (!skipAi && TA.mvAi && aiOf(r) !== TA.mvAi) return false;
         var t = (TA.mvQ || '').trim().toLowerCase().replace(/^#+\s*/, '');
         return !t || [r.ticket_number, r.subject, n, r.to_agent, r.to_team, r.channel].join(' ').toLowerCase().indexOf(t) > -1;
       }
@@ -443,17 +451,66 @@
           var on = (TA.mvAgent || '') === c[0];
           return h('button', { type: 'button', class: 'tka-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: function () { TA.mvAgent = c[0]; paintChips(); fill(); } }, [h('span', { text: c[1] }), h('b', { text: String(c[2]) })]);
         }));
+        var base = rows.filter(function (r) { return match(r, true); }), n = { '': base.length };
+        base.forEach(function (r) { var k = aiOf(r); n[k] = (n[k] || 0) + 1; });
+        aiChips.replaceChildren.apply(aiChips, AI_F.map(function (c) {
+          var on = (TA.mvAi || '') === c[0];
+          return h('button', { type: 'button', class: 'tka-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: function () { TA.mvAi = c[0]; paintChips(); fill(); } }, [h('span', { text: c[1] }), h('b', { text: String(n[c[0]] || 0) })]);
+        }));
       }
+      // Bulk bar: pick tickets, then one verdict and one comment for all of them.
+      var selAll = h('input', { type: 'checkbox', 'aria-label': 'Select all shown tickets' });
+      var selN = h('span', { class: 'tka-when' });
+      var bulkC = h('input', { class: 'tka-input tka-bulk-c', maxlength: '800', placeholder: 'Comment for all selected (the agent sees it)', 'aria-label': 'Comment for all selected tickets' });
+      var bulkBtns = h('div', { class: 'tka-inline' });
+      var bulk = h('div', { class: 'tka-bulk', role: 'region', 'aria-label': 'Bulk verdict' }, [h('label', { class: 'tka-bulk-all' }, [selAll, h('span', { text: 'Select shown' })]), selN, bulkC, bulkBtns]);
+      function selected() { return rows.filter(function (r) { return TA.mvSel[r.id]; }); }
+      function paintBulk() {
+        var shown = rows.filter(function (r) { return match(r); }), sel = selected();
+        var allOn = shown.length && shown.every(function (r) { return TA.mvSel[r.id]; });
+        selAll.checked = !!allOn; selAll.indeterminate = !allOn && shown.some(function (r) { return TA.mvSel[r.id]; });
+        selN.textContent = sel.length ? sel.length + ' selected' : 'none selected';
+        bulk.classList.toggle('on', sel.length > 0);
+        bulkBtns.querySelectorAll('button').forEach(function (b) { b.disabled = !sel.length; });
+      }
+      function runBulk(verdict, severity, label, ev) {
+        var sel = selected(); if (!sel.length) return;
+        var c = bulkC.value.trim();
+        if (c.length < 5) { bulkC.classList.add('tka-bad'); try { bulkC.focus(); } catch (e) {} bulkC.addEventListener('input', function () { bulkC.classList.remove('tka-bad'); }, { once: true }); return toast(verdict === 'invalid' ? 'Write what the agents missed' : verdict === 'ignored' ? 'Say why these are skipped' : 'Write a short comment on what you checked', 'error'); }
+        if (verdict === 'invalid' && severity === 'fatal' && !window.confirm(sel.length + ' fatal verdicts: each one is a strike for its agent. Continue?')) return;
+        var b = ev.currentTarget; busy(b, true, 'Saving...');
+        api('/api/review/bulk-verdict', { ids: sel.map(function (r) { return r.id; }), verdict: verdict, severity: severity, comment: c }).then(function (x) {
+          busy(b, false, label);
+          if (!x.success) return toast(x.error || 'Failed', 'error');
+          var f = (x.failed || []).length;
+          toast(x.done + ' saved' + (f ? ', ' + f + ' not saved: ' + x.failed[0].error : ''), f ? 'error' : 'success');
+          TA.mvSel = {}; (x.failed || []).forEach(function (y) { TA.mvSel[y.id] = 1; });
+          bulkC.value = ''; load();
+        });
+      }
+      [['Approve', 'good', null, 'primary sm'], ['Rework: feedback', 'invalid', 'feedback', 'sm'], ['Rework: fatal', 'invalid', 'fatal', 'danger sm'], ['Skip', 'ignored', null, 'ghost sm']].forEach(function (o) {
+        bulkBtns.appendChild(btn(o[0], o[3], function (ev) { runBulk(o[1], o[2], o[0], ev); }, { disabled: 'disabled', title: o[1] === 'good' ? 'Approves each ticket to the person it was moved to' : null }));
+      });
+      selAll.addEventListener('change', function () { rows.filter(function (r) { return match(r); }).forEach(function (r) { if (selAll.checked) TA.mvSel[r.id] = 1; else delete TA.mvSel[r.id]; }); fill(); });
       function fill() {
-        var shown = rows.filter(match);
+        var shown = rows.filter(function (r) { return match(r); });
         count.textContent = shown.length === rows.length ? '' : shown.length + ' of ' + rows.length + ' shown';
-        if (!shown.length) { list.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No tickets match' }), h('p', { text: 'Clear the search or pick All.' })])); return; }
-        list.replaceChildren.apply(list, shown.map(function (r) { return reviewCard(r, buf, me, true); }));
+        if (!shown.length) { list.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No tickets match' }), h('p', { text: 'Clear the search or pick All.' })])); paintBulk(); return; }
+        list.replaceChildren.apply(list, shown.map(function (r) {
+          var el = reviewCard(r, buf, me, true), t = el.querySelector('.tka-lr-t');
+          var cb = h('input', { type: 'checkbox', class: 'tka-sel', 'aria-label': 'Select #' + r.ticket_number });
+          cb.checked = !!TA.mvSel[r.id];
+          cb.addEventListener('click', function (e) { e.stopPropagation(); });
+          cb.addEventListener('change', function () { if (cb.checked) TA.mvSel[r.id] = 1; else delete TA.mvSel[r.id]; paintBulk(); });
+          if (t) t.insertBefore(cb, t.firstChild);
+          return el;
+        }));
+        paintBulk();
       }
       var t = null;
-      q.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { TA.mvQ = q.value; fill(); }, 120); });
+      q.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { TA.mvQ = q.value; paintChips(); fill(); }, 120); });
       paintChips(); fill();
-      return h('div', { class: 'tka-lr' }, [h('div', { class: 'tka-lf' }, [q, count]), chips, h('div', { class: 'tka-lr-box' }, [head, list])]);
+      return h('div', { class: 'tka-lr' }, [h('div', { class: 'tka-lf' }, [q, count]), chips, aiChips, bulk, h('div', { class: 'tka-lr-box' }, [head, list])]);
     }
     function reviewCard(r, buf, me, asRow) {
       var waiting = r.state === 'waiting';
@@ -614,7 +671,7 @@
       if (showDeal) { anBtn = btn('', 'tka-dealbtn tka-anbtn', function (ev) { ev.stopPropagation(); toggleAn(null, true); }, { 'aria-expanded': 'false' }); anBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: asRow ? 'Analysis' : 'Ticket analysis' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
       TA.seen = TA.seen || {}; var fresh = !TA.seen[r.id]; TA.seen[r.id] = 1;
       var numEl = r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number });
-      var destTxt = [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ');
+      var destTxt = [/^\s*none\s*$/i.test(r.to_agent || '') ? '' : r.to_agent, r.to_team ? (/^\s*none\s*$/i.test(r.to_agent || '') || !r.to_agent ? r.to_team : '(' + r.to_team + ')') : ''].filter(Boolean).join(' ');
       if (asRow) {
         art = h('article', { class: 'tka-row lr' + (showDeal ? ' tka-clickable' : '') + (fresh ? ' tka-in' : '') }, [
           h('div', { class: 'tka-lr-head' }, [

@@ -49,4 +49,13 @@ describe('AI auto-approval', () => {
     expect((await tr.autoApprove({ max: 10 })).approved).toBe(0);
     await expect(tr.undoAi(r.id, { email: 'spoc@adit.com' })).rejects.toThrow();
   });
+  it('bulk verdict saves each moved ticket and reports the rest', async () => {
+    const rows = await q(`SELECT id FROM tr_reviews WHERE ticket_id IN ('1','2','3') ORDER BY ticket_id`);
+    const out = await tr.bulkVerdict({ email: 'spoc@adit.com' }, { ids: rows.map(r => r.id).concat([9999]), verdict: 'good', comment: 'Checked, right team' });
+    expect(out.done).toBe(3);
+    expect(out.failed.length).toBe(1);
+    const again = await tr.bulkVerdict({ email: 'spoc@adit.com' }, { ids: [rows[0].id], verdict: 'good', comment: 'Checked again' });
+    expect(again.done).toBe(0);
+    await expect(tr.bulkVerdict({ email: 'spoc@adit.com' }, { ids: [] })).rejects.toThrow();
+  });
 });

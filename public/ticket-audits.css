@@ -535,6 +535,8 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-lf-chips .tka-chip.on b{background:rgba(255,255,255,.22);color:#fff}
 .tka-lr-box{border:1px solid var(--tka-border);border-radius:14px;background:var(--tka-surface);box-shadow:0 1px 2px rgba(7,43,64,.05);overflow:hidden}
 .tka-lr-cols,.tka-lr-head{display:grid;grid-template-columns:minmax(0,2fr) minmax(90px,.7fr) 76px 118px minmax(0,1.3fr) 440px;align-items:center;gap:6px 14px}
+.tka-lr-st{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.tka-lr-st .tka-pill{max-width:100%;white-space:nowrap}
 .tka-lr-cols{padding:8px 16px;background:var(--tka-surface2);border-bottom:1px solid var(--tka-border);font:600 10.5px 'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--tka-t3)}
 .tka-lr-cols span:last-child{text-align:right;min-width:440px}
 .tka-lr-list{display:flex;flex-direction:column}
@@ -802,3 +804,11 @@ html.dark-mode .tka-rework-tg.warn{background:rgba(245,162,74,.15);border-color:
 @keyframes tkaPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tka-amber) 45%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
 @media (prefers-reduced-motion:reduce){.tka-stale,.tka-stale-ic{animation:none}}
 @media (max-width:700px){.tka-stale-row{flex-wrap:wrap}}
+
+/* Batch 264: bulk verdict bar and row checkboxes */
+.tka-bulk{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 12px;margin:8px 0;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface2)}
+.tka-bulk.on{border-color:var(--tka-teal)}
+.tka-bulk-all{display:inline-flex;align-items:center;gap:6px;font:500 12.5px 'Poppins',sans-serif;color:var(--tka-t2);cursor:pointer}
+.tka-bulk-c{flex:1 1 240px;min-width:0}
+.tka-bulk .tka-btn[disabled]{opacity:.45;cursor:not-allowed}
+.tka-lr-t .tka-sel{flex:none;width:16px;height:16px;margin:0 8px 0 0;cursor:pointer;accent-color:var(--tka-teal)}
