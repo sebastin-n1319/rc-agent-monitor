@@ -762,7 +762,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
           return _deskIds.m.get(String(email || '').toLowerCase()) || null;
         } });
       setTimeout(() => {
-        const tick = () => cq.work({ max: 4 }).then(r => { if (r && (r.audited || r.discovered)) console.log('🎧 Call QA:', JSON.stringify(r)); }).catch(e => console.warn('call qa work failed:', e.message));
+        const tick = () => cq.work({ max: 6 }).then(r => { if (r && (r.audited || r.discovered)) console.log('🎧 Call QA:', JSON.stringify(r)); }).catch(e => console.warn('call qa work failed:', e.message));
         tick(); setInterval(tick, 120 * 1000);
       }, 180 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.

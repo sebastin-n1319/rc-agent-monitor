@@ -117,3 +117,21 @@ describe('Call QA pipeline', () => {
     expect(pr.agreePct).toBe(100); expect(pr.caughtPct).toBe(100);
   });
 });
+
+describe('Call QA rules that hold whatever the AI says', () => {
+  const base = () => ({ stage: 'Resolved', params: Object.fromEntries(cq.PARAMS.map((p) => [p[0], { r: 'met' }])), fatal: Object.fromEntries(cq.FATALS.map((f) => [f[0], { hit: false }])), survey: { required: true, pitched: 'partial' } });
+  it('a pitch in the agent\'s own words is not a survey fatal', () => {
+    const r = base(); r.fatal.survey = { hit: true, why: 'Not word for word' };
+    expect(cq.enforce(r, [{}]).fatal.survey.hit).toBe(false);
+  });
+  it('no pitch at all on a call that needed it is a survey fatal', () => {
+    const r = base(); r.survey.pitched = 'no';
+    expect(cq.enforce(r, [{}]).fatal.survey.hit).toBe(true);
+  });
+  it('no ticket found is never a documentation fatal', () => {
+    const r = base(); r.fatal.documentation_task = { hit: true }; r.params.documentation = { r: 'missed' };
+    const out = cq.enforce(r, []);
+    expect(out.fatal.documentation_task.hit).toBe(false);
+    expect(out.params.documentation.r).toBe('na');
+  });
+});
