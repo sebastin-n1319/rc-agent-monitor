@@ -317,7 +317,7 @@ VoIP outages by parent ticket (Batch 260): an outage is now counted the Adit way
 
 T1 CS VoIP closed by T1: a ticket counts as VoIP when Desk classifies it as VoIP Support or the agent set the Adit app module to Voice, eFax or Call tracking; the AI reading only decides tickets with neither mark. Tickets the AI judged not VoIP are counted and shown in the reading line.
 
-T1 CS VoIP outage counts: Desk and CRM data hides rows that carry personal details (a phone number in a subject is enough) once a read returns more than 25 of them, so outage tickets and the main ticket list are read by ticket id in small groups whenever rows were held back. One outage day shows as one incident: when two VoIP parent tickets fall on the same day, the one with the most linked children leads and the other day's tickets are counted once.
+T1 CS VoIP outage counts: an outage day's tickets are the Outage, parent and child tickets that day owned by the VoIP team (Desk classification, ticketing team or owner role). Matching subjects on words such as phone was dropped, because Desk and CRM data treats that as personal data and returns only 25 rows. A capped read is logged and never paged around. One outage day shows as one incident: when two VoIP parent tickets fall on the same day, the one with the most linked children leads.
 
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
