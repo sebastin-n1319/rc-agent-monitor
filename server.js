@@ -1650,6 +1650,8 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
 
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
+    // Batch 267: an admin posting for someone else (for example logging them out) is kept in the audit log.
+    if (isAdmin && email.toLowerCase() !== req.session.email.toLowerCase()) insertAuditLog(req.session.email, 'break_event_for_agent', email.toLowerCase(), `${action}${note ? ': ' + String(note).slice(0, 200) : ''}`).catch(() => {});
     // #21 Session 8, stamp idempotency key for retry-safety
     if (idempoKey && event && event.id) {
       try { await setBreakEventIdempoKey(event.id, idempoKey); } catch (e) { /* unique-constraint race ok */ }

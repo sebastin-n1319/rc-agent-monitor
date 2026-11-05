@@ -217,6 +217,13 @@
       ${sc ? row('scrin.io', e(sc.status === 'online' ? 'Tracking' : sc.status === 'away' ? 'Idle' : 'Not tracking'), sc.lastActive ? 'last active ' + e(timeOf(Date.parse(sc.lastActive))) : '') : ''}
       ${lv.onCall ? row('Phone', 'On a call', e(lv.direction || '')) : ''}
       ${lv.activeChats ? row('Open chats', String(lv.activeChats)) : ''}
+      ${g('role', '') === 'admin' && isToday() && r.currentStatus !== 'Logged Out' ? `<h4>Log out</h4>
+      <div class="bx-lo">
+        <p class="bx-sub">Ends ${e(String(r.username || '').split(' ')[0] || 'their')}'s shift now, the same as their own End shift. A break or BRB they are on is closed first. The break log and the Google Chat post show who logged them out and why.</p>
+        <label class="bx-sub" for="bx-lo-reason">Reason</label>
+        <textarea id="bx-lo-reason" class="bx-lo-in" rows="2" maxlength="300" placeholder="For example: forgot to end shift, left at 5:00 PM"></textarea>
+        <div class="bx-row bx-lo-act"><button type="button" class="bx-btn bx-btn-danger" data-bx-logout="${e(r.email)}">Log out ${e(String(r.username || r.email).split(' ')[0])}</button><span class="bx-sub" data-bx-lo-msg role="status"></span></div>
+      </div>` : ''}
     </div>`;
     const o = document.createElement('div'); o.id = 'bx-agent-pop'; o.className = 'bx-root bx-pop-wrap'; o.innerHTML = html;
     document.body.appendChild(o);
@@ -627,8 +634,27 @@
     setInterval(() => { const r = roots(), v = g('view', 'admin'); const el = v === 'admin' ? r.admin : r.agent; if (!document.hidden && el && el.offsetParent !== null) loadLiveNow(); }, 20000);
   }
 
+  // Batch 267: an admin logs an agent out from their panel (forgot to end the shift, left early).
+  async function adminLogout(btn) {
+    const email = btn.getAttribute('data-bx-logout'), pop = btn.closest('.bx-pop'), msg = pop.querySelector('[data-bx-lo-msg]'), box = pop.querySelector('#bx-lo-reason');
+    const r = teamRows().find(x => String(x.email || '').toLowerCase() === String(email).toLowerCase()); if (!r) return;
+    const reason = String(box.value || '').trim();
+    if (reason.length < 3) { msg.textContent = 'Write a short reason first.'; box.focus(); return; }
+    if (btn.getAttribute('data-confirm') !== '1') { btn.setAttribute('data-confirm', '1'); btn.textContent = 'Confirm log out'; msg.textContent = 'Click again to log ' + (r.username || email) + ' out.'; return; }
+    btn.disabled = true; btn.textContent = 'Logging out...'; msg.textContent = '';
+    try {
+      const j = await fetch('/api/break-events', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: r.username || email, email, role: r.role || 'agent', action: 'LOGGED_OUT', note: ('Logged out by ' + (g('user', '') || g('email', 'an admin')) + ': ' + reason).slice(0, 480), tz: DAY_TZ }) }).then(x => x.json());
+      if (!j || !j.success) throw new Error((j && j.error) || 'Could not log them out');
+      closeAgentPanel();
+      if (typeof showToast === 'function') showToast((r.username || email) + ' is logged out', 'success');
+      if (typeof loadBreakTracker === 'function') { try { await loadBreakTracker(); } catch (err) { /* the next poll catches up */ } }
+      render();
+    } catch (err) { btn.disabled = false; btn.removeAttribute('data-confirm'); btn.textContent = 'Log out ' + String(r.username || email).split(' ')[0]; msg.textContent = err.message; }
+  }
   document.addEventListener('click', async ev => {
     if (ev.target.closest('[data-bx-pop-close]') || ev.target.id === 'bx-agent-pop') { closeAgentPanel(); return; }
+    const lo = ev.target.closest('[data-bx-logout]'); if (lo) { adminLogout(lo); return; }
     const card = ev.target.closest('[data-bx-agent]');
     if (card && card.closest('#bx-admin-root')) { openAgentPanel(card.getAttribute('data-bx-agent'), card); return; }
     const act = ev.target.closest('[data-bx-action]');

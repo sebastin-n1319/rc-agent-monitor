@@ -211,3 +211,12 @@ html.dark-mode .bx-root{--bx-ssm:#F072A6;--bx-ssm-s:rgba(240,114,166,.14)}
 .bx-pop-row span{color:var(--bx-t3)}
 .bx-pop-row b{font-weight:600}
 .bx-pop-row em{grid-column:2;font-style:normal;font-size:12px;color:var(--bx-t3)}
+
+/* Batch 267: admin log out in the agent panel */
+.bx-lo{display:grid;gap:6px}
+.bx-lo p{margin:0;line-height:1.45}
+.bx-lo-in{width:100%;box-sizing:border-box;border:1px solid var(--bx-border);border-radius:10px;background:var(--bx-surface);color:var(--bx-t1);font:13px 'Poppins',sans-serif;padding:8px 10px;resize:vertical}
+.bx-lo-in:focus-visible,.bx-btn-danger:focus-visible{outline:2px solid var(--bx-red);outline-offset:2px}
+.bx-lo-act{gap:10px;align-items:center;flex-wrap:wrap}
+.bx-root .bx-btn-danger{background:#B4323A;border-color:#B4323A;color:#fff}
+.bx-root .bx-btn-danger[disabled]{opacity:.6;cursor:default}
