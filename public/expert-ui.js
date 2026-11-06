@@ -294,6 +294,8 @@
       if (!S.mode && !hasTicket && !reuse && !isWork) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
       // Batch 247 (from Aria): a first name shared by several Adit people is confirmed before answering.
       if (!reuse && !S.dymDone && !hasTicket) {
+        // Batch 268: the box empties as soon as the question is sent (the check below re-sends it as text, which used to keep it).
+        if (typeof again !== 'string') input.value = '';
         S.busy = true;
         ctx.api('/api/guides/expert/did-you-mean', { question: q }).then(function (r) {
           S.busy = false;
