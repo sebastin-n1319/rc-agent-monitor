@@ -37,8 +37,31 @@
   function mount(root) {
     S.root = root; root.className = 'th'; root.replaceChildren(h('p', { class: 'th-muted', text: 'Loading ticket hygiene...' }));
     load();
+    startLive();
     return { refresh: load };
   }
+  // Batch 264: the page checks for a newer read every minute (the server refreshes every 15 minutes on business hours)
+  // and redraws in place, keeping the tab, filters and scroll. It waits while someone is typing.
+  function startLive() {
+    if (S.live) return;
+    S.live = setInterval(function () {
+      if (!S.root || !document.body.contains(S.root) || document.hidden) return;
+      api('/api/ticket-hygiene' + (S.rep ? '?since=' + S.rep.at : '')).then(function (r) {
+        if (!r || !r.success) return;
+        var changed = !r.unchanged && r.report && (!S.rep || r.report.at > S.rep.at);
+        var runChanged = !!r.running !== !!S.running;
+        if (changed) { S.rep = r.report; S.trend = r.trend || []; }
+        S.running = r.running; S.error = r.error;
+        if (!changed && !runChanged) { tickAge(); return; }
+        var a = document.activeElement;
+        if (a && S.root.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { S.pendingRender = true; return; }
+        var y = window.scrollY; render(); window.scrollTo(0, y);
+        if (changed) toast('Updated with the latest read');
+      });
+    }, 60000);
+  }
+  function ageText(ms) { var m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; }
+  function tickAge() { var el = S.root && S.root.querySelector('.th-age'); if (el && S.rep) el.textContent = 'Updated ' + ageText(S.rep.at); if (S.pendingRender && !(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))) { S.pendingRender = false; var y = window.scrollY; render(); window.scrollTo(0, y); } }
   function load() {
     return api('/api/ticket-hygiene').then(function (r) {
       if (!r || !r.success) { S.root.replaceChildren(h('div', { class: 'th-card th-note', text: (r && r.error) || 'Could not load ticket hygiene.' })); return; }
@@ -69,10 +92,10 @@
       h('div', null, [h('h1', { text: 'T1 CS ticket hygiene' }),
         h('p', { class: 'th-sub', text: 'Every open T1 CS ticket, sorted by what it needs next. Read-only: nothing is changed in Desk and nothing is posted. Times are Central; business days are Mon to Fri, 7 AM to 7 PM.' })]),
       h('div', { class: 'th-ctl' }, [
-        rep ? h('span', { class: 'th-asof', text: 'As of ' + asOf(rep.at) }) : null,
+        rep ? h('span', { class: 'th-asof', title: 'Refreshes every 15 minutes on business days (7 AM to 7 PM CT), hourly otherwise' }, [h('span', { text: 'As of ' + asOf(rep.at) + ' \u00b7 ' }), h('span', { class: 'th-age', text: 'Updated ' + ageText(rep.at) }), S.running ? h('span', { class: 'th-live', text: ' \u00b7 refreshing now' }) : null]) : null,
         rep ? h('span', { class: 'th-pill conf-' + rep.confidence.toLowerCase(), title: 'How complete the data and AI labels were for this read', text: rep.confidence + ' confidence' }) : null,
         h('button', { type: 'button', class: 'th-btn', disabled: S.running ? true : null, text: S.running ? 'Reading tickets...' : 'Refresh now', onclick: function (e) { runNow(e.currentTarget); } }),
-        rep ? h('button', { type: 'button', class: 'th-btn primary', text: 'Copy Chat message', onclick: function (e) { copy(rep.chat, e.currentTarget); } }) : null
+        rep ? h('button', { type: 'button', class: 'th-btn primary', text: 'Copy Chat message', title: 'Copies the AI message when you have written one for this read, otherwise the standard one', onclick: function (e) { var C = S.chat || {}; copy(C.message && C.at === rep.at ? C.message : rep.chat, e.currentTarget); } }) : null
       ])
     ]);
     var kids = [head];
@@ -90,7 +113,7 @@
     S.root.replaceChildren.apply(S.root, kids);
     ({ overview: viewOverview, ask: viewAsk, agents: viewAgents, tickets: viewTickets, transfers: viewTransfers, teams: viewTeams, chat: viewChat })[S.view](body, rep);
   }
-  function go(bucket, agent, category) { S.view = 'tickets'; S.f.bucket = bucket || ''; S.f.agent = agent || ''; S.f.category = category || ''; render(); window.scrollTo && S.root.scrollIntoView({ block: 'start' }); }
+  function go(bucket, agent, category, status) { S.view = 'tickets'; S.f = { bucket: bucket || '', agent: agent || '', category: category || '', status: status || '', q: '' }; render(); window.scrollTo && S.root.scrollIntoView({ block: 'start' }); }
 
   function kpis(rep) {
     var c = rep.counts;
@@ -104,22 +127,39 @@
 
   // ── charts (HTML bars: theme aware, readable without color) ─────────
   function legend(items) { return h('div', { class: 'th-legend' }, items.map(function (it) { return h('span', null, [h('i', { class: 'th-sw ' + it[1], 'aria-hidden': 'true' }), it[0]]); })); }
+  // Batch 264: one shared hover tooltip for every chart mark (data-tip), and value labels on marks wide enough to hold them.
+  var TIP = null;
+  function tipOn(e) {
+    var t = e.target.closest && e.target.closest('[data-tip]'); if (!t) return;
+    if (!TIP) { TIP = h('div', { class: 'th-tip', role: 'tooltip' }); document.body.appendChild(TIP); }
+    TIP.textContent = t.getAttribute('data-tip'); TIP.style.display = 'block';
+    var r = t.getBoundingClientRect(), w = TIP.offsetWidth;
+    TIP.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+    TIP.style.top = Math.max(8, r.top - TIP.offsetHeight - 8 + window.scrollY) + 'px';
+  }
+  function tipOff() { if (TIP) TIP.style.display = 'none'; }
+  document.addEventListener('mouseover', tipOn); document.addEventListener('focusin', tipOn);
+  document.addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('[data-tip]')) tipOff(); }); document.addEventListener('focusout', tipOff);
+  function pctOf(v, t) { return t ? Math.round(100 * v / t) + '%' : ''; }
   function stacked(rows, keys, clsOf, labelOf, onRow, onSeg) {
     var max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([1]));
     return h('div', { class: 'th-bars' }, rows.map(function (r) {
       var segs = keys.filter(function (k) { return r.parts[k]; }).map(function (k) {
-        return h('span', { class: 'th-seg-b ' + clsOf(k), style: 'width:' + (100 * r.parts[k] / max) + '%', title: r.label + ': ' + labelOf(k) + ' ' + r.parts[k], onclick: onSeg ? function (e) { e.stopPropagation(); onSeg(r, k); } : null });
+        var v = r.parts[k], w = 100 * v / max;
+        return h('span', { class: 'th-seg-b ' + clsOf(k), style: 'width:' + w + '%', 'data-tip': r.label + ' \u00b7 ' + labelOf(k) + ': ' + v + ' (' + pctOf(v, r.total) + ' of ' + r.total + ')', onclick: onSeg ? function (e) { e.stopPropagation(); onSeg(r, k); } : null },
+          w >= 6 ? h('em', { class: 'th-seg-v', text: String(v) }) : null);
       });
       return h('div', { class: 'th-bar-row' + (onRow ? ' click' : ''), role: onRow ? 'button' : null, tabindex: onRow ? '0' : null, 'aria-label': r.label + ', ' + r.total + ': ' + keys.filter(function (k) { return r.parts[k]; }).map(function (k) { return labelOf(k) + ' ' + r.parts[k]; }).join(', '),
         onclick: onRow ? function () { onRow(r); } : null, onkeydown: onRow ? function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRow(r); } } : null }, [
         h('span', { class: 'th-bar-l', title: r.label, text: r.label }), h('span', { class: 'th-bar-t' }, segs), h('span', { class: 'th-bar-n', text: String(r.total) })]);
     }));
   }
-  function simple(pairs, cls, onRow) {
+  function simple(pairs, cls, onRow, noPct) {
     var max = Math.max.apply(null, pairs.map(function (p) { return p[1]; }).concat([1]));
+    var sum = noPct ? 0 : pairs.reduce(function (a, p) { return a + (Number(p[1]) || 0); }, 0);
     return h('div', { class: 'th-bars' }, pairs.map(function (p) {
       return h('div', { class: 'th-bar-row' + (onRow ? ' click' : ''), role: onRow ? 'button' : null, tabindex: onRow ? '0' : null, 'aria-label': p[0] + ': ' + p[1], onclick: onRow ? function () { onRow(p[0]); } : null, onkeydown: onRow ? function (e) { if (e.key === 'Enter') onRow(p[0]); } : null }, [
-        h('span', { class: 'th-bar-l', title: p[0], text: p[0] }), h('span', { class: 'th-bar-t' }, [p[1] ? h('span', { class: 'th-seg-b ' + cls, style: 'width:' + (100 * p[1] / max) + '%', title: p[0] + ': ' + p[1] }) : null]), h('span', { class: 'th-bar-n', text: String(p[1]) })]);
+        h('span', { class: 'th-bar-l', title: p[0], text: p[0] }), h('span', { class: 'th-bar-t' }, [p[1] ? h('span', { class: 'th-seg-b ' + cls, style: 'width:' + (100 * p[1] / max) + '%', 'data-tip': p[0] + ': ' + p[1] + (sum ? ' (' + pctOf(p[1], sum) + ' of ' + sum + ')' : '') }) : null]), h('span', { class: 'th-bar-n' }, [String(p[1]), sum ? h('small', { text: ' ' + pctOf(p[1], sum) }) : null])]);
     }));
   }
   function card(title, sub, body, wide) { return h('section', { class: 'th-card' + (wide ? ' wide' : '') }, [h('div', { class: 'th-ch' }, [h('h2', { text: title }), sub ? h('p', { text: sub }) : null]), body]); }
@@ -135,7 +175,8 @@
     ['total'].concat(BUCKETS.slice(0, 4)).forEach(function (k) {
       var pl = document.createElementNS(ns, 'polyline'); pl.setAttribute('points', pts.map(function (p, i) { return x(i) + ',' + y(p[k] || 0); }).join(' ')); pl.setAttribute('class', 'th-line ' + (k === 'total' ? 'tot' : 'b-' + k)); svg.appendChild(pl);
       pts.forEach(function (p, i) { var c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x(i)); c.setAttribute('cy', y(p[k] || 0)); c.setAttribute('r', 4); c.setAttribute('class', 'th-pt ' + (k === 'total' ? 'tot' : 'b-' + k));
-        var tt = document.createElementNS(ns, 'title'); tt.textContent = p.day + ': ' + (k === 'total' ? 'Open' : BL[k]) + ' ' + (p[k] || 0); c.appendChild(tt); svg.appendChild(c); });
+        c.setAttribute('data-tip', p.day + ' \u00b7 ' + (k === 'total' ? 'Open' : BL[k]) + ': ' + (p[k] || 0)); c.setAttribute('tabindex', '0'); svg.appendChild(c); });
+      var lp = pts[pts.length - 1], tl = document.createElementNS(ns, 'text'); tl.setAttribute('x', x(pts.length - 1) - 8); tl.setAttribute('y', y(lp[k] || 0) - 8); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('class', 'th-dl ' + (k === 'total' ? 'tot' : 'b-' + k)); tl.textContent = lp[k] || 0; svg.appendChild(tl);
     });
     [0, pts.length - 1].forEach(function (i) { var t = document.createElementNS(ns, 'text'); t.setAttribute('x', x(i)); t.setAttribute('y', Hh - 6); t.setAttribute('text-anchor', i ? 'end' : 'start'); t.setAttribute('class', 'th-axis'); t.textContent = pts[i].day.slice(5); svg.appendChild(t); });
     return h('div', null, [legend([['Open', 'tot']].concat(BUCKETS.slice(0, 4).map(function (b) { return [BL[b], 'b-' + b]; }))), svg]);
@@ -158,7 +199,7 @@
       card('Open tickets by agent and status', 'Select an agent to see their tickets.', h('div', null, [legend(sk.map(function (s, i) { return [s, sCls(i)]; })), stacked(agentRows, sk, function (k) { return sCls(sk.indexOf(k)); }, function (k) { return k; }, function (r) { go('', r.label); })])),
       card('What each agent needs to do', 'Buckets per agent. Select a colour to open that list.', h('div', null, [legend(BUCKETS.map(function (b) { return [BL[b], 'b-' + b]; })), stacked(agentB, BUCKETS, function (k) { return 'b-' + k; }, function (k) { return BL[k]; }, function (r) { go('', r.label); }, function (r, k) { go(k, r.label); })])),
       card('Issue category (AI)', 'The AI reads the subject, description, conversation, notes, call transcripts and owner history, and names a specific category for every ticket. Split by bucket.', h('div', null, [legend(BUCKETS.map(function (b) { return [BL[b], 'b-' + b]; })), stacked(cats, BUCKETS, function (k) { return 'b-' + k; }, function (k) { return BL[k]; }, function (r) { go('', '', r.label); }, function (r, k) { go(k, '', r.label); })])),
-      card('Tickets by status', null, simple(sk.map(function (s) { return [s, d.byStatus[s]]; }), 'th-c0')),
+      card('Tickets by status', 'Select a status to see its tickets.', simple(sk.map(function (s) { return [s, d.byStatus[s]]; }), 'th-c0', function (st) { go('', '', '', st); })),
       card('Ticket age', 'Since the ticket was created.', simple(d.byAge, 'th-c1')),
       card('Time since our last contact', 'Business days, Mon to Fri, 7 AM to 7 PM CT.', simple(d.byIdle, 'th-c2')),
       card('Adit app module', 'From the Desk module field.', simple(d.byModule, 'th-c3')),
@@ -188,6 +229,7 @@
       if (f.bucket && r.bucket !== f.bucket) return false;
       if (f.agent && r.agent !== f.agent) return false;
       if (f.category && r.category !== f.category) return false;
+      if (f.status && r.status !== f.status) return false;
       if (q && !(String(r.number).indexOf(q) >= 0 || (r.subject || '').toLowerCase().indexOf(q) >= 0 || (r.account || '').toLowerCase().indexOf(q) >= 0)) return false;
       return true;
     }).sort(function (a, b) { return BUCKETS.indexOf(a.bucket) - BUCKETS.indexOf(b.bucket) || (b.esc - a.esc) || ((a.lastContact || a.created || 0) - (b.lastContact || b.created || 0)); });
@@ -202,9 +244,10 @@
     var bar = h('div', { class: 'th-filters' }, [
       sel('Bucket', f.bucket, BUCKETS.map(function (b) { return [b, BL[b] + ' (' + (rep.counts[b] || 0) + ')']; }), 'bucket'),
       sel('Agent', f.agent, agents.map(function (a) { return [a, a]; }), 'agent'),
+      sel('Status', f.status, statusKeys(rep).map(function (st) { return [st, st + ' (' + rep.dash.byStatus[st] + ')']; }), 'status'),
       sel('Category', f.category, cats.map(function (c) { return [c, c]; }), 'category'),
       h('label', { class: 'th-fl grow' }, [h('span', { text: 'Search' }), h('input', { class: 'th-in', type: 'search', placeholder: 'Ticket number, subject or account', value: f.q || '', oninput: debounce(function (e) { S.f.q = e.target.value; var pos = e.target.selectionStart; render(); var i = S.root.querySelector('.th-filters input'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (x) { /* ignore */ } } }, 250) })]),
-      (f.bucket || f.agent || f.category || f.q || f.unownedPC) ? h('button', { type: 'button', class: 'th-btn sm', text: 'Clear', onclick: function () { S.f = { bucket: '', agent: '', category: '', q: '' }; render(); } }) : null
+      (f.bucket || f.agent || f.category || f.status || f.q || f.unownedPC) ? h('button', { type: 'button', class: 'th-btn sm', text: 'Clear', onclick: function () { S.f = { bucket: '', agent: '', category: '', status: '', q: '' }; render(); } }) : null
     ]);
     var list = filtered(rep);
     var head = h('p', { class: 'th-small th-muted', text: list.length + ' ticket' + (list.length === 1 ? '' : 's') + (f.unownedPC ? ' Pending Customer with no owner' : '') + (f.bucket ? ' · ' + BHELP[f.bucket] : '') });
@@ -270,7 +313,7 @@
     var max = Math.max.apply(null, rows.map(function (r) { return r.n; }).concat([1]));
     return h('div', null, [legend([['Not returned', 'b-check'], ['Returned to T1', 'b-unactioned']]), h('div', { class: 'th-cols', role: 'img', 'aria-label': 'Transfers per day' }, rows.map(function (r) {
       var bad = r.bad || 0, ok = Math.max(0, r.n - bad);
-      return h('div', { class: 'th-col', title: r.k + ': ' + r.n + ' transfers, ' + bad + ' returned' }, [
+      return h('div', { class: 'th-col', 'data-tip': r.k + ': ' + r.n + ' transfers, ' + bad + ' returned to T1' }, [
         h('span', { class: 'th-col-n', text: String(r.n) }),
         h('span', { class: 'th-col-b' }, [bad ? h('i', { class: 'b-unactioned', style: 'height:' + (100 * bad / max) + '%' }) : null, h('i', { class: 'b-check', style: 'height:' + (100 * ok / max) + '%' })]),
         h('span', { class: 'th-col-l', text: String(r.k).slice(5) })]);
@@ -295,7 +338,10 @@
       var cls = 's' + Math.min(si, 7);
       var pl = document.createElementNS(ns, 'polyline'); pl.setAttribute('points', xs.map(function (x0, i) { return X(i) + ',' + Y(valueOf(s2, x0, i) || 0); }).join(' ')); pl.setAttribute('class', 'th-line ' + cls); svg.appendChild(pl);
       xs.forEach(function (x0, i) { var c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', X(i)); c.setAttribute('cy', Y(valueOf(s2, x0, i) || 0)); c.setAttribute('r', 4); c.setAttribute('class', 'th-pt ' + cls);
-        var tt = document.createElementNS(ns, 'title'); tt.textContent = x0 + ' ' + s2 + ': ' + fmt(valueOf(s2, x0, i) || 0); c.appendChild(tt); svg.appendChild(c); });
+        c.setAttribute('data-tip', x0 + ' \u00b7 ' + s2 + ': ' + fmt(valueOf(s2, x0, i) || 0)); c.setAttribute('tabindex', '0'); svg.appendChild(c); });
+      // Data label on the last point of each series.
+      var li = xs.length - 1, lv = valueOf(s2, xs[li], li) || 0, tl = document.createElementNS(ns, 'text');
+      tl.setAttribute('x', X(li) - 8); tl.setAttribute('y', Y(lv) - 9 - si * 13); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('class', 'th-dl ' + cls); tl.textContent = fmt(lv); svg.appendChild(tl);
     });
     [0, xs.length - 1].forEach(function (i) { var t = document.createElementNS(ns, 'text'); t.setAttribute('x', X(i)); t.setAttribute('y', Hh - 6); t.setAttribute('text-anchor', i ? 'end' : 'start'); t.setAttribute('class', 'th-axis'); t.textContent = xs[i]; svg.appendChild(t); });
     return h('div', null, [legend(seriesList.map(function (s2, i) { return [s2, sCls(i)]; })), svg]);
@@ -430,7 +476,7 @@
         view.appendChild(stacked(rows2, ser, function (s2) { return sCls(ser.indexOf(s2)); }, function (s2) { return s2; }));
         return;
       }
-      view.appendChild(simple(res.rows.slice(0, 20).map(function (r) { return [String(r[k.label]), num(r[k.value]) || 0]; }), 'th-c0'));
+      view.appendChild(simple(res.rows.slice(0, 20).map(function (r) { return [String(r[k.label]), num(r[k.value]) || 0]; }), 'th-c0', null, true));
     }
     draw(); c.appendChild(view);
     if (res.chart !== 'table' && k.value) c.appendChild(h('button', { type: 'button', class: 'th-btn sm th-tog', text: 'Show table', onclick: function (e) { showTable = !showTable; e.currentTarget.textContent = showTable ? 'Show chart' : 'Show table'; draw(); } }));
@@ -459,10 +505,46 @@
     return svgLines(ser.slice(0, 8), xs, function (s2, x0) { return (data[s2] || {})[x0] || 0; }, res.purpose || 'Trend');
   }
 
+  // Batch 264: the Chat message can be written by the AI from a prompt; it stays editable and is copied, never posted.
+  var CHAT_EXAMPLES = ['Short huddle note: counts and the 5 most urgent tickets', 'Only follow-ups, grouped by agent, friendly tone', 'Escalated tickets first, then unactioned',
+    'One message per agent with their own tickets', 'Closure candidates only, ask agents to confirm and close', 'End of day summary for my manager, no ticket numbers'];
+  S.chat = S.chat || { prompt: '', message: null, busy: false, error: null, at: null };
   function viewChat(body, rep) {
-    var pre = h('pre', { class: 'th-chat', tabindex: '0', 'aria-label': 'Google Chat message', text: rep.chat });
-    body.appendChild(card('Google Chat message', 'Copy and paste it into the team space. Nothing is posted from here. ' + rep.chat.length + ' characters' + (rep.chat.length > 4000 ? ', over the 4,096 Chat limit, so paste it in two parts' : '') + '.',
-      h('div', null, [h('div', { class: 'th-ctl' }, [h('button', { type: 'button', class: 'th-btn primary', text: 'Copy Chat message', onclick: function (e) { copy(rep.chat, e.currentTarget); } })]), pre]), true));
+    var C = S.chat;
+    var text = C.message && C.at === rep.at ? C.message : rep.chat;
+    var isAi = !!(C.message && C.at === rep.at);
+    var prompt = h('textarea', { class: 'th-in th-ask-in', rows: '2', 'aria-label': 'What should the message say?', placeholder: 'Tell the AI what to write. For example: only follow-ups for Sky Gibson, short and friendly' });
+    prompt.value = C.prompt || '';
+    var genBtn = h('button', { type: 'button', class: 'th-btn primary', text: C.busy ? 'Writing...' : 'Write with AI', disabled: C.busy ? true : null });
+    function gen(q) {
+      q = String(q || prompt.value || '').trim(); if (!q || C.busy) return;
+      C.prompt = q; C.busy = true; C.error = null; render();
+      api('/api/ticket-hygiene/chat', { method: 'POST', body: JSON.stringify({ prompt: q }) }).then(function (r) {
+        C.busy = false;
+        if (!r || !r.success) { C.error = (r && r.error) || 'Could not write the message'; render(); return; }
+        C.message = r.message; C.at = r.at; render();
+      }).catch(function () { C.busy = false; C.error = 'Could not reach the server'; render(); });
+    }
+    genBtn.addEventListener('click', function () { gen(); });
+    prompt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); gen(); } });
+    prompt.addEventListener('input', function () { C.prompt = prompt.value; });
+    body.appendChild(h('section', { class: 'th-card wide th-ask' }, [
+      h('div', { class: 'th-ch' }, [h('h2', { text: 'Write the message with AI' }), h('p', { text: 'Say who it is for, what to include and the tone. The AI uses only this read’s tickets and counts, in Google Chat format. Nothing is posted.' })]),
+      h('div', { class: 'th-ask-row' }, [prompt, genBtn]),
+      h('div', { class: 'th-chips th-ex' }, CHAT_EXAMPLES.map(function (q) { return h('button', { type: 'button', class: 'th-chip th-chip-btn', text: q, disabled: C.busy ? true : null, onclick: function () { prompt.value = q; gen(q); } }); }))
+    ]));
+    if (C.error) body.appendChild(h('div', { class: 'th-card th-note bad', role: 'alert', text: C.error }));
+    var ta = h('textarea', { class: 'th-chat th-chat-edit', 'aria-label': 'Google Chat message, editable', spellcheck: 'true' }); ta.value = text;
+    var count = h('span', { class: 'th-small th-muted' });
+    function upd() { var n = ta.value.length; count.textContent = n + ' characters' + (n > 4000 ? ', over the 4,096 Chat limit: paste it in two parts' : ''); }
+    ta.addEventListener('input', function () { upd(); if (isAi) C.message = ta.value; }); upd();
+    body.appendChild(card(isAi ? 'AI message' : 'Standard message', isAi ? 'Written from: ' + C.prompt + '. You can edit it before copying.' : 'The standard check message. Edit it here or write one with AI above.',
+      h('div', null, [h('div', { class: 'th-ctl' }, [
+        h('button', { type: 'button', class: 'th-btn primary', text: 'Copy message', onclick: function (e) { copy(ta.value, e.currentTarget); } }),
+        isAi ? h('button', { type: 'button', class: 'th-btn', text: 'Back to standard', onclick: function () { C.message = null; render(); } }) : null,
+        isAi ? h('button', { type: 'button', class: 'th-btn', text: 'Rewrite', disabled: C.busy ? true : null, onclick: function () { gen(C.prompt); } }) : null,
+        count]), ta]), true));
+    if (C.message && C.at !== rep.at) body.appendChild(h('p', { class: 'th-small th-muted', text: 'A newer read came in, so the AI message was set aside. Write it again to use the latest numbers.' }));
   }
 
   window.TicketHygiene = { mount: mount };

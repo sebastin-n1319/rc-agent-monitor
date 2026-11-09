@@ -104,6 +104,16 @@ describe('ticket hygiene buckets', () => {
     expect(r.limits.join(' ')).toMatch(/held back 9 ticket subjects/);
     expect(r.confidence).toBe('Low');
   });
+  it('writes an AI Chat message from the latest read, cleaned', async () => {
+    let seen = null;
+    th.setDeps({ ai: { bestJSON: async (o) => { seen = JSON.parse(o.user); return { json: { message: '## Hi team\n- **#1001** call a@b.com or 555-123-4567 \u2014 today' } }; } } });
+    const r = await th.composeChat('only follow-ups');
+    expect(seen.request).toBe('only follow-ups');
+    expect(seen.data.header).toMatch(/^\*T1 CS ticket check/);
+    expect(seen.data.tickets.length).toBeGreaterThan(0);
+    expect(r.message).toBe('Hi team\n\u2022 *#1001* call [contact] or [contact] - today');
+    await expect(th.composeChat('')).rejects.toThrow();
+  });
   it('cleans contact details and HTML', () => {
     expect(th._clean('<p>Call me at (555) 123-4567 or a@b.com</p>')).toBe('Call me at [phone] or [email]');
   });
