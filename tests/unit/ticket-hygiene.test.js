@@ -44,7 +44,7 @@ beforeAll(async () => {
   db = new sqlite3.Database(':memory:');
   th.setDB(db); await th.initSchema();
   th.setDeps({
-    query: async (sql) => /FROM desk_tickets/.test(sql) ? { rows: tickets } : /desk_ticket_threads/.test(sql) ? { rows: threads } : { rows: comments },
+    query: async (sql) => /count\(\*\) AS n/.test(sql) ? { rows: [{ n: tickets.length }] } : /AS subject FROM desk_tickets/.test(sql) ? { rows: tickets.map((t) => ({ id: t.id, subject: t.subject })) } : /FROM desk_tickets/.test(sql) ? { rows: tickets.map(({ subject, ...r }) => r) } : /desk_ticket_threads/.test(sql) ? { rows: threads } : { rows: comments },
     ai: { anyConfigured: () => true, bestJSON: async ({ user }) => {
       const j = JSON.parse(user);
       return { items: j.tickets.map((t) => ({ id: t.id, client: /working now/.test(t.client_last) ? 'confirmation' : t.client_last ? 'new_question' : null, agent: /Checking|outbound/.test(t.agent_last) ? 'chase' : t.agent_last ? 'fix_answer' : null, promise: false, category: /Subject 3/.test(t.subject) ? 'VoIP & Phones' : 'nonsense', why: 'test' })) };
@@ -93,6 +93,16 @@ describe('ticket hygiene buckets', () => {
     const again = await th._build({ now: NOW });
     expect(again.ai.cached).toBeGreaterThan(0); expect(again.ai.ran).toBe(0);
     expect((await th.trend(30)).length).toBeGreaterThanOrEqual(1);
+  });
+  it('never puts contact words in the SQL and reports a short ticket list', async () => {
+    const seen = [];
+    th.setDeps({ query: async (sql) => { seen.push(sql); return /count\(\*\) AS n/.test(sql) ? { rows: [{ n: 30 }] } : /AS subject FROM/.test(sql) ? { rows: [], withheld: 5, truncated: true } : /FROM desk_tickets/.test(sql) ? { rows: tickets.map(({ subject, ...r }) => r) } : { rows: [] }; } });
+    const r = await th._build({ now: NOW });
+    expect(seen.join(' ')).not.toMatch(/'\[(email|phone)\]'/);
+    expect(r.total).toBe(9);
+    expect(r.limits.join(' ')).toMatch(/Only 9 of 30 open tickets/);
+    expect(r.limits.join(' ')).toMatch(/held back 9 ticket subjects/);
+    expect(r.confidence).toBe('Low');
   });
   it('cleans contact details and HTML', () => {
     expect(th._clean('<p>Call me at (555) 123-4567 or a@b.com</p>')).toBe('Call me at [phone] or [email]');
