@@ -791,6 +791,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // redone within an hourly cap. Suggestions only: nothing is changed in Zoho Desk.
     // Batch 225: scheduled reports (Tickets > Reports): a plain-words request, read-only queries, sent to a Google Chat space.
     // Batch 233: per ticket check of what the CSM really did on a T1 transfer (used by the reports).
+    // Batch 260: T1 CS ticket hygiene (read-only buckets and dashboards), refreshed hourly on business hours.
+    { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
+      if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (!th.due()) return; th.latest().then((r) => { if (r && Date.now() - r.at < 55 * 60 * 1000) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 10 * 60 * 1000); }
     { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
     { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
       cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
@@ -9946,6 +9949,19 @@ const requireAuditAdmin = async (req, res, next) => {
   try { const c = await auditCtx(req); if (!c.admin) return res.status(403).json({ success: false, error: 'Admin access required' }); req.audit = c; next(); }
   catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
 };
+// Batch 260: T1 CS ticket hygiene. Admins and SPOCs; read-only (nothing is changed in Desk, nothing is posted).
+app.get('/api/ticket-hygiene', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  const th = require('./lib/ticket-hygiene');
+  const rep = await th.latest();
+  res.json({ success: true, running: th.isRunning(), error: th.lastError(), report: rep, trend: await th.trend(30) });
+}));
+app.post('/api/ticket-hygiene/run', requireAuth, requireAuditAccess, rateLimit(6, 60000), auditWrap(async (req, res) => {
+  const th = require('./lib/ticket-hygiene');
+  if (!require('./lib/aditkb-service').isConfigured()) return res.status(503).json({ success: false, error: 'Desk and CRM data is not set up' });
+  // A full read takes a minute or two, so start it and let the page poll.
+  th.refresh().catch(e => console.warn('ticket hygiene run:', e.message));
+  res.json({ success: true, running: true });
+}));
 app.get('/api/audits/me', requireAuth, auditWrap(async (req, res) => {
   const c = await auditCtx(req);
   res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await transferReview.waitingCount()) : 0, suggestions: 0 });

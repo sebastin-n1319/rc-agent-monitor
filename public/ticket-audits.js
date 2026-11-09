@@ -53,7 +53,7 @@
     return pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat');
   }
   function tabs() {
-    var t = [['review', 'Pending review'], ['history', 'History']];
+    var t = [['review', 'Pending review'], ['history', 'History'], ['hygiene', 'Ticket hygiene']];
     if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['escalations', 'Escalation watch'], ['spocs', 'SPOC management'], ['reviewSettings', 'Settings']]);
     return t;
   }
@@ -81,7 +81,12 @@
       h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer review' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
-    ({ review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, reviewSettings: viewReviewSettings, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+    ({ hygiene: viewHygiene, review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, reviewSettings: viewReviewSettings, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+  }
+  // Batch 260: T1 CS ticket hygiene, for SPOCs as well as admins.
+  function viewHygiene(body) {
+    TA.root.classList.add('tka-wide'); var r = h('div'); body.appendChild(r);
+    if (window.TicketHygiene) window.TicketHygiene.mount(r); else r.appendChild(h('p', { class: 'tka-empty', text: 'Ticket hygiene is still loading. Refresh the page.' }));
   }
   function setBadge(n) {
     ['sb-agent-audits', 'agent-tab-audits', 'sb-audits'].forEach(function (id) {

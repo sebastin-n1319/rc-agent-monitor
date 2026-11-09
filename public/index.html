@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.127"></script>
+<script src="/adit-reset.js?v=1.19.128"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -81,7 +81,7 @@
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
-<script src="/ticket-audits.js?v=1.42.0" defer></script>
+<script src="/ticket-audits.js?v=1.43.0" defer></script>
 <script src="/custom-reports.js?v=1.0.6" defer></script>
 <script src="/client-tour.js?v=1.4.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
@@ -91,7 +91,9 @@
 <link rel="stylesheet" href="/app-header.css?v=1.4.0">
 <link rel="stylesheet" href="/voip-project.css?v=1.7.0">
 <link rel="stylesheet" href="/call-qa.css?v=1.0.0">
+<link rel="stylesheet" href="/ticket-hygiene.css?v=1.0.0">
 <script src="/call-qa.js?v=1.1.0" defer></script>
+<script src="/ticket-hygiene.js?v=1.0.0" defer></script>
 <script src="/voip-project.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
 <script src="/bonus-calc.js?v=1.8.0" defer></script>
@@ -1689,6 +1691,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- TICKET REPORT (Admin) -->
   <!-- Batch 250: T1 CS VoIP (replaces the AI and VoIP tab) -->
   <div class="page" id="tab-call-qa"><div id="cq-root"></div></div>
+  <div class="page" id="tab-ticket-hygiene"><div id="th-root"></div></div>
   <div class="page" id="tab-voip-project"><div id="vp-root"></div></div>
   <div class="page" id="tab-voip-fix"><div id="vpf-root"></div></div>
   <!-- Batch 225: scheduled reports (Tickets > Reports) -->
@@ -9297,6 +9300,7 @@ const ADMIN_TAB_GROUPS = [
   { primary: 'tickets', members: [
       { tab: 'tickets',          label: 'Ticket Report' },
       { tab: 'ticket-lifecycle', label: 'Ticket Lifecycle' },
+      { tab: 'ticket-hygiene',   label: 'Ticket hygiene' },
       { tab: 'voip-project',     label: 'T1 CS VoIP' },
       { tab: 'voip-fix',         label: 'VoIP fix list' },
       { tab: 'custom-reports',   label: 'Reports' },
@@ -9365,6 +9369,7 @@ function switchTab(tab,el){
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='settings') { if(typeof openSettingsAdmin==='function') openSettingsAdmin(); }
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
+  if(tab==='ticket-hygiene') { if(window.TicketHygiene && !window._thMounted) { window._thMounted = window.TicketHygiene.mount(document.getElementById('th-root')); } else if (window._thMounted) window._thMounted.refresh(); }
   if(tab==='call-qa') { if(window.CallQA && !window._cqMounted) { window._cqMounted = window.CallQA.mount(document.getElementById('cq-root')); } else if (window._cqMounted) window._cqMounted.refresh(); }
   if(tab==='voip-fix') { if(window.VoipProject && !window._vpfMounted) { window._vpfMounted = window.VoipProject.mount(document.getElementById('vpf-root'), { mode: 'fix' }); } else if (window._vpfMounted) window._vpfMounted.refresh(); }
   if(tab==='voip-project') { if(window.VoipProject && !window._vpMounted) { window._vpMounted = window.VoipProject.mount(document.getElementById('vp-root'), { mode: 'admin' }); } else if (window._vpMounted) window._vpMounted.refresh(); }
