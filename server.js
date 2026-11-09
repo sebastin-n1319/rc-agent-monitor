@@ -792,7 +792,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 225: scheduled reports (Tickets > Reports): a plain-words request, read-only queries, sent to a Google Chat space.
     // Batch 233: per ticket check of what the CSM really did on a T1 transfer (used by the reports).
     // Batch 260: T1 CS ticket hygiene (read-only buckets and dashboards), refreshed hourly on business hours.
-    { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
+    { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kbRow: (t, o) => escalationWatch.kbHi(t, o) });
+      { const ta = require('./lib/ticket-ask'); ta.setDB(db); await ta.initSchema(); ta.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
       if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (!th.due()) return; th.latest().then((r) => { if (r && Date.now() - r.at < 55 * 60 * 1000) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 10 * 60 * 1000); }
     { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
     { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
@@ -9961,6 +9962,17 @@ app.post('/api/ticket-hygiene/run', requireAuth, requireAuditAccess, rateLimit(6
   // A full read takes a minute or two, so start it and let the page poll.
   th.refresh().catch(e => console.warn('ticket hygiene run:', e.message));
   res.json({ success: true, running: true });
+}));
+// Batch 263: Ask AI about tickets (any team). Admins and SPOCs; read-only.
+app.post('/api/ticket-hygiene/ask', requireAuth, requireAuditAccess, rateLimit(12, 60000), auditWrap(async (req, res) => {
+  const b = req.body || {};
+  res.json({ success: true, result: await require('./lib/ticket-ask').ask({ question: b.question, context: b.context, by: req.audit.email }) });
+}));
+app.get('/api/ticket-hygiene/ask/history', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  res.json({ success: true, items: await require('./lib/ticket-ask').history(req.audit.email, 20) });
+}));
+app.get('/api/ticket-hygiene/ask/:id', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  res.json({ success: true, result: await require('./lib/ticket-ask').getAsk(req.params.id, req.audit.email) });
 }));
 app.get('/api/audits/me', requireAuth, auditWrap(async (req, res) => {
   const c = await auditCtx(req);

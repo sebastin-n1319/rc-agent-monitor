@@ -81,14 +81,14 @@
       kids.push(h('div', { class: 'th-card th-empty' }, [h('p', { text: S.running ? 'Reading every open T1 CS ticket and its conversation. This takes a minute or two.' : 'No read yet. Press Refresh now to build the first one.' })]));
       S.root.replaceChildren.apply(S.root, kids); return;
     }
-    var seg = h('div', { class: 'th-seg', role: 'tablist', 'aria-label': 'Ticket hygiene views' }, [['overview', 'Overview'], ['agents', 'Agents'], ['tickets', 'Tickets'], ['chat', 'Chat message']].map(function (t) {
+    var seg = h('div', { class: 'th-seg', role: 'tablist', 'aria-label': 'Ticket hygiene views' }, [['overview', 'Overview'], ['ask', 'Ask AI'], ['agents', 'Agents'], ['tickets', 'Tickets'], ['transfers', 'Transfers'], ['teams', 'All teams'], ['chat', 'Chat message']].map(function (t) {
       return h('button', { type: 'button', role: 'tab', 'aria-selected': S.view === t[0] ? 'true' : 'false', text: t[1], onclick: function () { S.view = t[0]; render(); } });
     }));
     kids.push(kpis(rep), seg);
     var body = h('div', { class: 'th-body' });
     kids.push(body);
     S.root.replaceChildren.apply(S.root, kids);
-    ({ overview: viewOverview, agents: viewAgents, tickets: viewTickets, chat: viewChat })[S.view](body, rep);
+    ({ overview: viewOverview, ask: viewAsk, agents: viewAgents, tickets: viewTickets, transfers: viewTransfers, teams: viewTeams, chat: viewChat })[S.view](body, rep);
   }
   function go(bucket, agent, category) { S.view = 'tickets'; S.f.bucket = bucket || ''; S.f.agent = agent || ''; S.f.category = category || ''; render(); window.scrollTo && S.root.scrollIntoView({ block: 'start' }); }
 
@@ -157,7 +157,7 @@
       summary,
       card('Open tickets by agent and status', 'Select an agent to see their tickets.', h('div', null, [legend(sk.map(function (s, i) { return [s, sCls(i)]; })), stacked(agentRows, sk, function (k) { return sCls(sk.indexOf(k)); }, function (k) { return k; }, function (r) { go('', r.label); })])),
       card('What each agent needs to do', 'Buckets per agent. Select a colour to open that list.', h('div', null, [legend(BUCKETS.map(function (b) { return [BL[b], 'b-' + b]; })), stacked(agentB, BUCKETS, function (k) { return 'b-' + k; }, function (k) { return BL[k]; }, function (r) { go('', r.label); }, function (r, k) { go(k, r.label); })])),
-      card('Issue category (AI)', 'The AI reads the subject and the client’s messages and picks one category. Split by bucket.', h('div', null, [legend(BUCKETS.map(function (b) { return [BL[b], 'b-' + b]; })), stacked(cats, BUCKETS, function (k) { return 'b-' + k; }, function (k) { return BL[k]; }, function (r) { go('', '', r.label === 'Other' ? '' : r.label); }, function (r, k) { go(k, '', r.label === 'Other' ? '' : r.label); })])),
+      card('Issue category (AI)', 'The AI reads the subject, description, conversation, notes, call transcripts and owner history, and names a specific category for every ticket. Split by bucket.', h('div', null, [legend(BUCKETS.map(function (b) { return [BL[b], 'b-' + b]; })), stacked(cats, BUCKETS, function (k) { return 'b-' + k; }, function (k) { return BL[k]; }, function (r) { go('', '', r.label); }, function (r, k) { go(k, '', r.label); })])),
       card('Tickets by status', null, simple(sk.map(function (s) { return [s, d.byStatus[s]]; }), 'th-c0')),
       card('Ticket age', 'Since the ticket was created.', simple(d.byAge, 'th-c1')),
       card('Time since our last contact', 'Business days, Mon to Fri, 7 AM to 7 PM CT.', simple(d.byIdle, 'th-c2')),
@@ -213,6 +213,7 @@
         h('span', { class: 'th-b b-' + r.bucket, title: BL[r.bucket], text: r.isNew ? 'New' : BL[r.bucket] }),
         h('div', { class: 'th-row-m' }, [
           h('div', { class: 'th-row-t' }, [r.url ? h('a', { href: r.url, target: '_blank', rel: 'noopener', text: '#' + r.number }) : h('b', { text: '#' + r.number }), ' ', h('span', { class: 'th-subj', text: r.subject || '(no subject)' })]),
+          r.issue ? h('div', { class: 'th-row-i', text: r.issue }) : null,
           h('div', { class: 'th-row-r', text: r.reason + (r.ai && r.ai.why && AI_CODES.indexOf(r.code) >= 0 ? ' · AI: ' + r.ai.why : '') }),
           h('div', { class: 'th-chips' }, [
             h('span', { class: 'th-chip', text: r.agent + (r.inferred ? ' †' : '') }), h('span', { class: 'th-chip', text: r.status }), h('span', { class: 'th-chip', text: r.category }),
@@ -220,6 +221,7 @@
             r.lastContact ? h('span', { class: 'th-chip', text: 'last contact ' + ago(r.lastContact) }) : h('span', { class: 'th-chip warn', text: 'never contacted' }),
             r.esc ? h('span', { class: 'th-chip bad', text: 'Escalated' }) : null,
             r.dependency ? h('span', { class: 'th-chip info', text: 'Dependency: ' + r.depWhy }) : null,
+            r.hops >= 2 ? h('span', { class: 'th-chip' + (r.hops >= 4 ? ' warn' : ''), title: 'Owner changes in Desk' + (r.teamsVisited && r.teamsVisited.length ? ', through ' + r.teamsVisited.join(', ') : ''), text: r.hops + ' owner moves' }) : null,
             r.dup ? h('span', { class: 'th-chip warn', title: 'Same account and subject as ' + r.dup.join(', '), text: 'Possible duplicate' }) : null,
             r.account ? h('span', { class: 'th-chip mute', text: r.account }) : null
           ])
@@ -229,6 +231,233 @@
     body.appendChild(h('section', { class: 'th-card wide' }, [bar, head, rows.length ? h('div', { class: 'th-list' }, rows) : h('p', { class: 'th-empty', text: 'Nothing matches these filters.' }), list.length > 300 ? h('p', { class: 'th-small th-muted', text: 'Showing the first 300. Narrow the filters to see the rest.' }) : null]));
   }
   function debounce(fn, ms) { var t; return function (e) { clearTimeout(t); var ev = e; t = setTimeout(function () { fn(ev); }, ms); }; }
+
+
+  // ── Transfers (Batch 263) ────────────────────────────────────────────
+  function kv(rows, key, val) { return (rows || []).map(function (r) { return [String(r[key]), Number(r[val]) || 0]; }); }
+  function staticTiles(list) {
+    return h('div', { class: 'th-kpis' }, list.map(function (x) { return h('div', { class: 'th-kpi static' }, [h('span', { class: 'th-kpi-l', text: x[0] }), h('b', { text: String(x[1]) }), h('span', { class: 'th-kpi-s', text: x[2] })]); }));
+  }
+  function viewTransfers(body, rep) {
+    var t = rep.transfers;
+    if (!t) { body.appendChild(h('div', { class: 'th-card th-empty', text: 'Transfers fill in on the next refresh.' })); return; }
+    var bad = (t.byResult || []).filter(function (r) { return r.k === 'Returned to T1'; })[0];
+    var moved2 = (t.open.byHops || []).slice(2).reduce(function (a, x) { return a + x[1]; }, 0);
+    body.appendChild(staticTiles([
+      ['Transfers out of T1, 30 days', t.total, 'from Transfer review'],
+      ['Returned to T1', bad ? bad.n : 0, t.total ? Math.round(100 * (bad ? bad.n : 0) / t.total) + '% not valid' : 'none'],
+      ['Open tickets moved 2+ times', moved2, 'owner changes in Desk'],
+      ['Ping-pong tickets', (t.open.pingPong || []).length, '4+ owner moves']
+    ]));
+    var agentRows = (t.byAgent || []).map(function (r) { return { label: r.k, total: r.n, parts: { good: r.good || 0, bad: r.bad || 0, other: Math.max(0, r.n - (r.good || 0) - (r.bad || 0)) } }; });
+    var teamRows = (t.byTeam || []).map(function (r) { return { label: r.k, total: r.n, parts: { ok: r.n - (r.bad || 0), bad: r.bad || 0 } }; });
+    var TL = { good: 'Approved', bad: 'Returned to T1', other: 'Waiting or moved without review', ok: 'Not returned' };
+    var tcls = function (k) { return { good: 'b-closure', bad: 'b-unactioned', other: 'b-notdue', ok: 'b-check' }[k]; };
+    var none = function (msg) { return h('p', { class: 'th-muted th-small', text: msg }); };
+    body.appendChild(h('div', { class: 'th-grid' }, [
+      card('Where T1 sends tickets', 'Last 30 days, by the team it went to.', teamRows.length ? h('div', null, [legend([['Not returned', 'b-check'], ['Returned to T1', 'b-unactioned']]), stacked(teamRows, ['ok', 'bad'], tcls, function (k) { return TL[k]; })]) : none('No transfers in the last 30 days.')),
+      card('Transfers by agent', 'Last 30 days. Returned means the reviewer sent it back as not valid.', agentRows.length ? h('div', null, [legend([['Approved', 'b-closure'], ['Returned to T1', 'b-unactioned'], ['Waiting or moved without review', 'b-notdue']]), stacked(agentRows, ['good', 'bad', 'other'], tcls, function (k) { return TL[k]; })]) : none('No transfers in the last 30 days.')),
+      card('Review result', null, simple(kv(t.byResult, 'k', 'n'), 'th-c2')),
+      card('Review path', 'Moved without review skips the T1 check.', simple(kv(t.byPath, 'k', 'n'), 'th-c3')),
+      card('Open tickets by owner moves', 'From the Desk owner change log.', simple(t.open.byHops || [], 'th-c0')),
+      card('Open T1 tickets that passed through other teams', 'Teams from the people directory.', (t.open.byTeam || []).length ? simple(t.open.byTeam, 'th-c4') : none('None of the open tickets went through another team.')),
+      card('Transfers per day', 'Last 30 days (Central).', dayBars(t.byDay || []), true),
+      card('Ping-pong tickets', 'Open tickets that changed owner 4 or more times.', pingList(t.open.pingPong || []), true)
+    ]));
+  }
+  function dayBars(rows) {
+    if (!rows.length) return h('p', { class: 'th-muted th-small', text: 'No transfers in the last 30 days.' });
+    var max = Math.max.apply(null, rows.map(function (r) { return r.n; }).concat([1]));
+    return h('div', null, [legend([['Not returned', 'b-check'], ['Returned to T1', 'b-unactioned']]), h('div', { class: 'th-cols', role: 'img', 'aria-label': 'Transfers per day' }, rows.map(function (r) {
+      var bad = r.bad || 0, ok = Math.max(0, r.n - bad);
+      return h('div', { class: 'th-col', title: r.k + ': ' + r.n + ' transfers, ' + bad + ' returned' }, [
+        h('span', { class: 'th-col-n', text: String(r.n) }),
+        h('span', { class: 'th-col-b' }, [bad ? h('i', { class: 'b-unactioned', style: 'height:' + (100 * bad / max) + '%' }) : null, h('i', { class: 'b-check', style: 'height:' + (100 * ok / max) + '%' })]),
+        h('span', { class: 'th-col-l', text: String(r.k).slice(5) })]);
+    }))]);
+  }
+  function pingList(rows) {
+    if (!rows.length) return h('p', { class: 'th-muted th-small', text: 'No open ticket has moved 4 or more times.' });
+    return h('div', { class: 'th-scroll' }, h('table', { class: 'th-table' }, [h('thead', null, h('tr', null, [h('th', { scope: 'col', text: 'Ticket' }), h('th', { scope: 'col', text: 'Agent now' }), h('th', { scope: 'col', class: 'n', text: 'Moves' }), h('th', { scope: 'col', class: 'n', text: 'People' }), h('th', { scope: 'col', text: 'Other teams' })])),
+      h('tbody', null, rows.map(function (r) { return h('tr', null, [h('td', null, r.url ? h('a', { href: r.url, target: '_blank', rel: 'noopener', text: '#' + r.number }) : '#' + r.number), h('td', { text: r.agent }), h('td', { class: 'n', text: String(r.hops) }), h('td', { class: 'n', text: String(r.owners) }), h('td', { text: (r.teams || []).join(', ') || '-' })]); }))]));
+  }
+
+  // ── All teams (Batch 263) ────────────────────────────────────────────
+  function svgLines(seriesList, xs, valueOf, ariaLabel) {
+    var W = 1000, Hh = 210, P = 34, max = 1;
+    seriesList.forEach(function (s2) { xs.forEach(function (x0, i) { max = Math.max(max, valueOf(s2, x0, i) || 0); }); });
+    var X = function (i) { return P + (W - 2 * P) * i / Math.max(1, xs.length - 1); }, Y = function (v) { return Hh - P - (Hh - 2 * P) * v / max; };
+    var ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + Hh); svg.setAttribute('class', 'th-trend'); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', ariaLabel);
+    [0, 0.5, 1].forEach(function (f) { var l = document.createElementNS(ns, 'line'); l.setAttribute('x1', P); l.setAttribute('x2', W - P); l.setAttribute('y1', Y(max * f)); l.setAttribute('y2', Y(max * f)); l.setAttribute('class', 'th-grid'); svg.appendChild(l);
+      var t = document.createElementNS(ns, 'text'); t.setAttribute('x', 2); t.setAttribute('y', Y(max * f) + 4); t.setAttribute('class', 'th-axis'); t.textContent = fmt(max * f); svg.appendChild(t); });
+    seriesList.forEach(function (s2, si) {
+      var cls = 's' + Math.min(si, 7);
+      var pl = document.createElementNS(ns, 'polyline'); pl.setAttribute('points', xs.map(function (x0, i) { return X(i) + ',' + Y(valueOf(s2, x0, i) || 0); }).join(' ')); pl.setAttribute('class', 'th-line ' + cls); svg.appendChild(pl);
+      xs.forEach(function (x0, i) { var c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', X(i)); c.setAttribute('cy', Y(valueOf(s2, x0, i) || 0)); c.setAttribute('r', 4); c.setAttribute('class', 'th-pt ' + cls);
+        var tt = document.createElementNS(ns, 'title'); tt.textContent = x0 + ' ' + s2 + ': ' + fmt(valueOf(s2, x0, i) || 0); c.appendChild(tt); svg.appendChild(c); });
+    });
+    [0, xs.length - 1].forEach(function (i) { var t = document.createElementNS(ns, 'text'); t.setAttribute('x', X(i)); t.setAttribute('y', Hh - 6); t.setAttribute('text-anchor', i ? 'end' : 'start'); t.setAttribute('class', 'th-axis'); t.textContent = xs[i]; svg.appendChild(t); });
+    return h('div', null, [legend(seriesList.map(function (s2, i) { return [s2, sCls(i)]; })), svg]);
+  }
+  function viewTeams(body, rep) {
+    var a = rep.allTeams;
+    if (!a) { body.appendChild(h('div', { class: 'th-card th-empty', text: 'All-team figures fill in on the next refresh.' })); return; }
+    var teams = {};
+    (a.openTeam || []).forEach(function (r) { var t = teams[r.team] || (teams[r.team] = { label: r.team, total: 0, parts: {} }); t.parts[r.status] = (t.parts[r.status] || 0) + Number(r.n); t.total += Number(r.n); });
+    var trows = Object.keys(teams).map(function (k) { return teams[k]; }).sort(function (x, y) { return y.total - x.total; });
+    var totalOpen = trows.reduce(function (x, t) { return x + t.total; }, 0);
+    trows = trows.slice(0, 14);
+    var stCount = {}; trows.forEach(function (t) { Object.keys(t.parts).forEach(function (s2) { stCount[s2] = (stCount[s2] || 0) + t.parts[s2]; }); });
+    var sk = Object.keys(stCount).sort(function (x, y) { return statusIdx(x) - statusIdx(y) || stCount[y] - stCount[x]; }).slice(0, 7);
+    var restName = 'Other statuses', anyRest = false;
+    trows.forEach(function (t) { var rest = 0; Object.keys(t.parts).forEach(function (k) { if (sk.indexOf(k) < 0) { rest += t.parts[k]; delete t.parts[k]; } }); if (rest) { t.parts[restName] = rest; anyRest = true; } });
+    if (anyRest) sk.push(restName);
+    var flow = a.flow || [];
+    var c30 = flow.reduce(function (x, r) { return x + Number(r.created || 0); }, 0), d30 = flow.reduce(function (x, r) { return x + Number(r.closed || 0); }, 0);
+    body.appendChild(staticTiles([
+      ['Open, every team', totalOpen, Object.keys(teams).length + ' teams'],
+      ['Created, 30 days', c30, Math.round(c30 / Math.max(1, flow.length)) + ' a day'],
+      ['Closed, 30 days', d30, Math.round(d30 / Math.max(1, flow.length)) + ' a day'],
+      ['Stale (open 5+ days)', (a.stale || []).reduce(function (x, r) { return x + Number(r.stale || 0); }, 0), 'in the top 15 teams']
+    ]));
+    var resol = h('div', { class: 'th-scroll' }, h('table', { class: 'th-table' }, [h('thead', null, h('tr', null, ['Team', 'Closed', 'Avg hours', 'Median hours', 'Slow (72 h+)', 'Reopened'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'n' : null, text: x }); }))),
+      h('tbody', null, (a.resol || []).map(function (r) {
+        var pct = function (v) { return Number(r.closed) ? Math.round(100 * Number(v || 0) / Number(r.closed)) + '%' : '-'; };
+        return h('tr', null, [h('th', { scope: 'row', text: r.team }), h('td', { class: 'n', text: String(r.closed) }), h('td', { class: 'n', text: String(r.avg_hours) }), h('td', { class: 'n', text: String(r.median_hours) }), h('td', { class: 'n', text: pct(r.slow) }), h('td', { class: 'n', text: pct(r.reopened) })]);
+      }))]));
+    var staleRows = (a.stale || []).map(function (r) { return { label: r.team, total: Number(r.open), parts: { fresh: Number(r.open) - Number(r.stale || 0), stale: Number(r.stale || 0) } }; });
+    var escRows = (a.stale || []).map(function (r) { return [r.team, Number(r.escalated || 0)]; }).filter(function (x) { return x[1]; });
+    var xs = flow.map(function (r) { return String(r.day).slice(5, 10); });
+    body.appendChild(h('div', { class: 'th-grid' }, [
+      card('Open tickets by team and status', 'Every Desk team (ticketing team).', h('div', null, [legend(sk.map(function (s2, i) { return [s2, sCls(i)]; })), stacked(trows, sk, function (k) { return sCls(sk.indexOf(k)); }, function (k) { return k; })])),
+      card('Stale tickets by team', 'Still open after 5 days.', h('div', null, [legend([['Under 5 days', 'b-check'], ['Stale', 'b-unactioned']]), stacked(staleRows, ['fresh', 'stale'], function (k) { return k === 'stale' ? 'b-unactioned' : 'b-check'; }, function (k) { return k === 'stale' ? 'Stale' : 'Under 5 days'; })])),
+      card('Created vs closed per day', 'Every team, last 30 days (Central).', flow.length > 1 ? svgLines(['Created', 'Closed'], xs, function (s2, x0, i) { return Number(flow[i][s2 === 'Created' ? 'created' : 'closed']); }, 'Tickets created and closed per day') : h('p', { class: 'th-muted th-small', text: 'Not enough days yet.' }), true),
+      card('Resolution by team', 'Tickets closed in the last 30 days, normal hours (created to closed, wall clock).', resol, true),
+      card('Escalated open tickets by team', null, escRows.length ? simple(escRows, 'th-c4') : h('p', { class: 'th-muted th-small', text: 'No escalated open tickets.' }))
+    ]));
+  }
+
+  // ── Ask AI (Batch 263) ───────────────────────────────────────────────
+  var EXAMPLES = ['Which team has the most open tickets, by status?', 'Tickets created vs closed per week for VoIP Support, last 8 weeks', 'Average resolution hours by team last month',
+    'Top issue categories for Tech CSM this month', 'Which T1 agents closed the most tickets last week?', 'Escalated tickets still open, by team and owner', 'Reopened tickets by team in the last 30 days', 'Tickets by channel each day this week'];
+  S.ask = { busy: false, result: null, history: null, convo: [], follow: false };
+  function viewAsk(body) {
+    var A = S.ask;
+    var input = h('textarea', { class: 'th-in th-ask-in', rows: '2', 'aria-label': 'Ask a question about tickets', placeholder: 'Ask anything about tickets, for any team. For example: open tickets by team and status' });
+    var askBtn = h('button', { type: 'button', class: 'th-btn primary', text: A.busy ? 'Working...' : 'Ask', disabled: A.busy ? true : null });
+    function submit(q) {
+      q = String(q || input.value || '').trim(); if (!q || A.busy) return;
+      A.busy = true; A.error = null; A.pending = q; input.value = '';
+      var ctx = A.follow ? A.convo.slice(-2).map(function (c) { return 'Q: ' + c.q + ' (' + c.title + ')'; }).join(' | ') : '';
+      render();
+      api('/api/ticket-hygiene/ask', { method: 'POST', body: JSON.stringify({ question: q, context: ctx }) }).then(function (r) {
+        A.busy = false; A.pending = null;
+        if (!r || !r.success) { A.error = (r && r.error) || 'Could not answer that'; render(); return; }
+        A.result = r.result; A.convo.push({ q: q, title: r.result.title }); A.history = null; render();
+      }).catch(function () { A.busy = false; A.pending = null; A.error = 'Could not reach the server'; render(); });
+    }
+    askBtn.addEventListener('click', function () { submit(); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
+    var follow = null;
+    if (A.convo.length) { var cb = h('input', { type: 'checkbox' }); cb.checked = !!A.follow; cb.addEventListener('change', function () { A.follow = cb.checked; }); follow = h('label', { class: 'th-small th-check' }, [cb, ' Treat my next question as a follow-up']); }
+    body.appendChild(h('section', { class: 'th-card wide th-ask' }, [
+      h('div', { class: 'th-ch' }, [h('h2', { text: 'Ask AI about tickets' }), h('p', { text: 'Any team or department. The AI turns your question into read-only queries over the Desk data, then answers with the numbers and charts. Contact details and message text are never read.' })]),
+      h('div', { class: 'th-ask-row' }, [input, askBtn]), follow,
+      h('div', { class: 'th-chips th-ex' }, EXAMPLES.map(function (q) { return h('button', { type: 'button', class: 'th-chip th-chip-btn', text: q, disabled: A.busy ? true : null, onclick: function () { submit(q); } }); }))
+    ]));
+    if (A.busy) body.appendChild(h('div', { class: 'th-card th-empty', role: 'status' }, [h('b', { text: A.pending }), h('p', { text: 'Reading the Desk data. This usually takes 20 to 40 seconds.' })]));
+    if (A.error) body.appendChild(h('div', { class: 'th-card th-note bad', role: 'alert', text: A.error }));
+    if (A.result && !A.busy) body.appendChild(answerView(A.result));
+    var hist = h('section', { class: 'th-card wide' }, [h('div', { class: 'th-ch' }, [h('h2', { text: 'Your recent questions' })])]);
+    body.appendChild(hist);
+    function fillHist() {
+      if (!A.history.length) { hist.appendChild(h('p', { class: 'th-muted th-small', text: 'Nothing yet.' })); return; }
+      hist.appendChild(h('div', { class: 'th-hlist' }, A.history.map(function (x) {
+        return h('button', { type: 'button', class: 'th-hist', onclick: function () { api('/api/ticket-hygiene/ask/' + x.id).then(function (r) { if (r && r.success) { A.result = r.result; A.error = null; render(); } }); } },
+          [h('b', { text: x.title || x.question }), h('span', { class: 'th-muted th-small', text: x.question })]);
+      })));
+    }
+    if (!A.history) api('/api/ticket-hygiene/ask/history').then(function (r) { A.history = (r && r.items) || []; fillHist(); }); else fillHist();
+  }
+  function md(text) {
+    var wrap = h('div', { class: 'th-md' }), ul = null;
+    String(text || '').split('\n').forEach(function (line) {
+      var t = line.trim(); if (!t) { ul = null; return; }
+      var li = /^[-•*]\s+/.test(t), el = h(li ? 'li' : 'p');
+      t.replace(/^[-•*]\s+/, '').split(/(\*[^*]+\*)/).forEach(function (part) { if (/^\*[^*]+\*$/.test(part)) el.appendChild(h('b', { text: part.slice(1, -1) })); else if (part) el.appendChild(document.createTextNode(part)); });
+      if (li) { if (!ul) { ul = h('ul'); wrap.appendChild(ul); } ul.appendChild(el); } else { ul = null; wrap.appendChild(el); }
+    });
+    return wrap;
+  }
+  function answerView(r) {
+    var chatText = ('*' + r.title + '*\n' + String(r.answer || '').replace(/^\s*[-*]\s+/gm, '• ')).replace(/[—–]/g, '-');
+    var kids = [h('div', { class: 'th-ch' }, [h('h2', { text: r.title }), h('button', { type: 'button', class: 'th-btn sm', text: 'Copy answer', onclick: function (e) { copy(chatText, e.currentTarget); } })]),
+      h('p', { class: 'th-muted th-small', text: 'Asked: ' + r.question + (r.assumptions ? ' · Read as: ' + r.assumptions : '') }), md(r.answer)];
+    if (r.cannot) kids.push(h('p', { class: 'th-note', text: 'Not in the data: ' + r.cannot }));
+    (r.limits || []).forEach(function (l) { kids.push(h('p', { class: 'th-note', text: l })); });
+    var grid = h('div', { class: 'th-grid' });
+    (r.results || []).forEach(function (res) { grid.appendChild(resultCard(res)); });
+    return h('div', null, [h('section', { class: 'th-card wide th-answer' }, kids), grid]);
+  }
+  function num(v) { if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null; var n = Number(v); return isNaN(n) ? null : n; }
+  function fmt(v) { var n = num(v); if (n == null) return String(v == null ? '' : v); return Number.isInteger(n) || Math.abs(n) >= 100 ? Math.round(n).toLocaleString() : String(Math.round(n * 10) / 10); }
+  function pickCols(res) {
+    var cols = res.columns || [], rows = res.rows || [];
+    var isNum = function (c) { return rows.length > 0 && rows.every(function (r) { return r[c] == null || num(r[c]) != null; }) && !/(^|_)(number|id|year)$/.test(c); };
+    var value = res.value && cols.indexOf(res.value) >= 0 ? res.value : cols.filter(isNum).slice(-1)[0];
+    var label = res.label && cols.indexOf(res.label) >= 0 ? res.label : (cols.filter(function (c) { return c !== value && !isNum(c); })[0] || cols[0]);
+    var series = res.series && cols.indexOf(res.series) >= 0 && res.series !== label ? res.series : null;
+    return { label: label, value: value, series: series, isNum: isNum };
+  }
+  function resultCard(res) {
+    var wide = res.chart === 'table' || res.chart === 'line';
+    var c = h('section', { class: 'th-card' + (wide ? ' wide' : '') });
+    c.appendChild(h('div', { class: 'th-ch' }, [h('h2', { text: res.purpose || 'Result' }), h('p', { text: res.error ? '' : res.count + ' row' + (res.count === 1 ? '' : 's') + (res.capped ? ' (cut to 25 by the data service)' : '') })]));
+    if (res.error) { c.appendChild(h('p', { class: 'th-note bad', text: 'This part could not be read: ' + res.error })); return c; }
+    if (!res.rows || !res.rows.length) { c.appendChild(h('p', { class: 'th-muted th-small', text: 'No rows.' })); return c; }
+    var k = pickCols(res), view = h('div'), showTable = res.chart === 'table' || !k.value;
+    function draw() {
+      view.replaceChildren();
+      if (showTable) { view.appendChild(table(res)); return; }
+      if (res.chart === 'number') { view.appendChild(h('div', { class: 'th-kpis' }, (res.columns || []).filter(k.isNum).map(function (col) { return h('div', { class: 'th-kpi static' }, [h('span', { class: 'th-kpi-l', text: col.replace(/_/g, ' ') }), h('b', { text: fmt(res.rows[0][col]) })]); }))); return; }
+      if (res.chart === 'line') { view.appendChild(lineChart(res, k)); return; }
+      if (k.series) {
+        var by = {}, ser = [];
+        res.rows.forEach(function (r) { var l = String(r[k.label]), s2 = String(r[k.series]), v = num(r[k.value]) || 0; var o = by[l] || (by[l] = { label: l, total: 0, parts: {} }); o.parts[s2] = (o.parts[s2] || 0) + v; o.total += v; if (ser.indexOf(s2) < 0) ser.push(s2); });
+        var rows2 = Object.keys(by).map(function (x) { return by[x]; }).sort(function (a, b) { return b.total - a.total; }).slice(0, 20);
+        view.appendChild(legend(ser.map(function (s2, i) { return [s2, sCls(i)]; })));
+        view.appendChild(stacked(rows2, ser, function (s2) { return sCls(ser.indexOf(s2)); }, function (s2) { return s2; }));
+        return;
+      }
+      view.appendChild(simple(res.rows.slice(0, 20).map(function (r) { return [String(r[k.label]), num(r[k.value]) || 0]; }), 'th-c0'));
+    }
+    draw(); c.appendChild(view);
+    if (res.chart !== 'table' && k.value) c.appendChild(h('button', { type: 'button', class: 'th-btn sm th-tog', text: 'Show table', onclick: function (e) { showTable = !showTable; e.currentTarget.textContent = showTable ? 'Show chart' : 'Show table'; draw(); } }));
+    return c;
+  }
+  function table(res) {
+    var cols = res.columns || [];
+    return h('div', { class: 'th-scroll th-tbl-wrap' }, h('table', { class: 'th-table' }, [h('thead', null, h('tr', null, cols.map(function (c2) { return h('th', { scope: 'col', text: c2.replace(/_/g, ' ') }); }))),
+      h('tbody', null, res.rows.slice(0, 200).map(function (r) { return h('tr', null, cols.map(function (c2) {
+        var v = r[c2];
+        if (c2 === 'web_url' && v) return h('td', null, h('a', { href: v, target: '_blank', rel: 'noopener', text: 'Open' }));
+        if (typeof v === 'string' && /^\d{4}-\d\d-\d\d[T ]\d/.test(v)) return h('td', { text: v.slice(0, 16).replace('T', ' ') });
+        var n = typeof v === 'number' ? v : null;
+        return h('td', { class: n != null ? 'n' : null, text: n != null ? fmt(n) : String(v == null ? '' : v) });
+      })); }))]));
+  }
+  function lineChart(res, k) {
+    var rows = res.rows.slice().sort(function (a, b) { return String(a[k.label]).localeCompare(String(b[k.label])); });
+    var xs = [], data = {}, ser = [];
+    rows.forEach(function (r) {
+      var x0 = String(r[k.label]).slice(0, 10), s2 = k.series ? String(r[k.series]) : (k.value || 'value').replace(/_/g, ' ');
+      if (xs.indexOf(x0) < 0) xs.push(x0); if (ser.indexOf(s2) < 0) ser.push(s2);
+      (data[s2] = data[s2] || {})[x0] = ((data[s2] || {})[x0] || 0) + (num(r[k.value]) || 0);
+    });
+    if (xs.length < 2) return simple(rows.map(function (r) { return [String(r[k.label]), num(r[k.value]) || 0]; }), 'th-c0');
+    return svgLines(ser.slice(0, 8), xs, function (s2, x0) { return (data[s2] || {})[x0] || 0; }, res.purpose || 'Trend');
+  }
 
   function viewChat(body, rep) {
     var pre = h('pre', { class: 'th-chat', tabindex: '0', 'aria-label': 'Google Chat message', text: rep.chat });

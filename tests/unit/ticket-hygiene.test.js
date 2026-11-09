@@ -47,7 +47,7 @@ beforeAll(async () => {
     query: async (sql) => /count\(\*\) AS n/.test(sql) ? { rows: [{ n: tickets.length }] } : /AS subject FROM desk_tickets/.test(sql) ? { rows: tickets.map((t) => ({ id: t.id, subject: t.subject })) } : /FROM desk_tickets/.test(sql) ? { rows: tickets.map(({ subject, ...r }) => r) } : /desk_ticket_threads/.test(sql) ? { rows: threads } : { rows: comments },
     ai: { anyConfigured: () => true, bestJSON: async ({ user }) => {
       const j = JSON.parse(user);
-      return { items: j.tickets.map((t) => ({ id: t.id, client: /working now/.test(t.client_last) ? 'confirmation' : t.client_last ? 'new_question' : null, agent: /Checking|outbound/.test(t.agent_last) ? 'chase' : t.agent_last ? 'fix_answer' : null, promise: false, category: /Subject 3/.test(t.subject) ? 'VoIP & Phones' : 'nonsense', why: 'test' })) };
+      return { json: { items: j.tickets.map((t) => ({ id: t.id, client: /working now/.test(t.client_last) ? 'confirmation' : t.client_last ? 'new_question' : null, agent: /Checking|outbound/.test(t.agent_last) ? 'chase' : t.agent_last ? 'fix_answer' : null, promise: false, category: /Subject 3/.test(t.subject) ? 'VoIP & Phones' : 'Other', why: 'test' })) } };
     } },
   });
 });
@@ -86,7 +86,7 @@ describe('ticket hygiene buckets', () => {
     expect(sky.total).toBe(8);
     expect(rep.dash.byBucket.closure).toBe(2);
     expect(rep.dash.byStatus['Pending Customer']).toBe(5);
-    expect(b(3).category).toBe('VoIP & Phones'); expect(b(4).category).toBe('Other');
+    expect(b(3).category).toBe('VoIP & Phones'); expect(b(4).category).toBe('Needs review');
   });
   it('stores the run and reuses AI labels', async () => {
     const l = await th.latest(); expect(l.total).toBe(9);
