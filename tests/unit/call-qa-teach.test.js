@@ -49,11 +49,25 @@ describe('Teach the AI', () => {
     const t = await ct.today('qa.one@adit.com', false);
     await expect(ct.answer(t.items[1].id, 'qa.two@adit.com', false, 'hi there')).rejects.toThrow(/not found/);
   });
+  it('QA reviewers cannot skip, and an answer that never gets clear goes to an admin', async () => {
+    const t = await ct.today('qa.one@adit.com', false);
+    const id = t.items[2].id;
+    await expect(ct.skip(id, 'qa.one@adit.com', false, true)).rejects.toThrow(/cannot be skipped/);
+    let it;
+    for (let i = 0; i < ct.MAX_TURNS; i++) { judge.push({ sufficient: false, followup: 'Say more?' }); it = await ct.answer(id, 'qa.one@adit.com', false, 'Maybe, it depends ' + i); }
+    expect(it.status).toBe('review');
+    const a = await ct.adminView();
+    expect(a.review.map((x) => x.id)).toContain(id);
+    const after = await ct.settle(id, 'admin@adit.com', 'Dead air under 10 seconds with a heads-up is fine.', 'hold');
+    expect(after.review.map((x) => x.id)).not.toContain(id);
+    const p = await ct.pending('qa.one@adit.com');
+    expect(p.madeToday).toBe(8); expect(p.open).toBe(6);
+  });
   it('lets an admin pick the survey rule and switch rules off', async () => {
     let a = await ct.setSurveyMode('closing'); expect(a.surveyMode).toBe('closing');
     await expect(ct.setSurveyMode('x')).rejects.toThrow();
-    a = await ct.setRule(a.rules[0].id, 'off', 'admin@adit.com');
-    expect(a.rules[0].status).toBe('off');
+    for (const r of a.rules) a = await ct.setRule(r.id, 'off', 'admin@adit.com');
+    expect(a.rules.every((r) => r.status === 'off')).toBe(true);
     expect(JSON.parse((await q(db, `SELECT v FROM cq_state WHERE k = 'qa_rules'`))[0].v)).toEqual([]);
   });
 });

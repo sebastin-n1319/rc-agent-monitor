@@ -52,3 +52,5 @@ html.dark-mode .cqt{--t-surf:#0F1E2A;--t-soft:#132634;--t-line:#22394B;--t-line2
 .cqt-list{margin:0;padding-left:18px;font-size:13px;line-height:1.6}
 .cqt-btn:focus-visible,.cqt-qhead:focus-visible,.cqt-in:focus-visible,.cqt-mode:focus-visible,.cqt-seg button:focus-visible{outline:2px solid var(--t-acc);outline-offset:2px}
 @media (max-width:640px){.cqt{padding:12px 16px 40px}.cqt-body{padding:0 14px 14px}.cqt-qhead{grid-template-columns:24px 1fr}.cqt-qhead .cqt-st{grid-column:2;justify-self:start}.cqt-msg{max-width:100%}.cqt-arule{flex-direction:column}}
+.cqt-must{background:var(--t-warn-soft);border-color:transparent;color:var(--t-t1)}
+.cqt-ref{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding-bottom:6px;border-bottom:1px solid var(--t-line);margin-bottom:8px!important}

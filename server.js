@@ -9317,19 +9317,23 @@ const teachWrap = (fn) => async (req, res) => { try { await fn(req, res); } catc
 const requireTeach = async (req, res, next) => {
   try { const admin = await isAdminSession(req); const trainer = (await isQaRole(req.session.email)) || (await teachMod().isTrainer(req.session.email));
     if (!admin && !trainer) return res.status(403).json({ success: false, error: 'Teach the AI is for QA reviewers and admins' });
-    req.teach = { email: String(req.session.email || '').toLowerCase(), admin, trainer }; next(); }
+    req.teach = { email: String(req.session.email || '').toLowerCase(), admin, trainer, qa: await isQaRole(req.session.email) }; next(); }
   catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
 };
 app.get('/api/call-qa/teach/me', requireAuth, teachWrap(async (req, res) => {
-  const admin = await isAdminSession(req); res.json({ success: true, admin, trainer: (await isQaRole(req.session.email)) || (await teachMod().isTrainer(req.session.email)) });
+  const admin = await isAdminSession(req); const qa = await isQaRole(req.session.email);
+  const trainer = qa || (await teachMod().isTrainer(req.session.email));
+  // Batch 268: QA reviewers must finish the day's questions before using the rest of the tool.
+  res.json({ success: true, admin, trainer, qa, mustFinish: qa, pending: trainer ? await teachMod().pending(req.session.email) : null });
 }));
-app.get('/api/call-qa/teach/today', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().today(req.teach.email, req.teach.admin)) }); }));
+app.get('/api/call-qa/teach/today', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, noSkip: !!req.teach.qa, ...(await teachMod().today(req.teach.email, req.teach.admin)) }); }));
 app.post('/api/call-qa/teach/q/:id/answer', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().answer(req.params.id, req.teach.email, false, (req.body || {}).text) }); }));
 app.post('/api/call-qa/teach/q/:id/confirm', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().confirm(req.params.id, req.teach.email, false, (req.body || {}).rules) }); }));
 app.post('/api/call-qa/teach/q/:id/more', requireAuth, requireTeach, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().explainMore(req.params.id, req.teach.email, false) }); }));
-app.post('/api/call-qa/teach/q/:id/skip', requireAuth, requireTeach, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().skip(req.params.id, req.teach.email, false) }); }));
+app.post('/api/call-qa/teach/q/:id/skip', requireAuth, requireTeach, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().skip(req.params.id, req.teach.email, false, req.teach.qa) }); }));
 app.get('/api/call-qa/teach/admin', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().adminView()) }); }));
 app.get('/api/call-qa/teach/admin/q/:id', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().questionAdmin(req.params.id) }); }));
+app.post('/api/call-qa/teach/admin/q/:id/settle', requireAdmin, teachWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await teachMod().settle(req.params.id, req.session.email, b.text, b.param)) }); }));
 app.post('/api/call-qa/teach/trainers', requireAdmin, teachWrap(async (req, res) => { await teachMod().setTrainers((req.body || {}).emails); res.json({ success: true, ...(await teachMod().adminView()) }); }));
 app.post('/api/call-qa/teach/rules/:id', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setRule(req.params.id, (req.body || {}).status, req.session.email)) }); }));
 app.post('/api/call-qa/teach/survey-mode', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setSurveyMode((req.body || {}).mode)) }); }));

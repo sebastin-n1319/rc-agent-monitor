@@ -83,7 +83,7 @@
 <script src="/updates.js?v=1.2.0" defer></script>
 <script src="/ticket-audits.js?v=1.43.0" defer></script>
 <script src="/custom-reports.js?v=1.0.6" defer></script>
-<script src="/client-tour.js?v=1.5.0" defer></script>
+<script src="/client-tour.js?v=1.5.1" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.1.0">
 <script src="/notice-center.js?v=1.3.1" defer></script>
@@ -93,8 +93,8 @@
 <link rel="stylesheet" href="/call-qa.css?v=1.0.0">
 <link rel="stylesheet" href="/ticket-hygiene.css?v=1.2.0">
 <script src="/call-qa.js?v=1.3.0" defer></script>
-<link rel="stylesheet" href="/call-qa-teach.css?v=1.0.0">
-<script src="/call-qa-teach.js?v=1.0.1" defer></script>
+<link rel="stylesheet" href="/call-qa-teach.css?v=1.1.0">
+<script src="/call-qa-teach.js?v=1.1.0" defer></script>
 <script src="/ticket-hygiene.js?v=1.2.0" defer></script>
 <script src="/voip-project.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
@@ -4404,6 +4404,8 @@ function switchAgentSection(section,el){
     el=document.getElementById('agent-tab-dashboard');
   }
   if(isQaRole() && section==='dashboard'){ section='qateach'; el=document.getElementById('agent-tab-qateach'); }
+  // Batch 268: QA reviewers answer today's Teach the AI questions before anything else.
+  if(isQaRole() && window.__cqtMustFinish && section!=='qateach'){ showToast('Finish today\u2019s Teach the AI questions first. The rest of the tool opens when you are done.','warning'); section='qateach'; el=document.getElementById('agent-tab-qateach'); }
   if(section!=='breakbot') currentBreakbotPreviewMode=false;
   currentAgentSection=section;
   document.querySelectorAll('.agent-shell-btn').forEach(btn=>btn.classList.remove('active'));

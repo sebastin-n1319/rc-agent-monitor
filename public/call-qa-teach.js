@@ -18,7 +18,8 @@
   var TOPIC = { opening: 'Call Opening', verification: 'Verification', hold: 'Hold / dead air', transfer: 'Transfer', empathy: 'Empathy', acknowledgement: 'Acknowledgement', listening: 'Active Listening',
     interruptions: 'Interruptions', communication: 'Communication', closing: 'Call Closing', account: 'Account Analysis', ownership: 'Ownership', education: 'Client Education', objection: 'Objection Handling',
     probing: 'Probing', documentation: 'Documentation', survey: 'Survey', stage: 'Call stage', fatal: 'Fatals', documentation_task: 'Documentation fatal', callback: 'Callback fatal' };
-  var ST = { open: 'To answer', followup: 'AI asked more', confirm: 'Confirm the rule', done: 'Done', skipped: 'Skipped' };
+  var ST = { open: 'To answer', followup: 'AI asked more', confirm: 'Confirm the rule', done: 'Done', skipped: 'Skipped', review: 'Sent to admin' };
+  function finished(x) { return x.status === 'done' || x.status === 'skipped' || x.status === 'review'; }
   function topic(t) { return TOPIC[t] || String(t || 'General'); }
 
   function mount(root, opts) {
@@ -29,20 +30,27 @@
       render();
       api('/api/call-qa/teach/today').then(function (r) {
         if (!r.success) { S.err = r.error; render(); return; }
-        S.err = null; S.data = r;
-        if (S.open == null) { var first = r.items.filter(function (x) { return x.status !== 'done' && x.status !== 'skipped'; })[0]; S.open = first ? first.id : null; }
+        S.err = null; S.data = r; release();
+        if (S.open == null) { var first = r.items.filter(function (x) { return !finished(x); })[0]; S.open = first ? first.id : null; }
         render();
       });
       if (opts.admin) api('/api/call-qa/teach/admin').then(function (r) { if (r.success) { S.admin = r; render(); } });
     }
-    function replace(item) { if (!S.data) return; S.data.items = S.data.items.map(function (x) { return x.id === item.id ? item : x; }); S.data.doneToday = S.data.items.filter(function (x) { return x.day === S.data.day && (x.status === 'done' || x.status === 'skipped'); }).length; }
+    // Batch 268: QA reviewers stay on Teach AI until today's questions are done (or none could be written).
+    function release() {
+      if (!S.data) return;
+      var open = S.data.items.filter(function (x) { return !finished(x); }).length;
+      window.__cqtMustFinish = !!(S.data.noSkip && open > 0);
+      if (typeof window.__cqtBanner === 'function') window.__cqtBanner();
+    }
+    function replace(item) { if (!S.data) return; S.data.items = S.data.items.map(function (x) { return x.id === item.id ? item : x; }); S.data.doneToday = S.data.items.filter(function (x) { return x.day === S.data.day && finished(x); }).length; release(); }
     function act(item, path, body, btn) {
       if (S.busy[item.id]) return; S.busy[item.id] = true; if (btn) { btn.disabled = true; btn.textContent = 'Thinking...'; }
       api('/api/call-qa/teach/q/' + item.id + '/' + path, body || {}).then(function (r) {
         S.busy[item.id] = false;
         if (!r.success) { item._err = r.error; render(); return; }
         replace(r.item);
-        if (r.item.status === 'done' || r.item.status === 'skipped') { var next = S.data.items.filter(function (x) { return x.status !== 'done' && x.status !== 'skipped'; })[0]; S.open = next ? next.id : null; }
+        if (finished(r.item)) { var next = S.data.items.filter(function (x) { return !finished(x); })[0]; S.open = next ? next.id : null; }
         render();
       });
     }
@@ -74,6 +82,8 @@
       var out = [top];
       if (d.genError && !d.items.length) out.push(h('div', { class: 'cqt-card cqt-bad', text: 'Could not write today’s questions: ' + d.genError }));
       if (!d.items.length && !d.genError) out.push(h('div', { class: 'cqt-card cqt-muted', text: 'No questions right now. Check back tomorrow.' }));
+      var left = d.items.filter(function (x) { return !finished(x); }).length;
+      if (d.noSkip && left) out.push(h('div', { class: 'cqt-card cqt-must', role: 'status' }, [h('b', { text: left + ' question' + (left === 1 ? '' : 's') + ' left today. ' }), 'Answer each one until the AI says it has enough. The rest of the tool opens when you are done.']));
       if (d.doneToday >= d.perDay) out.push(h('div', { class: 'cqt-card cqt-good', text: 'All done for today. Thank you, every answer makes the audits closer to yours.' }));
       d.items.forEach(function (it, i) { out.push(itemView(it, i)); });
       return h('div', null, out);
@@ -94,14 +104,14 @@
       if (it.context) b.push(h('div', { class: 'cqt-ctx' }, [h('b', { text: it.kind === 'call' ? 'The call' : 'Scenario' }), h('p', { text: it.context })]));
       if (it.call) b.push(callBox(it.call));
       if (it.needs && it.needs.length && (it.status === 'open' || it.status === 'followup')) b.push(h('p', { class: 'cqt-needs' }, [h('b', { text: 'A full answer covers: ' }), it.needs.join(' · ')]));
-      if (it.thread.length) b.push(h('div', { class: 'cqt-thread' }, it.thread.map(function (t) { return h('div', { class: 'cqt-msg ' + (t.role === 'qa' ? 'me' : 'ai') }, [h('span', { text: t.role === 'qa' ? 'You' : 'AI' }), h('p', { text: t.text })]); })));
+      if (it.thread.length) b.push(h('div', { class: 'cqt-thread' }, it.thread.map(function (t) { return h('div', { class: 'cqt-msg ' + (t.role === 'qa' ? 'me' : 'ai') }, [h('span', { text: t.role === 'qa' ? 'You' : t.role === 'admin' ? 'Admin' : 'AI' }), h('p', { text: t.text })]); })));
       if (it._err) b.push(h('p', { class: 'cqt-bad', role: 'alert', text: it._err }));
       if (it.status === 'open' || it.status === 'followup') {
         var ta = h('textarea', { class: 'cqt-in', rows: '4', 'aria-label': 'Your answer', placeholder: it.status === 'followup' ? 'Answer the AI’s follow-up' : 'Your answer: what you decide, when it applies, any exceptions' });
         var send = h('button', { type: 'button', class: 'cqt-btn primary', text: S.busy[it.id] ? 'Thinking...' : 'Send', disabled: S.busy[it.id] ? true : null });
         send.addEventListener('click', function () { var v = ta.value.trim(); if (!v) { ta.focus(); return; } act(it, 'answer', { text: v }, send); });
         ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send.click(); } });
-        b.push(ta, h('div', { class: 'cqt-row' }, [send, h('button', { type: 'button', class: 'cqt-btn', text: 'Skip', onclick: function (e) { act(it, 'skip', {}, e.currentTarget); } }), h('span', { class: 'cqt-muted cqt-small', text: 'Ctrl or Cmd + Enter sends' })]));
+        b.push(ta, h('div', { class: 'cqt-row' }, [send, S.data && S.data.noSkip ? null : h('button', { type: 'button', class: 'cqt-btn', text: 'Skip', onclick: function (e) { act(it, 'skip', {}, e.currentTarget); } }), h('span', { class: 'cqt-muted cqt-small', text: S.data && S.data.noSkip ? 'Not sure? Say what you would check and why. Ctrl or Cmd + Enter sends' : 'Ctrl or Cmd + Enter sends' })]));
         setTimeout(function () { if (document.body.contains(ta)) ta.focus(); }, 0);
       }
       if (it.status === 'confirm') {
@@ -125,7 +135,8 @@
       return h('div', { class: 'cqt-body' }, b);
     }
     function callBox(c) {
-      var rows = [h('p', null, [h('b', { text: 'AI ' + (c.ai.score == null ? '-' : c.ai.score) }), ' (' + (c.ai.stage || '-') + ')  vs  ', h('b', { text: 'Human QA ' + (c.human.score == null ? '-' : c.human.score) }), ' (' + (c.human.stage || '-') + ')', c.agent ? ' · ' + c.agent : ''])];
+      var ref = [c.human.audit ? 'CRM Call Audit ' + c.human.audit : null, c.agent, c.when, c.human.auditor ? 'audited by ' + c.human.auditor : null].filter(Boolean).join(' \u00b7 ');
+      var rows = [ref ? h('p', { class: 'cqt-ref' }, [h('b', { text: ref }), c.human.audit ? h('button', { type: 'button', class: 'cqt-btn sm', text: 'Copy audit ID', onclick: function (e) { var b = e.currentTarget; try { navigator.clipboard.writeText(c.human.audit).then(function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy audit ID'; }, 1400); }); } catch (x) {} } }) : null]) : null,h('p', null, [h('b', { text: 'AI ' + (c.ai.score == null ? '-' : c.ai.score) }), ' (' + (c.ai.stage || '-') + ')  vs  ', h('b', { text: 'Human QA ' + (c.human.score == null ? '-' : c.human.score) }), ' (' + (c.human.stage || '-') + ')', c.agent ? ' · ' + c.agent : ''])];
       if (c.ai.fatal.length) rows.push(h('p', null, [h('b', { text: 'AI fatal: ' }), c.ai.fatal.map(function (f) { return f.param + ' (' + f.why + ')'; }).join('; ')]));
       if (c.ai.missed.length) rows.push(h('p', null, [h('b', { text: 'AI marked missed: ' }), c.ai.missed.map(function (m) { return m.param + (m.why ? ' (' + m.why + ')' : ''); }).join('; ')]));
       if (c.human.note) rows.push(h('p', null, [h('b', { text: 'Human QA note: ' }), c.human.note]));
@@ -159,6 +170,12 @@
           h('div', { class: 'cqt-row' }, [r.status !== 'active' ? h('button', { type: 'button', class: 'cqt-btn sm primary', text: 'Use it', onclick: function () { api('/api/call-qa/teach/rules/' + r.id, { status: 'active' }).then(function (x) { if (x.success) S.admin = x; render(); }); } }) : null,
             r.status !== 'off' ? h('button', { type: 'button', class: 'cqt-btn sm', text: 'Switch off', onclick: function () { api('/api/call-qa/teach/rules/' + r.id, { status: 'off' }).then(function (x) { if (x.success) S.admin = x; render(); }); } }) : null])]);
       };
+      if (A.review && A.review.length) out.push(h('section', { class: 'cqt-card' }, [h('h3', { text: 'Questions waiting for you (' + A.review.length + ')' }), h('p', { class: 'cqt-muted cqt-small', text: 'The reviewer answered 6 times and the AI still had no clear rule. Read the thread and write the rule.' })].concat(A.review.map(function (q) {
+        var t = h('textarea', { class: 'cqt-in', rows: '2', 'aria-label': 'Rule for this question', placeholder: 'The rule the AI should follow' });
+        return h('div', { class: 'cqt-arule' }, [h('div', { style: 'flex:1' }, [h('span', { class: 'cqt-tags' }, [h('em', { class: 'cqt-tag', text: topic(q.topic) }), h('em', { class: 'cqt-tag', text: String(q.thread.filter(function (x) { return x.role === 'qa'; }).length) + ' answers' })]),
+          h('p', { text: q.question }), h('details', null, [h('summary', { text: 'Thread' }), h('div', { class: 'cqt-thread' }, q.thread.map(function (m) { return h('div', { class: 'cqt-msg ' + (m.role === 'qa' ? 'me' : 'ai') }, [h('span', { text: m.role === 'qa' ? 'QA' : 'AI' }), h('p', { text: m.text })]); }))]), t]),
+          h('div', { class: 'cqt-row' }, [h('button', { type: 'button', class: 'cqt-btn sm primary', text: 'Save rule', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/teach/admin/q/' + q.id + '/settle', { text: t.value, param: q.topic }).then(function (x) { if (x.success) S.admin = x; else b.disabled = false; render(); }); } })])]);
+      }))));
       if (conflicts.length) out.push(h('section', { class: 'cqt-card' }, [h('h3', { text: 'Rules waiting for you (' + conflicts.length + ')' }), h('p', { class: 'cqt-muted cqt-small', text: 'Two QA reviewers answered differently. Pick the one to use and switch the other off.' })].concat(conflicts.map(ruleRow))));
       out.push(h('section', { class: 'cqt-card' }, [h('h3', { text: 'Rules (' + A.rules.length + ')' })].concat(A.rules.length ? A.rules.filter(function (r) { return r.status !== 'conflict'; }).map(ruleRow) : [h('p', { class: 'cqt-muted', text: 'No rules yet.' })])));
       // Activity
@@ -175,6 +192,11 @@
     api('/api/call-qa/teach/me').then(function (m) {
       if (!m || !m.success) return;
       ['sb-agent-qateach', 'agent-tab-qateach'].forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.toggle('ap-hidden', !(m.trainer || m.admin)); });
+      // Batch 268: QA reviewers finish the day's questions first. The page releases this once they are done (or if none could be written).
+      if (m.mustFinish && m.pending && (m.pending.open > 0 || m.pending.madeToday < 8)) {
+        window.__cqtMustFinish = true;
+        if (typeof sbAgent === 'function') { try { sbAgent('qateach', document.getElementById('sb-agent-qateach')); } catch (e) {} }
+      }
     });
   }
   window.CQTeach = { mount: mount, gate: gate };
