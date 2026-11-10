@@ -143,7 +143,7 @@
         a.overall != null ? stat('Parameter agreement', a.overall + '%') : null, p.learning && p.learning.until ? stat('Learning period ends', String(p.learning.until).slice(0, 10)) : null])];
       // QA reviewers
       var ta = h('textarea', { class: 'cqt-in', rows: '2', 'aria-label': 'QA reviewer emails', placeholder: 'name@adit.com, one or more, separated by commas' }); ta.value = A.trainers.join(', ');
-      out.push(h('section', { class: 'cqt-card' }, [h('h3', { text: 'QA reviewers' }), h('p', { class: 'cqt-muted cqt-small', text: 'They see Teach the AI in their sidebar and get 8 questions a day. Only @adit.com addresses.' }), ta,
+      out.push(h('section', { class: 'cqt-card' }, [h('h3', { text: 'QA reviewers' }), h('p', { class: 'cqt-muted cqt-small', text: 'Everyone with the QA role is a reviewer automatically. Add anyone else here (for example an agent who also does QA). They see Teach AI in their sidebar and get 8 questions a day. Only @adit.com addresses.' }), ta,
         h('div', { class: 'cqt-row' }, [h('button', { type: 'button', class: 'cqt-btn primary', text: 'Save reviewers', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/teach/trainers', { emails: ta.value }).then(function (r) { if (r.success) { S.admin = r; } render(); }); } })])]));
       // Survey rule
       var modes = [['fatal', 'Fatal (the written rule)', 'A missing pitch on a call that needed it makes the score 0.'], ['closing', 'Call Closing miss', 'No fatal; Call Closing is marked missed.'], ['ai', 'Let QA rules decide', 'No rule in code; the AI follows what the QA team teaches it.']];

@@ -1710,7 +1710,7 @@ app.post('/api/roles', requireAdmin, async (req, res) => {
   const { email, role, addedBy, breakbotEnabled } = req.body;
   if (!email || !role) return res.status(400).json({ success: false, error: 'Email and role required' });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
-  if (!['admin','agent','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, or readonly' });
+  if (!['admin','agent','qa','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, QA or readonly' });
   try {
     await setRole(email.trim().toLowerCase(), role, req.session.email || addedBy, breakbotEnabled);
     invalidateMembers();
@@ -1761,12 +1761,17 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
 // Session 58: which agent-view pages agents can open (Access Control tab).
 // app_settings 'agent_pages' = { global: {page: bool}, users: {email: {page: bool}} }.
 // Home is always on. Break Bot also respects the per-person breakbot_enabled column.
-const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall', 'guides'];
+const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall', 'guides', 'callqa'];
+// Batch 267: pages that are off for agents unless an admin switches them on (Call QA holds every agent's scores).
+const AGENT_PAGES_DEFAULT_OFF = ['callqa'];
+// Batch 267: the QA role. QA reviewers get only these pages by default; an admin can show or hide pages per person.
+// Teach the AI is always on for them and Home (the agent dashboard) is never shown.
+const QA_PAGE_DEFAULTS = { breakbot: false, bonus: false, writer: false, tickets: false, mystats: false, talerts: false, assess: true, hall: false, guides: true, callqa: true };
 async function readAgentPages() {
   let raw = {};
   try { raw = JSON.parse((await getSetting('agent_pages')) || '{}') || {}; } catch (e) { raw = {}; }
   const global = {};
-  for (const p of AGENT_PAGES) global[p] = !(raw.global && raw.global[p] === false);
+  for (const p of AGENT_PAGES) global[p] = AGENT_PAGES_DEFAULT_OFF.includes(p) ? !!(raw.global && raw.global[p] === true) : !(raw.global && raw.global[p] === false);
   const users = {};
   for (const [email, m] of Object.entries(raw.users || {})) {
     const clean = {};
@@ -1779,10 +1784,12 @@ async function effectiveAgentPages(email) {
   const cfg = await readAgentPages();
   const mine = cfg.users[String(email || '').toLowerCase()] || {};
   const settings = await getRoleSettingsForEmail(email).catch(() => null);
-  const out = { dashboard: true };
-  for (const p of AGENT_PAGES) out[p] = typeof mine[p] === 'boolean' ? mine[p] : cfg.global[p];
+  const qa = settings?.role === 'qa';
+  const out = { dashboard: !qa };
+  for (const p of AGENT_PAGES) out[p] = typeof mine[p] === 'boolean' ? mine[p] : (qa ? !!QA_PAGE_DEFAULTS[p] : cfg.global[p]);
+  if (qa) out.qateach = true;
   if (settings && settings.breakbotEnabled === false) out.breakbot = false;
-  return { pages: out, admin: settings?.role === 'admin' };
+  return { pages: out, admin: settings?.role === 'admin', role: settings?.role || 'agent' };
 }
 app.get('/api/agent-pages', requireAdmin, async (req, res) => {
   try { res.json({ success: true, pages: AGENT_PAGES, ...(await readAgentPages()) }); }
@@ -1832,7 +1839,7 @@ app.post('/api/access-requests/:email/approve', requireAdmin, async (req, res) =
   const email = decodeURIComponent(req.params.email).trim().toLowerCase();
   const { role = 'agent', breakbotEnabled = true } = req.body || {};
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email' });
-  if (!['admin', 'agent', 'guest', 'guides'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, guest or guides' });
+  if (!['admin', 'agent', 'qa', 'guest', 'guides'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, QA, guest or guides' });
   try {
     if (role === 'guides') {
       // Batch 156: Support guides only, no other page of the tool
@@ -9305,15 +9312,16 @@ function cqRange(q) {
 }
 // Batch 266: Teach the AI. QA reviewers (named by an admin) answer the AI's questions for about 30 minutes a day; admins see everything.
 const teachMod = () => require('./lib/call-qa-teach');
+const isQaRole = async (email) => { const st = await getRoleSettingsForEmail(email).catch(() => null); return !!(st && st.role === 'qa'); };
 const teachWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { if (!e.status) console.error('call-qa teach:', e.message); res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Teach the AI error' }); } };
 const requireTeach = async (req, res, next) => {
-  try { const admin = await isAdminSession(req); const trainer = await teachMod().isTrainer(req.session.email);
+  try { const admin = await isAdminSession(req); const trainer = (await isQaRole(req.session.email)) || (await teachMod().isTrainer(req.session.email));
     if (!admin && !trainer) return res.status(403).json({ success: false, error: 'Teach the AI is for QA reviewers and admins' });
     req.teach = { email: String(req.session.email || '').toLowerCase(), admin, trainer }; next(); }
   catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
 };
 app.get('/api/call-qa/teach/me', requireAuth, teachWrap(async (req, res) => {
-  const admin = await isAdminSession(req); res.json({ success: true, admin, trainer: await teachMod().isTrainer(req.session.email) });
+  const admin = await isAdminSession(req); res.json({ success: true, admin, trainer: (await isQaRole(req.session.email)) || (await teachMod().isTrainer(req.session.email)) });
 }));
 app.get('/api/call-qa/teach/today', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().today(req.teach.email, req.teach.admin)) }); }));
 app.post('/api/call-qa/teach/q/:id/answer', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().answer(req.params.id, req.teach.email, false, (req.body || {}).text) }); }));
@@ -9325,22 +9333,32 @@ app.get('/api/call-qa/teach/admin/q/:id', requireAdmin, teachWrap(async (req, re
 app.post('/api/call-qa/teach/trainers', requireAdmin, teachWrap(async (req, res) => { await teachMod().setTrainers((req.body || {}).emails); res.json({ success: true, ...(await teachMod().adminView()) }); }));
 app.post('/api/call-qa/teach/rules/:id', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setRule(req.params.id, (req.body || {}).status, req.session.email)) }); }));
 app.post('/api/call-qa/teach/survey-mode', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setSurveyMode((req.body || {}).mode)) }); }));
-app.get('/api/call-qa/summary', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+// Batch 267: Call QA for the QA role (and anyone an admin showed the page to): read audits and correct them. Settings stay admin-only.
+async function requireCallQaView(req, res, next) {
+  if (!req.session || !req.session.email) return res.status(401).json({ success: false, error: 'Authentication required' });
+  try {
+    if (await isAdminSession(req)) return next();
+    const eff = await effectiveAgentPages(req.session.email);
+    if (eff.pages && eff.pages.callqa) return next();
+    return res.status(403).json({ success: false, error: 'Call QA is not turned on for your account' });
+  } catch (e) { return res.status(500).json({ success: false, error: 'Access check failed' }); }
+}
+app.get('/api/call-qa/summary', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { const r = cqRange(req.query); res.json({ success: true, range: r, status: await cqMod().status(), ...(await cqMod().summary(r)) }); } catch (e) { cqErr(res, e, 'Could not load Call QA'); }
 });
-app.get('/api/call-qa/calls', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+app.get('/api/call-qa/calls', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { const r = cqRange(req.query); res.json({ success: true, calls: await cqMod().list({ ...r, agent: String(req.query.agent || ''), status: String(req.query.status || ''), fatal: String(req.query.fatal || ''), q: String(req.query.q || '').slice(0, 80) }) }); } catch (e) { cqErr(res, e, 'Could not load calls'); }
 });
-app.get('/api/call-qa/calls/:id', requireAdmin, rateLimit(120, 60000), async (req, res) => {
+app.get('/api/call-qa/calls/:id', requireCallQaView, rateLimit(120, 60000), async (req, res) => {
   try { res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not load the call'); }
 });
-app.post('/api/call-qa/calls/:id/override', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+app.post('/api/call-qa/calls/:id/override', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { res.json({ success: true, call: await cqMod().override(Number(req.params.id), { email: req.session && req.session.email }, req.body || {}) }); } catch (e) { cqErr(res, e, 'Could not save the correction'); }
 });
 app.post('/api/call-qa/calls/:id/reaudit', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { await cqMod().reaudit(Number(req.params.id)); res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not audit the call again'); }
 });
-app.get('/api/call-qa/calibration', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+app.get('/api/call-qa/calibration', requireCallQaView, rateLimit(30, 60000), async (req, res) => {
   try { const m = cqMod(); res.json({ success: true, status: await m.status(), agreement: await m.agreement(), guide: await m.guide(), human: await m.humanStats(180), learning: await m.learning() }); } catch (e) { cqErr(res, e, 'Could not load the calibration'); }
 });
 app.post('/api/call-qa/calibration/run', requireAdmin, rateLimit(5, 60000), async (req, res) => {

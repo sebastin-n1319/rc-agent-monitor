@@ -45,7 +45,8 @@
     return { from: day(now - 6 * 864e5), to: t };
   }
 
-  function mount(root) {
+  function mount(root, opts) {
+    var QA = !!(opts && opts.qa); // Batch 267: the QA role reads and corrects audits; settings stay with admins
     var S = { preset: '7', tab: 'overview', agent: '', status: '', fatal: false, q: '', data: null, calls: null, calib: null };
     root.innerHTML = '';
     var wrap = h('div', { class: 'cq' }); root.appendChild(wrap);
@@ -59,7 +60,7 @@
         h('div', { class: 'cq-ctl' }, [seg, h('button', { type: 'button', class: 'cq-btn', onclick: function () { load(); }, text: 'Refresh' })])]);
     }
     function tabs() {
-      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['teach', 'Teach the AI'], ['guide', 'What the AI learned']].map(function (t) {
+      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['teach', 'Teach the AI'], ['guide', 'What the AI learned']].filter(function (t) { return !(QA && t[0] === 'teach'); }).map(function (t) {
         return h('button', { type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', onclick: function () { var again = S.tab === 'teach'; S.tab = t[0]; draw(); if (t[0] === 'teach' && S.teachApi && !again) S.teachApi.refresh(); if (t[0] === 'calls' && !S.calls) loadCalls(); if ((t[0] === 'calibration' || t[0] === 'guide') && !S.calib) loadCalib(); }, text: t[1] });
       }));
     }
@@ -73,7 +74,7 @@
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Audit progress' }), h('p', { text: 'Calls are found every 30 minutes and audited about 20 minutes after they end, so Avoma has posted its transcript.' })]),
         h('div', { class: 'cq-prog', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(all), 'aria-valuenow': String(done), 'aria-label': 'Calls audited' }, h('i', { style: 'width:' + (all ? Math.round(done / all * 100) : 0) + '%' })),
         h('p', { class: 'cq-small cq-muted' }, done + ' of ' + all + ' calls audited (' + t.fromAvoma + ' from Avoma, ' + t.fromRc + ' transcribed from RingCentral). ' + t.waiting + ' waiting, ' + t.skipped + ' with no recording or speech' + (t.errors ? ', ' + t.errors + ' failed' : '') + '.'),
-        h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/backfill', { days: 7 }).then(function (r) { b.disabled = false; toast(r.success ? r.added + ' older calls found, they will be audited next' : r.error, r.success ? 'success' : 'error'); load(); }); }, text: 'Find calls from the last 7 days' }),
+        QA ? null : h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/backfill', { days: 7 }).then(function (r) { b.disabled = false; toast(r.success ? r.added + ' older calls found, they will be audited next' : r.error, r.success ? 'success' : 'error'); load(); }); }, text: 'Find calls from the last 7 days' }),
           h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/enabled', { on: st.enabled === false }).then(function () { load(); }); }, text: st.enabled === false ? 'Resume Call QA' : 'Pause Call QA' })])]));
       var hm = d.human || {};
       kids.push(h('div', { class: 'cq-kpis' }, [
@@ -133,7 +134,7 @@
           h('div', { class: 'cq-kpi' }, [h('b', { text: a.avgDiff == null ? 'none' : String(a.avgDiff) }), h('span', { text: 'Average score gap' }), h('small', { text: pc(a.within10Pct) + ' within 10 points' })]),
           h('div', { class: 'cq-kpi' }, [h('b', { text: pc(a.fatalAgreePct) }), h('span', { text: 'Fatal agreement' })]),
           h('div', { class: 'cq-kpi' }, [h('b', { text: pc(a.stageAgreePct) }), h('span', { text: 'Same stage' })])]),
-        h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn primary sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/calibration/run', { n: 60 }).then(function (r) { b.disabled = false; toast(r.success ? r.queued + ' human-audited calls queued for the AI' : r.error, r.success ? 'success' : 'error'); }); }, text: 'Compare 60 more calls' }),
+        QA ? null : h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn primary sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/calibration/run', { n: 60 }).then(function (r) { b.disabled = false; toast(r.success ? r.queued + ' human-audited calls queued for the AI' : r.error, r.success ? 'success' : 'error'); }); }, text: 'Compare 60 more calls' }),
           h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = 'Learning...'; api('/api/call-qa/relearn', {}).then(function (r) { b.disabled = false; b.textContent = 'Relearn from human QA'; toast(r.success ? 'Learned again: ' + (r.added || 0) + ' new human audits, ' + (r.queued || 0) + ' calls queued for the AI, ' + (r.lessons || 0) + ' lessons' : r.error, r.success ? 'success' : 'error'); S.calib = null; loadCalib(); }); }, text: 'Relearn from human QA' })])]));
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Per parameter' }), h('p', { text: 'Caught: of the calls human QA marked missed, how many the AI also marked missed. Extra: of the AI\'s misses, how many human QA passed.' })]),
         table([['Parameter'], ['Calls', 'n'], ['Agree', 'n'], ['Human missed', 'n'], ['Caught', 'n'], ['AI missed', 'n'], ['Extra', 'n']], a.params.map(function (p) {
@@ -213,7 +214,7 @@
             h('div', { class: 'act' }, [res, h('button', { type: 'button', class: 'cq-btn sm', 'aria-expanded': 'false', onclick: function (e) { var on = form.classList.toggle('on'); e.currentTarget.setAttribute('aria-expanded', on ? 'true' : 'false'); if (on) sel.focus(); }, text: 'Correct' })]),
             why || quote ? h('div', { class: 'w' }, [why || '', quote ? h('q', { text: '"' + quote + '"' }) : null]) : null, form]);
         }
-        function reBtn() { return h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = 'Auditing...'; api('/api/call-qa/calls/' + c.id + '/reaudit', {}).then(function (x) { if (!x.success) { b.disabled = false; b.textContent = 'Audit again'; return toast(x.error || 'Failed', 'error'); } render(x.call); dirty = true; }); }, text: 'Audit again' }); }
+        function reBtn() { if (QA) return null; return h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.textContent = 'Auditing...'; api('/api/call-qa/calls/' + c.id + '/reaudit', {}).then(function (x) { if (!x.success) { b.disabled = false; b.textContent = 'Audit again'; return toast(x.error || 'Failed', 'error'); } render(x.call); dirty = true; }); }, text: 'Audit again' }); }
       }
       var dirty = false;
       api('/api/call-qa/calls/' + id).then(function (x) { if (!x.success) { panel.replaceChildren(h('div', { class: 'cq-empty', text: x.error || 'Could not load the call' })); return; } render(x.call); var b = panel.querySelector('.cq-x'); if (b) b.focus(); });

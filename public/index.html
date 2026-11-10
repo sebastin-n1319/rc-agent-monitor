@@ -92,9 +92,9 @@
 <link rel="stylesheet" href="/voip-project.css?v=1.7.0">
 <link rel="stylesheet" href="/call-qa.css?v=1.0.0">
 <link rel="stylesheet" href="/ticket-hygiene.css?v=1.2.0">
-<script src="/call-qa.js?v=1.2.0" defer></script>
+<script src="/call-qa.js?v=1.3.0" defer></script>
 <link rel="stylesheet" href="/call-qa-teach.css?v=1.0.0">
-<script src="/call-qa-teach.js?v=1.0.0" defer></script>
+<script src="/call-qa-teach.js?v=1.0.1" defer></script>
 <script src="/ticket-hygiene.js?v=1.2.0" defer></script>
 <script src="/voip-project.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
@@ -848,6 +848,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M9 9.5h6M9 12.5h4"/></svg>
     <span class="sb-label">Teach AI</span>
   </div>
+  <!-- Batch 267: Call QA for the QA role (or anyone an admin shows it to) -->
+  <div class="sb-item ap-hidden" id="sb-agent-callqa" title="Call QA: AI audits of T1 calls"
+       onclick="sbAgent('callqa',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M5 4.5h9l5 5V19a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 19V6a1.5 1.5 0 0 1 1-1.5z"/><path d="M5 4.5h9l5 5V19a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 19V6a1.5 1.5 0 0 1 1-1.5z"/><path d="M8.5 13.5l2 2 4.5-4.5"/></svg>
+    <span class="sb-label">Call QA</span>
+  </div>
   <!-- Process and product updates from the Adit Updates site -->
   <div class="sb-item" id="sb-agent-updates" title="Process and product updates from the last 7 days"
        onclick="sbAgent('updates',this)">
@@ -1315,7 +1321,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           <div class="acx-card-hd"><h3 id="acx-add-h">Add or update a person</h3></div>
           <div class="acx-form">
             <label class="acx-field acx-field-grow"><span>Email</span><input type="email" id="roleEmail" class="acx-req-field" required aria-required="true" placeholder="name@adit.com" autocomplete="off" onkeydown="if(event.key==='Enter')addRole()"></label>
-            <label class="acx-field"><span>Role</span><select id="roleSelect"><option value="agent">Agent</option><option value="admin">Admin</option></select></label>
+            <label class="acx-field"><span>Role</span><select id="roleSelect"><option value="agent">Agent</option><option value="qa">QA (chosen pages only)</option><option value="admin">Admin</option></select></label>
             <button class="acx-btn acx-btn-primary" type="button" onclick="addRole()">Save</button>
           </div>
           <p class="acx-note">Adding someone here approves them straight away. Agents see only the pages switched on under Agent pages; admins see every page. To give one person a different set, open Pages on their row below.</p>
@@ -2286,6 +2292,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
     <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Review</button>
     <button class="agent-shell-btn ap-hidden" id="agent-tab-qateach" onclick="switchAgentSection('qateach',this)">Teach AI</button>
+    <button class="agent-shell-btn ap-hidden" id="agent-tab-callqa" onclick="switchAgentSection('callqa',this)">Call QA</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
@@ -2781,6 +2788,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="agent-shell-page av2" id="agent-section-updates"><div id="pu-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-audits"><div id="tka-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-qateach"><div id="cqt-agent-root"></div></div>
+  <div class="agent-shell-page av2" id="agent-section-callqa"><div id="cq-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Batch 156: Support guides, embedded -->
@@ -3970,11 +3978,14 @@ function breakbotTabEnabled(){
 // Session 58: agent page availability, set on Team > Access Control.
 // Agents only see pages the server allows; admins keep every page in Agent
 // View so they can preview, with pages hidden from agents marked.
-const AGENT_PAGE_KEYS=['breakbot','bonus','tickets','mystats','talerts','assess','hall','guides'];
+const AGENT_PAGE_KEYS=['breakbot','bonus','tickets','mystats','talerts','assess','hall','guides','callqa'];
+// Batch 267: the QA role sees only the pages an admin gives it; Home (the agent dashboard) is never shown and Teach the AI is its landing page.
+function isQaRole(){ return typeof currentRole === 'string' && currentRole.toLowerCase() === 'qa'; }
 let agentPagesAllowed=(()=>{ try{ return JSON.parse(localStorage.getItem('rcAgentPages')||'null'); }catch(e){ return null; } })();
 let agentPagesGlobal=null;
 function agentPageOn(p){
-  if(!p || p==='dashboard') return true;
+  if(!p || p==='dashboard') return !isQaRole();
+  if(p==='callqa' && !isAdminRole()) return !!(agentPagesAllowed && agentPagesAllowed.callqa);
   if(isAdminRole()) return true;
   return !agentPagesAllowed || agentPagesAllowed[p]!==false;
 }
@@ -3997,6 +4008,7 @@ function applyAgentPages(){
       }
     });
   });
+  ['sb-agent-dashboard','agent-tab-dashboard'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('ap-hidden', isQaRole()); });
   if(typeof currentAgentSection!=='undefined' && currentAgentSection && currentAgentSection!=='breakbot' && !agentPageOn(currentAgentSection)){
     switchAgentSection('dashboard',document.getElementById('agent-tab-dashboard'));
   }
@@ -4105,7 +4117,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
 
   // Pre-populate header & views before animation starts
   document.getElementById('userLabel').textContent=username.split(' ')[0];
-  document.getElementById('roleLabel').textContent=role==='admin'?'Admin':'Agent';
+  document.getElementById('roleLabel').textContent=role==='admin'?'Admin':role==='qa'?'QA':'Agent';
   // Session 15: personalize hero greeting
   const heroName=document.getElementById('av2-hero-name');
   if(heroName) heroName.textContent=username.split(' ')[0];
@@ -4391,6 +4403,7 @@ function switchAgentSection(section,el){
     section='dashboard';
     el=document.getElementById('agent-tab-dashboard');
   }
+  if(isQaRole() && section==='dashboard'){ section='qateach'; el=document.getElementById('agent-tab-qateach'); }
   if(section!=='breakbot') currentBreakbotPreviewMode=false;
   currentAgentSection=section;
   document.querySelectorAll('.agent-shell-btn').forEach(btn=>btn.classList.remove('active'));
@@ -4429,6 +4442,7 @@ function switchAgentSection(section,el){
   if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); if(window.TA&&TA.alertsTabs) TA.alertsTabs(); }
   if(section==='updates'){ if(window.PU) window.PU.open(); }
   if(section==='audits'){ if(window.TA) window.TA.open('agent'); }
+  if(section==='callqa'){ if(window.CallQA){ if(!window._cqAgent) window._cqAgent = window.CallQA.mount(document.getElementById('cq-agent-root'), { qa: true }); else window._cqAgent.refresh(); } }
   if(section==='qateach'){ if(window.CQTeach){ if(!window._cqtAgent) window._cqtAgent = window.CQTeach.mount(document.getElementById('cqt-agent-root')); else window._cqtAgent.refresh(); } }
   if(section==='assess') loadAssessFrame('agent-section-assess');
   if(section==='guides') loadAssessFrame('agent-section-guides');
@@ -10046,7 +10060,7 @@ async function loadAgentStatuses(){
           const scoreEl=document.getElementById('self-score');
           if(scoreEl){scoreEl.textContent=sc.v;scoreEl.className='score '+sc.c;}
           const rolePill=document.getElementById('self-role-pill');
-          if(rolePill)rolePill.textContent=currentRole==='admin'?'Admin':'Agent';
+          if(rolePill)rolePill.textContent=currentRole==='admin'?'Admin':currentRole==='qa'?'QA':'Agent';
           // FEAT-3: Break threshold alert, uses server-configured daily limit for BREAK
           const breakMins=Math.round((sum.unavailableSeconds||0)/60);
           const breakDailyLimit=(_cachedThresholds['BREAK']?.daily_limit_minutes)||60;
@@ -10862,12 +10876,17 @@ const ACX_PAGES={
   talerts:{label:'Alerts',desc:'Unassigned and waiting tickets'},
   assess:{label:'Tests',desc:'Assigned assessments'},
   hall:{label:'HOF',desc:'Hall of Fame'},
-  guides:{label:'Adit Expert',desc:'Ask any product or process question; Help Center, VoIP and AI guides'}
+  guides:{label:'Adit Expert',desc:'Ask any product or process question; Help Center, VoIP and AI guides'},
+  callqa:{label:'Call QA',desc:'AI audits of T1 calls, read and correct (off for agents unless shown)'}
 };
+// Batch 267: defaults for the QA role (an admin can still show or hide each page per person).
+const ACX_QA_DEFAULTS={breakbot:false,bonus:false,tickets:false,mystats:false,talerts:false,assess:true,hall:false,guides:true,callqa:true};
+const ACX_DEFAULT_OFF=['callqa'];
 let acxPageCfg={pages:Object.keys(ACX_PAGES),global:{},users:{}};
 let acxOpenEmail=null;
 
-function acxGlobalOn(p){ return acxPageCfg.global[p]!==false; }
+function acxGlobalOn(p){ return ACX_DEFAULT_OFF.includes(p) ? acxPageCfg.global[p]===true : acxPageCfg.global[p]!==false; }
+function acxDefaultOn(r,p){ return r && r.role==='qa' ? !!ACX_QA_DEFAULTS[p] : acxGlobalOn(p); }
 function acxOverrides(email){ return acxPageCfg.users[String(email||'').toLowerCase()]||{}; }
 // Per person state for one page: 'default' | 'show' | 'hide'
 function acxPageState(r,p){
@@ -10879,7 +10898,7 @@ function acxPageState(r,p){
 }
 function acxEffective(r,p){
   const st=acxPageState(r,p);
-  return st==='default'?acxGlobalOn(p):st==='show';
+  return st==='default'?acxDefaultOn(r,p):st==='show';
 }
 function acxIsCustom(r){
   if(r.role==='admin') return false;
@@ -10954,6 +10973,7 @@ function getFilteredRoles(){
 
 function acxPagesSummary(r){
   if(r.role==='admin') return '<span class="acx-tag">All pages</span>';
+  if(r.role==='qa'){ const on=acxPageCfg.pages.filter(p=>acxEffective(r,p)); return '<span class="acx-tag" title="'+esc('Teach AI, '+on.map(p=>ACX_PAGES[p]?ACX_PAGES[p].label:p).join(', '))+'">QA: '+(on.length+1)+' pages</span>'; }
   const pages=acxPageCfg.pages;
   const hidden=pages.filter(p=>!acxEffective(r,p));
   const custom=pages.filter(p=>acxPageState(r,p)!=='default');
@@ -10967,10 +10987,10 @@ function acxEditorRow(r){
   const items=acxPageCfg.pages.map(p=>{
     const m=ACX_PAGES[p]||{label:p};
     const st=acxPageState(r,p);
-    const def=acxGlobalOn(p)?'Default (on)':'Default (off)';
+    const def=acxDefaultOn(r,p)?'Default (on)':'Default (off)';
     return '<div class="acx-pe-item"><span class="acx-pe-l">'+esc(m.label)+'</span><div class="acx-seg acx-seg-sm" role="group" aria-label="'+esc(m.label)+'">'+seg(p,'default',def,st)+seg(p,'show','Show',st)+seg(p,'hide','Hide',st)+'</div></div>';
   }).join('');
-  return '<tr class="acx-pe-row"><td colspan="5"><div class="acx-pe"><div class="acx-pe-hd"><strong>Pages for '+esc(deriveRoleName(r.email))+'</strong><span>Default follows the Agent pages switches. Show or Hide applies to this person only.</span><button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="resetPersonPages(this)">Reset to default</button></div><div class="acx-pe-grid">'+items+'</div></div></td></tr>';
+  return '<tr class="acx-pe-row"><td colspan="5"><div class="acx-pe"><div class="acx-pe-hd"><strong>Pages for '+esc(deriveRoleName(r.email))+'</strong><span>'+(r.role==='qa'?'QA defaults: Teach AI, Call QA, Adit Expert and Tests on, the rest off. Home is never shown.':'Default follows the Agent pages switches.')+' Show or Hide applies to this person only.</span><button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="resetPersonPages(this)">Reset to default</button></div><div class="acx-pe-grid">'+items+'</div></div></td></tr>';
 }
 
 function renderRoleRows(){
@@ -10988,7 +11008,7 @@ function renderRoleRows(){
     const isAdmin=r.role==='admin';
     const open=acxOpenEmail===email.toLowerCase();
     const roleSel='<select class="acx-role-sel" data-email="'+esc(email)+'" aria-label="Role for '+esc(email)+'" onchange="setRoleInline(this)"'+(isCore||isSelf?' disabled title="'+(isCore?'Owner':'Your own role')+'"':'')+'>'+
-      '<option value="agent"'+(isAdmin?'':' selected')+'>Agent</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
+      '<option value="agent"'+(isAdmin||r.role==='qa'?'':' selected')+'>Agent</option><option value="qa"'+(r.role==='qa'?' selected':'')+'>QA</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
     const pagesBtn=isAdmin?'':'<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" aria-expanded="'+open+'" data-email="'+esc(email)+'" onclick="togglePersonPages(this)">'+(open?'Close':'Pages')+'</button>';
     const removeBtn=isCore?'<span class="acx-muted" title="The owner account cannot be removed">Owner</span>':(isSelf?'<span class="acx-muted" title="You cannot remove your own access">You</span>':'<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(email)+'" data-role="'+esc(r.role)+'" onclick="deleteRoleBtn(this)">Remove</button>');
     return '<tr class="'+(open?'is-open':'')+'">'+
@@ -11064,7 +11084,7 @@ async function setRoleInline(sel){
     const j=await res.json();
     if(!j.success) throw new Error(j.error||'Could not change role');
     if(row){ row.role=role; row.added_by=currentUser; }
-    showToast(email+' is now '+(role==='admin'?'an admin':'an agent'),'success');
+    showToast(email+' is now '+(role==='admin'?'an admin':role==='qa'?'a QA reviewer (only the pages you allow)':'an agent'),'success');
   }catch(e){ sel.value=prev; showToast(e.message,'error'); }
   sel.disabled=false;
   renderRoleRows(); renderRoleOverview(roleDirectory); renderAgentPagesCard();
@@ -11180,12 +11200,12 @@ function renderAccessRequests(){
     let meta, acts;
     if(r.status==='pending'){
       meta='Asked '+acxAgo(r.requested_at)+(r.attempts>1?' · tried '+r.attempts+' times, last '+acxAgo(r.last_attempt_at):'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="qa">QA (chosen pages only)</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-primary acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve</button>'+
         '<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="denyRequest(this)">Decline</button>';
     } else if(r.status==='denied'){
       meta='Declined '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'')+(r.note?' · '+esc(r.note):'')+(r.attempts>1?' · tried '+r.attempts+' times':'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="qa">QA (chosen pages only)</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve instead</button>';
     } else {
       meta=(r.status==='approved'?'Approved as '+esc(r.decided_role==='guest'?'guest (assessments only)':r.decided_role==='guides'?'guest (support guides only)':(r.decided_role||'agent')):'Removed')+' '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'');
