@@ -750,6 +750,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 265: Call QA (Call Logs > Call QA). The AI audits every recorded T1 call the way the human QA team does. Scores stay here.
     { const cq = require('./lib/call-qa'); cq.setDB(db); await cq.initSchema();
       let _deskIds = { at: 0, m: null };
+      { const ct = require('./lib/call-qa-teach'); ct.setDB(db); await ct.initSchema(); ct.setDeps({ ai: require('./lib/ai'), cq }); }
       cq.setDeps({ ai: require('./lib/ai'), kbq: (sql, limit) => require('./lib/aditkb-service').query(sql, limit), crmCoql: (q) => require('./lib/crm-qa').coql(q),
         rc: { listRecordedCalls: (ext, a, b) => require('./rc-service').listRecordedCalls(ext, a, b), fetchRecording: (u) => require('./rc-service').fetchRecording(u) },
         agents: () => getMonitoredAgents(), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
@@ -9302,6 +9303,28 @@ function cqRange(q) {
   const from = ok(q.from) ? q.from : new Date(Date.parse(to + 'T12:00:00Z') - 6 * 864e5).toISOString().slice(0, 10);
   return { from: new Date(getDateWindow(from, 'America/Chicago').start).toISOString(), to: new Date(getDateWindow(to, 'America/Chicago').end).toISOString(), fromDay: from, toDay: to };
 }
+// Batch 266: Teach the AI. QA reviewers (named by an admin) answer the AI's questions for about 30 minutes a day; admins see everything.
+const teachMod = () => require('./lib/call-qa-teach');
+const teachWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { if (!e.status) console.error('call-qa teach:', e.message); res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Teach the AI error' }); } };
+const requireTeach = async (req, res, next) => {
+  try { const admin = await isAdminSession(req); const trainer = await teachMod().isTrainer(req.session.email);
+    if (!admin && !trainer) return res.status(403).json({ success: false, error: 'Teach the AI is for QA reviewers and admins' });
+    req.teach = { email: String(req.session.email || '').toLowerCase(), admin, trainer }; next(); }
+  catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
+};
+app.get('/api/call-qa/teach/me', requireAuth, teachWrap(async (req, res) => {
+  const admin = await isAdminSession(req); res.json({ success: true, admin, trainer: await teachMod().isTrainer(req.session.email) });
+}));
+app.get('/api/call-qa/teach/today', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().today(req.teach.email, req.teach.admin)) }); }));
+app.post('/api/call-qa/teach/q/:id/answer', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().answer(req.params.id, req.teach.email, false, (req.body || {}).text) }); }));
+app.post('/api/call-qa/teach/q/:id/confirm', requireAuth, requireTeach, rateLimit(30, 60000), teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().confirm(req.params.id, req.teach.email, false, (req.body || {}).rules) }); }));
+app.post('/api/call-qa/teach/q/:id/more', requireAuth, requireTeach, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().explainMore(req.params.id, req.teach.email, false) }); }));
+app.post('/api/call-qa/teach/q/:id/skip', requireAuth, requireTeach, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().skip(req.params.id, req.teach.email, false) }); }));
+app.get('/api/call-qa/teach/admin', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().adminView()) }); }));
+app.get('/api/call-qa/teach/admin/q/:id', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, item: await teachMod().questionAdmin(req.params.id) }); }));
+app.post('/api/call-qa/teach/trainers', requireAdmin, teachWrap(async (req, res) => { await teachMod().setTrainers((req.body || {}).emails); res.json({ success: true, ...(await teachMod().adminView()) }); }));
+app.post('/api/call-qa/teach/rules/:id', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setRule(req.params.id, (req.body || {}).status, req.session.email)) }); }));
+app.post('/api/call-qa/teach/survey-mode', requireAdmin, teachWrap(async (req, res) => { res.json({ success: true, ...(await teachMod().setSurveyMode((req.body || {}).mode)) }); }));
 app.get('/api/call-qa/summary', requireAdmin, rateLimit(60, 60000), async (req, res) => {
   try { const r = cqRange(req.query); res.json({ success: true, range: r, status: await cqMod().status(), ...(await cqMod().summary(r)) }); } catch (e) { cqErr(res, e, 'Could not load Call QA'); }
 });

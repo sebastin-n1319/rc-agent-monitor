@@ -40,6 +40,7 @@
     'voip-project.css', // Batch 250: T1 CS VoIP
     'call-qa.css', // Batch 265: Call QA
     'ticket-hygiene.css', // Batch 260: T1 CS ticket hygiene
+    'call-qa-teach.css', // Batch 266: Teach the AI
     'bonus-calc.css', // Batch 166: T1 CS bonus calculator
     'appraisal.css', // Batch 193: agent appraisals
     'updates.css', // process and product updates

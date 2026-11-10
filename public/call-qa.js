@@ -59,8 +59,8 @@
         h('div', { class: 'cq-ctl' }, [seg, h('button', { type: 'button', class: 'cq-btn', onclick: function () { load(); }, text: 'Refresh' })])]);
     }
     function tabs() {
-      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['guide', 'What the AI learned']].map(function (t) {
-        return h('button', { type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', onclick: function () { S.tab = t[0]; draw(); if (t[0] === 'calls' && !S.calls) loadCalls(); if ((t[0] === 'calibration' || t[0] === 'guide') && !S.calib) loadCalib(); }, text: t[1] });
+      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['teach', 'Teach the AI'], ['guide', 'What the AI learned']].map(function (t) {
+        return h('button', { type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', onclick: function () { var again = S.tab === 'teach'; S.tab = t[0]; draw(); if (t[0] === 'teach' && S.teachApi && !again) S.teachApi.refresh(); if (t[0] === 'calls' && !S.calls) loadCalls(); if ((t[0] === 'calibration' || t[0] === 'guide') && !S.calib) loadCalib(); }, text: t[1] });
       }));
     }
 
@@ -227,6 +227,7 @@
       else if (S.tab === 'overview') kids = kids.concat(overview(S.data));
       else if (S.tab === 'calls') kids = kids.concat(callsView());
       else if (S.tab === 'calibration') kids = kids.concat(calibView());
+      else if (S.tab === 'teach') { if (!S.teachEl) { S.teachEl = h('div'); if (window.CQTeach) S.teachApi = window.CQTeach.mount(S.teachEl, { admin: true }); } kids.push(S.teachEl); }
       else kids = kids.concat(guideView());
       wrap.replaceChildren.apply(wrap, kids);
     }

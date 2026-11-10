@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.128"></script>
+<script src="/adit-reset.js?v=1.19.129"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -92,7 +92,9 @@
 <link rel="stylesheet" href="/voip-project.css?v=1.7.0">
 <link rel="stylesheet" href="/call-qa.css?v=1.0.0">
 <link rel="stylesheet" href="/ticket-hygiene.css?v=1.2.0">
-<script src="/call-qa.js?v=1.1.0" defer></script>
+<script src="/call-qa.js?v=1.2.0" defer></script>
+<link rel="stylesheet" href="/call-qa-teach.css?v=1.0.0">
+<script src="/call-qa-teach.js?v=1.0.0" defer></script>
 <script src="/ticket-hygiene.js?v=1.2.0" defer></script>
 <script src="/voip-project.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
@@ -839,6 +841,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
        onclick="sbAgent('audits',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
     <span class="sb-label">Review</span>
+  </div>
+  <!-- Batch 266: Teach the AI, for QA reviewers named in Call QA -->
+  <div class="sb-item ap-hidden" id="sb-agent-qateach" title="Teach the AI (Call QA)"
+       onclick="sbAgent('qateach',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M9 9.5h6M9 12.5h4"/></svg>
+    <span class="sb-label">Teach AI</span>
   </div>
   <!-- Process and product updates from the Adit Updates site -->
   <div class="sb-item" id="sb-agent-updates" title="Process and product updates from the last 7 days"
@@ -2277,6 +2285,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Tickets and Alerts</button>
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
     <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Review</button>
+    <button class="agent-shell-btn ap-hidden" id="agent-tab-qateach" onclick="switchAgentSection('qateach',this)">Teach AI</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
@@ -2771,6 +2780,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="agent-shell-page av2" id="agent-section-talerts"><div id="t1-alerts-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-updates"><div id="pu-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-audits"><div id="tka-agent-root"></div></div>
+  <div class="agent-shell-page av2" id="agent-section-qateach"><div id="cqt-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Batch 156: Support guides, embedded -->
@@ -4126,6 +4136,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   // Unread process and product updates must be acknowledged before agents start
   setTimeout(()=>{ try{ if(window.PU) window.PU.gate(role); }catch(e){} }, 1200);
   setTimeout(()=>{ try{ if(window.TA) window.TA.gate(); }catch(e){} }, 1500);
+  setTimeout(()=>{ try{ if(window.CQTeach) window.CQTeach.gate(); }catch(e){} }, 1700);
   setTimeout(()=>{ try{ if(window.ClientTour) window.ClientTour.maybe(role); }catch(e){} }, 2400);
 
   const loginEl=document.getElementById('loginScreen');
@@ -4418,6 +4429,7 @@ function switchAgentSection(section,el){
   if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); if(window.TA&&TA.alertsTabs) TA.alertsTabs(); }
   if(section==='updates'){ if(window.PU) window.PU.open(); }
   if(section==='audits'){ if(window.TA) window.TA.open('agent'); }
+  if(section==='qateach'){ if(window.CQTeach){ if(!window._cqtAgent) window._cqtAgent = window.CQTeach.mount(document.getElementById('cqt-agent-root')); else window._cqtAgent.refresh(); } }
   if(section==='assess') loadAssessFrame('agent-section-assess');
   if(section==='guides') loadAssessFrame('agent-section-guides');
   setTimeout(syncAssessLock, 0);
