@@ -1761,12 +1761,13 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
 // Session 58: which agent-view pages agents can open (Access Control tab).
 // app_settings 'agent_pages' = { global: {page: bool}, users: {email: {page: bool}} }.
 // Home is always on. Break Bot also respects the per-person breakbot_enabled column.
-const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall', 'guides', 'callqa'];
+// Batch 270: 'writer' (AI Write) was removed from the tool, so it is no longer a page here.
+const AGENT_PAGES = ['breakbot', 'bonus', 'tickets', 'mystats', 'talerts', 'assess', 'hall', 'guides', 'callqa'];
 // Batch 267: pages that are off for agents unless an admin switches them on (Call QA holds every agent's scores).
 const AGENT_PAGES_DEFAULT_OFF = ['callqa'];
 // Batch 267: the QA role. QA reviewers get only these pages by default; an admin can show or hide pages per person.
 // Teach the AI is always on for them and Home (the agent dashboard) is never shown.
-const QA_PAGE_DEFAULTS = { breakbot: false, bonus: false, writer: false, tickets: false, mystats: false, talerts: false, assess: true, hall: false, guides: true, callqa: true };
+const QA_PAGE_DEFAULTS = { breakbot: false, bonus: false, tickets: false, mystats: false, talerts: false, assess: true, hall: false, guides: true, callqa: true };
 async function readAgentPages() {
   let raw = {};
   try { raw = JSON.parse((await getSetting('agent_pages')) || '{}') || {}; } catch (e) { raw = {}; }

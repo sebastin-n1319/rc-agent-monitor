@@ -195,11 +195,13 @@
     load();
     return { refresh: load };
   }
-  // Shows the sidebar entry to QA reviewers.
+  // Shows the sidebar entry to QA reviewers only (the QA role and people named as reviewers).
+  // Batch 270: admins no longer get it in Agent View; theirs is Admin View > Call QA > Teach.
   function gate() {
     api('/api/call-qa/teach/me').then(function (m) {
       if (!m || !m.success) return;
-      ['sb-agent-qateach', 'agent-tab-qateach'].forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.toggle('ap-hidden', !(m.trainer || m.admin)); });
+      ['sb-agent-qateach', 'agent-tab-qateach'].forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.toggle('ap-hidden', !m.trainer); });
+      if (!m.trainer && typeof currentAgentSection !== 'undefined' && currentAgentSection === 'qateach' && typeof switchAgentSection === 'function') { try { switchAgentSection('dashboard', document.getElementById('agent-tab-dashboard')); } catch (e) {} }
       // Batch 268: QA reviewers finish the day's questions first. The page releases this once they are done (or if none could be written).
       if (m.mustFinish && m.pending && (m.pending.open > 0 || m.pending.madeToday < 8)) {
         window.__cqtMustFinish = true;
