@@ -83,7 +83,7 @@
 <script src="/updates.js?v=1.2.0" defer></script>
 <script src="/ticket-audits.js?v=1.43.0" defer></script>
 <script src="/custom-reports.js?v=1.0.6" defer></script>
-<script src="/client-tour.js?v=1.4.0" defer></script>
+<script src="/client-tour.js?v=1.5.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.1.0">
 <script src="/notice-center.js?v=1.3.1" defer></script>
@@ -4103,9 +4103,9 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   // admin view and get switched to agent view a moment later by
   // restoreLastTab(), a visible flash of the admin UI. Boot straight into
   // the stored view instead.
-  let bootView = role;
+  let bootView = role === 'qa' ? 'agent' : role; // Batch 267: QA reviewers use the agent shell
   try{ if(role === 'admin' && localStorage.getItem('rcActiveView') === 'agent') bootView = 'agent'; }catch(e){}
-  currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
+  currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role==='qa'?'agent':role;
   // Sync the role-gate class with the authoritative role passed in here,
   // guards the rare case where a demoted/promoted user's cached
   // localStorage.rcSession.role (used by the synchronous pre-paint script)
@@ -9229,7 +9229,7 @@ function restoreLastTab(){
     const savedScroll = parseInt(localStorage.getItem('rcScroll_' + tab) || '0', 10);
 
     // Restore admin vs agent view first
-    if(view && view !== currentViewMode){
+    if(view && view !== currentViewMode && (view !== 'admin' || isAdminRole())){
       applyView(view);
     }
 
@@ -12228,10 +12228,10 @@ window.addEventListener('load', async () => {
       // Set critical header elements first, before startApp, so they work even if startApp throws
       try{
         const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
-        const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
+        const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':r==='qa'?'QA':'Agent';
         const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
         const tb=document.getElementById('viewToggleBtn'); if(tb){ const _mob=window.__isMobile||window.__isPWA||window.matchMedia('(max-width:640px)').matches; tb.style.setProperty('display',(!_mob&&r==='admin')?'inline-flex':'none','important'); }
-        currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null; currentBreakbotEnabled=be; currentViewMode=r;
+        currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null; currentBreakbotEnabled=be; currentViewMode=r==='qa'?'agent':r;
       }catch(e){}
       // Now call startApp for full initialization
       try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed',e); }

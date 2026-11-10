@@ -49,8 +49,22 @@
     if (kind === 'gask') return h('div', { class: 'ct-sample' }, [
       h('div', { class: 'ct-s-row' }, ['All guides', 'VoIP only', 'AI only'].map(function (t, i) { return h('span', { class: 'ct-chip' + (i === 0 ? ' on' : ''), text: t }); })),
       h('div', { class: 'ct-s-guide' }, [h('small', { text: 'YOUR QUESTION' }), h('p', { text: 'Calls drop after 30 seconds, what should I check?' }), h('small', { text: 'FROM THE GUIDE' }), h('p', { text: 'A short answer, a link to the section it came from, and past tickets like #409238 that open in Zoho Desk.' })])]);
+    if (kind === 'qacard') return h('div', { class: 'ct-sample' }, [
+      h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag', text: 'Scenario' }), h('span', { class: 'ct-tag', text: 'Survey' })]),
+      h('div', { class: 'ct-s-guide' }, [h('small', { text: 'THE AI ASKS' }), h('p', { text: 'The agent closes the ticket and ends the call without the survey pitch. Fatal, a Call Closing miss, or neither?' }),
+        h('small', { text: 'A FULL ANSWER COVERS' }), h('p', { text: 'The decision · when it applies · exceptions' })])]);
+    if (kind === 'qafollow') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-guide' }, [h('small', { text: 'YOU' }), h('p', { text: 'Not fatal.' }),
+      h('small', { text: 'AI FOLLOW-UP' }), h('p', { text: 'Thanks. Does Call Closing lose points instead, and is there any case where a missing survey is fatal?' })])]);
+    if (kind === 'qarule') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-guide' }, [h('small', { text: 'THE RULE THE AI WILL FOLLOW' }),
+      h('p', { text: 'A missing survey pitch is never fatal. On first contact resolution calls the agent closed, mark Call Closing missed.' })]),
+      h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-chip on', text: 'Confirm rule' }), h('span', { class: 'ct-chip', text: 'Not right, explain more' })])]);
     return null;
   }
+  // Admins and named reviewers can replay the QA tour from the profile menu once they can see Teach AI.
+  function canTeach() { var el = document.getElementById('sb-agent-qateach'); return !!(el && !el.classList.contains('ap-hidden')) || (typeof currentRole !== 'undefined' && currentRole === 'admin'); }
+  function goTeach() { try { if (typeof sbAgent === 'function') sbAgent('qateach', document.getElementById('sb-agent-qateach')); } catch (e) {} }
+  function goCallQa() { try { if (typeof sbAgent === 'function') sbAgent('callqa', document.getElementById('sb-agent-callqa')); } catch (e) {} }
+  function isQa() { return typeof currentRole === 'string' && currentRole.toLowerCase() === 'qa'; }
   function goGuides() {
     try { if (typeof sbAgent === 'function') sbAgent('guides', document.getElementById('sb-agent-guides')); } catch (e) {}
   }
@@ -84,8 +98,20 @@
     { title: 'Your pages', text: 'Every page you can open is in the sidebar on the left. The highlighted item is the page you are on.', target: visibleSidebar, side: 'right' },
     { title: 'Search from anywhere', text: 'Press Ctrl K (or /) on any page to search pages and actions, and press ? to see all keyboard shortcuts.', last: true }
   ];
+  // Batch 267: for QA reviewers. What the role is for, and the daily Teach the AI task.
+  var QA_STEPS = [
+    { title: 'Welcome, QA reviewer', text: 'An AI now audits every recorded T1 call with the QA rubric. Your job here is to teach it to score calls the way you do, so it can take over routine audits. You see only the pages you need for that.', mark: 'QA' },
+    { title: 'Your daily task: Teach AI', text: 'Every working day, spend about 30 minutes in Teach AI. It is your home page and is always in your sidebar.', target: '#sb-agent-qateach', side: 'right' },
+    { title: '8 questions a day', text: 'The AI writes them from what it gets wrong most: short made-up scenarios, and real calls where its score and the human QA score were far apart. Each one shows what a full answer must cover.', sample: 'qacard', before: goTeach },
+    { title: 'Answer in your own words', text: 'Say what you decide, when it applies and the exceptions. If the answer is vague, the AI asks a follow-up. Keep answering until it says it has enough (at most 4 rounds). You can skip a question you cannot answer.', sample: 'qafollow' },
+    { title: 'Confirm the rule', text: 'The AI then writes the rule it will follow. Edit it if the wording is off, then confirm. Confirmed rules change the audits straight away. If your rule differs from another reviewer\u2019s, an admin decides which one stays.', sample: 'qarule' },
+    { title: 'Watch your progress', text: 'The top of Teach AI shows how many questions you have done today, the rules you taught, and how close the AI now is to human QA. The aim is 80% of calls within 10 points and 95% agreement on fatals.', target: '.cqt-stats', side: 'bottom', before: goTeach },
+    { title: 'Call QA: check and correct', text: 'Call QA shows every AI audit with the transcript and the AI\u2019s reasons. If the AI got an item wrong, correct it and write why. Corrections teach it too.', target: '#sb-agent-callqa', side: 'right' },
+    { title: 'Be specific and consistent', text: 'Teach the rule you actually apply, not the exception. Give numbers where they matter (for example how many seconds is dead air). Never paste a caller\u2019s phone number or email into an answer.', last: true }
+  ];
   var TOURS = [
-    { id: 'client-lookup', title: 'Client lookup', blurb: 'Find a client before you answer', icon: 'lookup', agent: true, steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
+    { id: 'qa-teach', title: 'Teach the AI (QA)', blurb: 'What the QA role does and the daily task', icon: 'guides', agent: true, qa: true, steps: QA_STEPS, ack: ' I understand my daily Teach the AI task', toast: 'Teach AI is ready. About 30 minutes a day.' },
+    { id: 'client-lookup', title: 'Client lookup', blurb: 'Find a client before you answer', icon: 'lookup', agent: true, noQa: true, steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
     { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
     { id: 'getting-around', title: 'Getting around', blurb: 'Header, profile menu and sidebar', icon: 'header', optional: true, steps: HD_STEPS, toast: 'Tour finished. Replay it any time from your profile menu.' }
   ];
@@ -183,7 +209,7 @@
     show();
   }
 
-  T.list = function () { return TOURS.map(function (t) { return { id: t.id, title: t.title, blurb: t.blurb, icon: t.icon, steps: t.steps.length, status: true }; }); };
+  T.list = function () { return TOURS.filter(function (t) { return isQa() ? !t.noQa : (!t.qa || canTeach()); }).map(function (t) { return { id: t.id, title: t.title, blurb: t.blurb, icon: t.icon, steps: t.steps.length, status: true }; }); };
   T.status = function (id) { return api('/api/tours/' + id + '/status').then(function (r) { return !!(r && r.success && r.done); }); };
   // Replay from the profile menu: can be closed at any time. Agent tours open agent view first.
   T.replay = function (id) {
@@ -197,7 +223,7 @@
   // Wait for the update and review screens that appear at sign-in, then check whether this person has finished the tour.
   T.maybe = function (role) {
     if (T.checked || T.running || role === 'assessment') return;
-    var inAgentView = role === 'agent' || (typeof currentViewMode !== 'undefined' && currentViewMode === 'agent');
+    var inAgentView = role === 'agent' || role === 'qa' || (typeof currentViewMode !== 'undefined' && currentViewMode === 'agent');
     if (!inAgentView) return;
     T.checked = true;
     var tries = 0;
@@ -210,6 +236,9 @@
     function next(k) {
       if (k >= TOURS.length) return;
       if (TOURS[k].optional) return next(k + 1);
+      // The QA tour runs for the QA role only; agent-only tours are skipped for it.
+      if (TOURS[k].qa && !isQa()) return next(k + 1);
+      if (TOURS[k].noQa && isQa()) return next(k + 1);
       api('/api/tours/' + TOURS[k].id + '/status').then(function (r) {
         if (r && r.success && !r.done) start(TOURS[k], function () { next(k + 1); });
         else if (r && r.success) next(k + 1);
