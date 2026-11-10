@@ -24,12 +24,18 @@
 
   function mount(root, opts) {
     opts = opts || {};
-    var S = { data: null, admin: null, open: null, busy: {}, err: null, tab: opts.admin ? 'admin' : 'today' };
+    var S = { data: null, admin: null, open: null, busy: {}, err: null, tab: opts.admin ? 'admin' : 'today', drafts: {} };
     root.className = 'cqt';
+    // Batch 269: a refresh keeps what is on screen until new data arrives, and only redraws when something changed.
+    // Redrawing every time made the page flicker and threw away a half-typed answer.
+    var lastSig = null;
     function load() {
-      render();
+      if (!S.data) render();
       api('/api/call-qa/teach/today').then(function (r) {
-        if (!r.success) { S.err = r.error; render(); return; }
+        if (!r.success) { if (S.err !== r.error) { S.err = r.error; render(); } return; }
+        var sig = JSON.stringify(r);
+        if (sig === lastSig && !S.err) return;
+        lastSig = sig;
         S.err = null; S.data = r; release();
         if (S.open == null) { var first = r.items.filter(function (x) { return !finished(x); })[0]; S.open = first ? first.id : null; }
         render();
@@ -108,11 +114,13 @@
       if (it._err) b.push(h('p', { class: 'cqt-bad', role: 'alert', text: it._err }));
       if (it.status === 'open' || it.status === 'followup') {
         var ta = h('textarea', { class: 'cqt-in', rows: '4', 'aria-label': 'Your answer', placeholder: it.status === 'followup' ? 'Answer the AI’s follow-up' : 'Your answer: what you decide, when it applies, any exceptions' });
+        var dk = it.id + ':' + it.thread.length; if (S.drafts[dk]) ta.value = S.drafts[dk];
+        ta.addEventListener('input', function () { S.drafts[dk] = ta.value; });
         var send = h('button', { type: 'button', class: 'cqt-btn primary', text: S.busy[it.id] ? 'Thinking...' : 'Send', disabled: S.busy[it.id] ? true : null });
         send.addEventListener('click', function () { var v = ta.value.trim(); if (!v) { ta.focus(); return; } act(it, 'answer', { text: v }, send); });
         ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send.click(); } });
         b.push(ta, h('div', { class: 'cqt-row' }, [send, S.data && S.data.noSkip ? null : h('button', { type: 'button', class: 'cqt-btn', text: 'Skip', onclick: function (e) { act(it, 'skip', {}, e.currentTarget); } }), h('span', { class: 'cqt-muted cqt-small', text: S.data && S.data.noSkip ? 'Not sure? Say what you would check and why. Ctrl or Cmd + Enter sends' : 'Ctrl or Cmd + Enter sends' })]));
-        setTimeout(function () { if (document.body.contains(ta)) ta.focus(); }, 0);
+        setTimeout(function () { if (document.body.contains(ta) && document.activeElement !== ta) { try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); } } }, 0);
       }
       if (it.status === 'confirm') {
         var drafts = it.rules.filter(function (r) { return r.status === 'draft'; });

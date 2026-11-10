@@ -112,7 +112,7 @@
   var TOURS = [
     { id: 'qa-teach', title: 'Teach the AI (QA)', blurb: 'What the QA role does and the daily task', icon: 'guides', agent: true, qa: true, steps: QA_STEPS, ack: ' I understand my daily Teach the AI task', toast: 'Teach AI is ready. About 30 minutes a day.' },
     { id: 'client-lookup', title: 'Client lookup', blurb: 'Find a client before you answer', icon: 'lookup', agent: true, noQa: true, steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
-    { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
+    { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, page: 'sb-agent-guides', steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
     { id: 'getting-around', title: 'Getting around', blurb: 'Header, profile menu and sidebar', icon: 'header', optional: true, steps: HD_STEPS, toast: 'Tour finished. Replay it any time from your profile menu.' }
   ];
 
@@ -239,6 +239,8 @@
       // The QA tour runs for the QA role only; agent-only tours are skipped for it.
       if (TOURS[k].qa && !isQa()) return next(k + 1);
       if (TOURS[k].noQa && isQa()) return next(k + 1);
+      // Batch 269: skip a tour whose page this person cannot open (it bounced them between pages). It runs once the page is given to them.
+      if (TOURS[k].page) { var pg = document.getElementById(TOURS[k].page); if (!pg || pg.classList.contains('ap-hidden')) return next(k + 1); }
       api('/api/tours/' + TOURS[k].id + '/status').then(function (r) {
         if (r && r.success && !r.done) start(TOURS[k], function () { next(k + 1); });
         else if (r && r.success) next(k + 1);
