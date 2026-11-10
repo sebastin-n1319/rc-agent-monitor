@@ -9343,22 +9343,22 @@ async function requireCallQaView(req, res, next) {
     return res.status(403).json({ success: false, error: 'Call QA is not turned on for your account' });
   } catch (e) { return res.status(500).json({ success: false, error: 'Access check failed' }); }
 }
-app.get('/api/call-qa/summary', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
+app.get('/api/call-qa/summary', requireAuth, requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { const r = cqRange(req.query); res.json({ success: true, range: r, status: await cqMod().status(), ...(await cqMod().summary(r)) }); } catch (e) { cqErr(res, e, 'Could not load Call QA'); }
 });
-app.get('/api/call-qa/calls', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
+app.get('/api/call-qa/calls', requireAuth, requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { const r = cqRange(req.query); res.json({ success: true, calls: await cqMod().list({ ...r, agent: String(req.query.agent || ''), status: String(req.query.status || ''), fatal: String(req.query.fatal || ''), q: String(req.query.q || '').slice(0, 80) }) }); } catch (e) { cqErr(res, e, 'Could not load calls'); }
 });
-app.get('/api/call-qa/calls/:id', requireCallQaView, rateLimit(120, 60000), async (req, res) => {
+app.get('/api/call-qa/calls/:id', requireAuth, requireCallQaView, rateLimit(120, 60000), async (req, res) => {
   try { res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not load the call'); }
 });
-app.post('/api/call-qa/calls/:id/override', requireCallQaView, rateLimit(60, 60000), async (req, res) => {
+app.post('/api/call-qa/calls/:id/override', requireAuth, requireCallQaView, rateLimit(60, 60000), async (req, res) => {
   try { res.json({ success: true, call: await cqMod().override(Number(req.params.id), { email: req.session && req.session.email }, req.body || {}) }); } catch (e) { cqErr(res, e, 'Could not save the correction'); }
 });
 app.post('/api/call-qa/calls/:id/reaudit', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { await cqMod().reaudit(Number(req.params.id)); res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not audit the call again'); }
 });
-app.get('/api/call-qa/calibration', requireCallQaView, rateLimit(30, 60000), async (req, res) => {
+app.get('/api/call-qa/calibration', requireAuth, requireCallQaView, rateLimit(30, 60000), async (req, res) => {
   try { const m = cqMod(); res.json({ success: true, status: await m.status(), agreement: await m.agreement(), guide: await m.guide(), human: await m.humanStats(180), learning: await m.learning() }); } catch (e) { cqErr(res, e, 'Could not load the calibration'); }
 });
 app.post('/api/call-qa/calibration/run', requireAdmin, rateLimit(5, 60000), async (req, res) => {
