@@ -319,7 +319,7 @@
         pg.stop();
         if (j.mode === 'workload') { var wc = workloadCard(j, q); thread.replaceChild(wc, pg.el); S.lastCard = wc; if (j.workload) { S.items.push({ q: q, mode: 'workload', j: j }); S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.workload.text }); } wc.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
         j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
-        S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
+        S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.answer.brief ? [j.answer.brief.bottom_line].concat(j.answer.brief.found || [], j.answer.brief.reply ? ['Reply: ' + j.answer.brief.reply] : []).join('\n') : [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
         .then(function () { S.busy = false; send.disabled = false; paintBar(); input.focus(); });
@@ -383,6 +383,17 @@
         j.depth === 'fast' ? h('button', { type: 'button', class: 'ax-mini', title: 'Ask the same question again with the full review', onclick: function () { if (S.busy) return; submit(q, true, 0, 'thinking'); } }, [icon('refresh', 'sm'), 'Think it through']) : null]);
       var card = h('article', { class: 'ax-card ax-ans' + (j.found ? '' : ' nf') });
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
+      // Batch 271: the short answer comes first (bottom line, what was found, one reply to paste); the rest is one click away.
+      var B = a.brief, outer = card;
+      if (j.scope === 'general') card.appendChild(h('p', { class: 'ax-scope', role: 'note' }, [icon('warn', 'sm'), h('span', null, [h('b', { text: 'General answer. ' }), 'Not checked against a client. Add the ticket number, deal or account name for an answer based on their record.'])]));
+      if (B) {
+        if (B.bottom_line) card.appendChild(h('p', { class: 'ax-lead ax-bl' }, [linkTickets(B.bottom_line)]));
+        if (B.found && B.found.length) card.appendChild(section('search', 'What I found', [h('ul', { class: 'ax-found' }, B.found.map(function (f) { return h('li', null, [linkTickets(f)]); }))]));
+        if (B.reply) card.appendChild(section('chat', B.reply_label || 'Reply', [h('blockquote', { class: 'ax-say' }, [B.reply]), h('div', { class: 'ax-row' }, [copyBtn(B.reply, 'Copy reply', true)])], 'say'));
+        if (B.unknown && B.unknown.length) card.appendChild(h('p', { class: 'ax-unk' }, [h('b', { text: 'Could not check: ' }), B.unknown.join(' ')]));
+        var full = h('details', { class: 'ax-full' }, [h('summary', null, [icon('list', 'sm'), 'Show full review (steps, private note, sources)'])]);
+        card.appendChild(full); card = full;
+      }
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
       if (j.unverified && j.unverified.length) card.appendChild(h('p', { class: 'ax-unv', role: 'note' }, [icon('warn', 'sm'), 'Not found in what Expert read, so treat as unverified: ' + j.unverified.map(function (n) { return '#' + n; }).join(', ')]));
@@ -390,7 +401,7 @@
       if (j.precedent && j.precedent.summary) card.appendChild(invBox(j.precedent, 'Expert checked how the team solved this before'));
       if (j.pattern && j.pattern.summary) card.appendChild(invBox(j.pattern, 'Expert checked other practices and past cases'));
       if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
-      card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
+      card.appendChild(h('p', { class: B ? 'ax-lead ax-sub' : 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
       if (a.say) {
@@ -407,6 +418,7 @@
       if (j.share) card.appendChild(h('div', { class: 'ax-share' }, [icon('link'), h('span', null, ['Send the client: ', h('a', { href: j.share.url, target: '_blank', rel: 'noopener', text: j.share.title })]), h('span', { class: 'ax-sp' }), copyBtn(j.share.url, 'Copy link')]));
       if (j.sources && j.sources.length) card.appendChild(sourcesBox(j.sources));
       if ((j.trace && j.trace.length) || a.basis) card.appendChild(howBox(j, a));
+      card = outer;
       if (a.follow_ups && a.follow_ups.length) card.appendChild(h('div', { class: 'ax-fu' }, a.follow_ups.map(function (f) { return h('button', { type: 'button', class: 'ax-chip', onclick: function () { input.value = f; submit(); } }, [f]); })));
       card.appendChild(feedbackRow(j, q));
       return card;
@@ -465,6 +477,7 @@
     }
     function plain(a, j) {
       var out = [];
+      if (a.brief) { var b = a.brief; out.push(b.bottom_line || ''); if (b.found && b.found.length) out.push('', 'What I found:', b.found.map(function (f) { return '- ' + f; }).join('\n')); if (b.reply) out.push('', (b.reply_label || 'Reply') + ':', b.reply); if (b.unknown && b.unknown.length) out.push('', 'Could not check: ' + b.unknown.join(' ')); return out.join('\n').trim(); }
       if (a.ticket) { out.push('Ticket #' + ((j.ticket && j.ticket.meta && j.ticket.meta.number) || '') + ': ' + (a.ticket.verdict ? a.ticket.verdict + ' ' : '') + a.ticket.summary);
         (a.ticket.findings || []).forEach(function (f, i) { out.push('Finding ' + (i + 1) + ': ' + f.title + (f.evidence ? ' Evidence: ' + f.evidence : '') + (f.recommendation ? ' Do: ' + f.recommendation : '')); });
         if (a.ticket.cluster && a.ticket.cluster.length) out.push('Same problem at other practices: ' + a.ticket.cluster.map(function (c) { return '#' + c.number + ' ' + c.account + ' (' + c.status + ')'; }).join('; ')); if (a.ticket.waiting) out.push('Waiting for: ' + a.ticket.waiting); if (a.ticket.next && a.ticket.next.length) out.push('Next: ' + a.ticket.next.join('; ')); if (a.ticket.improve && a.ticket.improve.length) out.push('Do better: ' + a.ticket.improve.join('; ')); out.push(''); }

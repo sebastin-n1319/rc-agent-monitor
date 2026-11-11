@@ -820,3 +820,15 @@ html.ax-full .ax-cbar{top:0}
 .ax-wk-v{font-size:20px;font-weight:650;color:var(--t1);font-variant-numeric:tabular-nums}
 .ax-wk-s{font-size:11.5px;color:var(--t3)}
 .ax-wk-src{margin:12px 0 0;font-size:12px;color:var(--t3)}
+
+/* Batch 271: short answer first */
+.ax-bl{font-size:15.5px}
+.ax-found{margin:0;padding-left:18px;display:grid;gap:6px;line-height:1.5;color:var(--t1)}
+.ax-unk{margin:10px 0 0;font-size:13px;color:var(--t2)}
+.ax-scope{display:flex;gap:8px;align-items:flex-start;margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--surface-2);font-size:13px;color:var(--t2)}
+.ax-scope svg{flex:none;margin-top:2px}
+.ax-full{margin-top:14px;border-top:1px solid var(--border);padding-top:10px}
+.ax-full>summary{cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent-ink);list-style:none;min-height:32px}
+.ax-full>summary::-webkit-details-marker{display:none}
+.ax-full>summary:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:6px}
+.ax-sub{font-size:14px;font-weight:400;color:var(--t2)}

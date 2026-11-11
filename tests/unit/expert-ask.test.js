@@ -103,3 +103,22 @@ describe('cut-off AI answers are kept (Batch 245)', () => {
     expect(j._truncated).toBe(true);
   });
 });
+
+describe.skipIf(!sqlite3)('short answer first, general answers flagged (Batch 271)', () => {
+  it('returns the brief, flags a general answer and searches how the team handled it before', async () => {
+    const goals = []; let seenUser = '';
+    const inv = { isConfigured: () => true, needsLookup: () => false, investigate: async (o) => { goals.push(o.goal || 'account'); return { summary: o.goal === 'precedent' ? 'FINDINGS:\n- #400837: VoIP confirmed with the decision maker before changing [Desk ticket #400837]' : 'ACCOUNT: not found\nFINDINGS: none', steps: [{ what: 'x', ok: true }], ms: 10 }; } };
+    const ai = { anyConfigured: () => true, isAnthropicConfigured: () => true, isConfigured: () => false, chatJSON: async () => ({ json: { verdict: 'ok' } }),
+      bestJSON: async (o) => { if (/route questions/.test(o.system)) return { json: { search: 'call flow change on behalf', alt: [], intent: 'process' } };
+        if (/second reviewer/.test(o.system)) return { json: { verdict: 'ok', issues: [] } };
+        seenUser = o.user;
+        return { json: { brief: { bottom_line: 'Usually VoIP makes it after the owner approves.', found: ['#400837: VoIP confirmed first'], reply_label: 'Reply to Derek', reply: 'Hi Derek, 1. Raise it to VoIP.', unknown: ['Who the authorized contacts are'] }, answer: 'VoIP handles it.', steps: ['a'], found: true, confidence: 'medium', sources: [] }, provider: 'anthropic' }; } };
+    ex.setDeps({ ai, investigate: inv, ticket: { detect: () => null, load: async () => { throw new Error('none'); } } });
+    const a = await ex.ask({ question: 'Client insists another rep did it before, can we change the call flow on their behalf?', email: 'a@adit.com', fresh: true });
+    expect(goals).toContain('precedent');
+    expect(a.scope).toBe('general');
+    expect(seenUser).toMatch(/NO ACCOUNT WAS CHECKED/);
+    expect(a.answer.brief).toMatchObject({ reply_label: 'Reply to Derek', found: ['#400837: VoIP confirmed first'] });
+    expect(a.precedent.summary).toMatch(/400837/);
+  });
+});
