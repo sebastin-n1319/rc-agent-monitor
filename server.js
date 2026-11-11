@@ -786,6 +786,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 185: the Help Center is read live from help.adit.com, 30 seconds after start and then every 30 minutes.
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
         setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
+      // Batch 274: once a week Expert learns new team rules from how tickets were handled (reviews, audits, corrections).
+      setTimeout(() => { const L = async () => { try { const st = await expert.learnStatus(); if (st && Date.now() - Date.parse(st.at) < 7 * 86400000) return; const r = await expert.learnRules({ by: 'weekly' }); if (r.added && r.added.length) console.log('🧠 Expert learned rules:', r.added.map(x => x.title).join('; ')); } catch (e) { console.warn('expert learn:', e.message); } }; L(); setInterval(L, 12 * 3600 * 1000); }, 10 * 60 * 1000);
       if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
     // Batch 197/200: Open T1 ticket review (admins), kept ready on its own. Every 5 minutes: the T1 view is read again
     // (every 15 minutes), Asana tasks are checked for changes (every 30 minutes), and new, changed or day-old reviews are
@@ -2301,9 +2303,14 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
     const b = req.body || {}, ai = require('./lib/ai');
     if (!b.reuse) { const wk = await expertWorkload(req, String(b.question || '')).catch(e => { console.warn('expert workload:', e.message); return null; }); if (wk) return res.json({ success: true, mode: 'workload', found: true, ...wk }); }
     const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
-      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, email: req.session.email });
+      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
+});
+// Batch 274: the ticket review is written when the agent opens Show full review.
+app.post('/api/guides/expert/review', requireAuth, rateLimit(10, 60000), async (req, res) => {
+  try { res.json({ success: true, review: await expertMod().reviewLater({ logId: (req.body || {}).logId, email: req.session.email }) }); }
+  catch (e) { expertErr(res, e, 'Could not write the review. Try again.'); }
 });
 // Batch 236: admin check of Expert's investigator: lists the data tools it can use and, with ?q=, runs one lookup.
 app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) => {
@@ -2420,6 +2427,8 @@ app.post('/api/guides/expert/notes', requireAdmin, async (req, res) => { try { r
 app.put('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(req.params.id, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
 app.delete('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { await expertMod().deleteNote(req.params.id); res.json({ success: true }); } catch (e) { expertErr(res, e, 'Could not delete'); } });
 app.post('/api/guides/expert/feedback/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await expertMod().handleFeedback(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.get('/api/guides/expert/learn', requireAdmin, async (req, res) => { try { res.json({ success: true, last: await expertMod().learnStatus() }); } catch (e) { expertErr(res, e, 'Could not load'); } });
+app.post('/api/guides/expert/learn', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, ...(await expertMod().learnRules({ days: b.days, dry: !!b.dry, by: req.session.email })) }); } catch (e) { expertErr(res, e, 'Could not learn rules'); } });
 app.post('/api/guides/expert/kb-sync', requireAdmin, rateLimit(4, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncKb({ force: !!(req.body && req.body.force) })) }); } catch (e) { expertErr(res, e, 'Could not read the Help Center'); } });
 app.post('/api/guides/expert/sync-calls', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncCalls()) }); } catch (e) { expertErr(res, e, 'Could not sync'); } });
 // Batch 212: scrin.io connection check (admins): the company, its people and how they match the Roster. Read only.

@@ -131,3 +131,23 @@ describe.skipIf(!sqlite3)('Serene Dental lessons (Batch 272)', () => {
     expect(r.find(x => x.title === 'T1 cannot make outbound calls').body).toMatch(/account CSM/);
   });
 });
+
+describe.skipIf(!sqlite3)('learning rules from past handling (Batch 274)', () => {
+  it('turns consistent reviewer decisions into rules with evidence, and skips weak ones', async () => {
+    const db = new sqlite3.Database(':memory:'); ex.setDB(db); await ex.initSchema();
+    const run = (sql, p = []) => new Promise((rs, rj) => db.run(sql, p, e => e ? rj(e) : rs()));
+    await run(`CREATE TABLE tr_reviews (id INTEGER PRIMARY KEY, ticket_number TEXT, subject TEXT, channel TEXT, to_team TEXT, verdict TEXT, severity TEXT, comment TEXT, reviewed_at TEXT, voided INTEGER DEFAULT 0)`);
+    for (const n of ['1', '2', '3', '4']) await run(`INSERT INTO tr_reviews (ticket_number, subject, to_team, verdict, comment, reviewed_at) VALUES (?,?,?,?,?, datetime('now'))`, ['42000' + n, 'Change voicemail greeting', 'VoIP', 'invalid', 'Help Center covers greetings, T1 handles']);
+    let sent = '';
+    ex.setDeps({ ai: { anyConfigured: () => true, bestJSON: async (o) => { sent = o.user; return { json: { rules: [
+      { title: 'Voicemail greeting changes stay in T1', body: 'Greeting changes are in the Help Center, so T1 completes them.', module: 'Adit Voice', evidence: ['420001', '420002', '420003'], count: 4 },
+      { title: 'Weak rule', body: 'Only one ticket says so.', evidence: ['1'], count: 1 }], conflicts: [] } }; } } });
+    const r = await ex.learnRules({ by: 'test' });
+    expect(sent).toMatch(/TRANSFER #420001/);
+    expect(r.added.map(x => x.title)).toEqual(['Voicemail greeting changes stay in T1']);
+    expect(r.added[0].body).toMatch(/Learned from 4 reviewer decisions, for example #420001/);
+    expect((await ex.rules()).some(x => x.title === 'Voicemail greeting changes stay in T1')).toBe(true);
+    expect((await ex.rules()).some(x => x.title === 'What Adit Pay posts to the EHR')).toBe(true);
+    expect((await ex.learnStatus()).added).toEqual(['Voicemail greeting changes stay in T1']);
+  });
+});

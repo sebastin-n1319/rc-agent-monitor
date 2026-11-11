@@ -315,7 +315,7 @@
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
-      var depthNow = depthOnce || S.depth, body = { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthNow };
+      var depthNow = depthOnce || S.depth, body = { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthNow, lazyReview: true };
       // Batch 273: on a live call two minutes is too long. A quick answer (Help Center, guides, team rules and the ticket, no
       // account lookups) is shown as soon as it is ready, and the full answer replaces it when the lookups finish.
       var holder = pg.el, deepDone = false;
@@ -407,6 +407,14 @@
         if (B.unknown && B.unknown.length) card.appendChild(h('p', { class: 'ax-unk' }, [h('b', { text: 'Could not check: ' }), B.unknown.join(' ')]));
         var full = h('details', { class: 'ax-full' }, [h('summary', null, [icon('list', 'sm'), 'Show full review (steps, private note, sources)'])]);
         card.appendChild(full); card = full;
+        // Batch 274: the ticket review is written the first time the agent opens the full review.
+        if (j.reviewLater && j.ticket && j.ticket.meta && j.logId) full.addEventListener('toggle', function () {
+          if (!full.open || full.dataset.rv) return; full.dataset.rv = '1';
+          var old = full.querySelector('.ax-tk'), wait = h('p', { class: 'ax-quickbar', role: 'status' }, [h('span', { class: 'ax-orb sm' }), 'Writing the ticket review (about a minute)...']);
+          if (old) old.after(wait); else full.insertBefore(wait, full.children[1] || null);
+          ctx.api('/api/guides/expert/review', { logId: j.logId }).then(function (r) { a.ticket = r.review; var nb = ticketBox(j.ticket, r.review); if (old && old.parentNode) old.replaceWith(nb); else full.insertBefore(nb, wait); wait.remove(); })
+            .catch(function (e) { full.dataset.rv = ''; wait.replaceChildren(icon('warn', 'sm'), h('span', { text: (e.message || 'Could not write the review') + '. Close and open again to retry.' })); });
+        });
       }
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
@@ -648,12 +656,15 @@
         stat(L.up + ' / ' + L.down, 'Helpful / not'), stat(L.avgSec != null ? L.avgSec + 's' : '-', 'Average time')]));
       var syncB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Learn from new calls now']);
       syncB.addEventListener('click', function () { syncB.disabled = true; ctx.api('/api/guides/expert/sync-calls', {}).then(function (r) { ctx.toast(r.added + ' call' + (r.added === 1 ? '' : 's') + ' learned'); load(); }).catch(function (e) { syncB.disabled = false; ctx.toast(e.message); }); });
+      // Batch 274: learn team rules from how tickets were handled (also runs by itself once a week).
+      var lrB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Learn rules from past tickets now']);
+      lrB.addEventListener('click', function () { lrB.disabled = true; ctx.toast('Reading reviewer decisions, audits and corrections...'); ctx.api('/api/guides/expert/learn', {}).then(function (r) { ctx.toast(r.added && r.added.length ? r.added.length + ' new rule' + (r.added.length === 1 ? '' : 's') + ' from ' + r.evidence + ' decisions: ' + r.added.map(function (x) { return x.title; }).join('; ') : (r.note || 'No new rules from ' + r.evidence + ' decisions')); load(); }).catch(function (e) { lrB.disabled = false; ctx.toast(e.message); }); });
       var kbB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Read the Help Center now']);
       kbB.addEventListener('click', function () { kbB.disabled = true; ctx.toast('Reading help.adit.com...'); ctx.api('/api/guides/expert/kb-sync', {}).then(function (r) { ctx.toast(r.ok === false ? (r.error || 'Could not read the Help Center') : (r.fetched ? r.fetched + ' article' + (r.fetched === 1 ? '' : 's') + ' updated' : 'Already up to date') + (r.removed ? ', ' + r.removed + ' removed' : '')); load(); }).catch(function (e) { kbB.disabled = false; ctx.toast(e.message); }); });
       var kbSub = K.modules + ' product modules, ' + (metaD.kbLive ? 'read live from help.adit.com every 30 minutes' + (metaD.kbSyncedAt ? '. Last read ' + new Date(metaD.kbSyncedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') : 'from the KB export until the first live read finishes');
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
         kn('book', K.articles + ' Help Center articles', kbSub, kbB), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
-        kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in Desk data for every question' : 'Desk data not connected'),
+        kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority. Rules marked learned come from reviewer decisions', lrB), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in Desk data for every question' : 'Desk data not connected'),
         kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', (K.updates || 0) + ' product and process updates', 'Every update on the Adit Updates site, plus published QA updates; newest wins'),
         kn('shield', (K.reviews || 0) + ' reviewer decisions', 'Transfer reviews, AI and VoIP audits and reviews, QA audits. New ones are learned within 10 minutes.'), kn('rule', (K.qa || 0) + ' QA rules', 'From Ticket audits'), kn('spark', (K.learned || 0) + ' helpful answers', 'Answers agents marked helpful are reused for the same scenario')])]));
       // feedback
