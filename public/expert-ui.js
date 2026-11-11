@@ -315,13 +315,26 @@
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthOnce || S.depth }).then(function (j) {
-        pg.stop();
+      var depthNow = depthOnce || S.depth, body = { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthNow };
+      // Batch 273: on a live call two minutes is too long. A quick answer (Help Center, guides, team rules and the ticket, no
+      // account lookups) is shown as soon as it is ready, and the full answer replaces it when the lookups finish.
+      var holder = pg.el, deepDone = false;
+      if (!reuse && !isWork && depthNow !== 'fast') {
+        ctx.api('/api/guides/expert/ask', Object.assign({}, body, { depth: 'fast' })).then(function (qj) {
+          if (deepDone || !qj || !qj.answer || qj.mode === 'workload') return;
+          qj.mode = qj.mode || mode;
+          var qc = answerCard(qj, q); qc.classList.add('ax-quick'); var qs = qc.querySelector('.ax-scope'); if (qs) qs.remove();
+          qc.insertBefore(h('p', { class: 'ax-quickbar', role: 'status' }, [h('span', { class: 'ax-orb sm' }), h('span', null, [h('b', { text: 'Quick answer. ' }), 'Still checking the account, earlier tickets and past cases; the full answer replaces this in a minute or so.'])]), qc.firstChild);
+          if (holder.parentNode) { pg.stop(); thread.replaceChild(qc, holder); holder = qc; }
+        }).catch(function () {});
+      }
+      ctx.api('/api/guides/expert/ask', body).then(function (j) {
+        deepDone = true; pg.stop(); pg.el = holder;
         if (j.mode === 'workload') { var wc = workloadCard(j, q); thread.replaceChild(wc, pg.el); S.lastCard = wc; if (j.workload) { S.items.push({ q: q, mode: 'workload', j: j }); S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.workload.text }); } wc.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
         j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.answer.brief ? [j.answer.brief.bottom_line].concat(j.answer.brief.found || [], j.answer.brief.reply ? ['Reply: ' + j.answer.brief.reply] : []).join('\n') : [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
+      }).catch(function (e) { deepDone = true; pg.stop(); if (holder !== pg.el && holder.classList && holder.classList.contains('ax-quick')) { var qb = holder.querySelector('.ax-quickbar'); if (qb) qb.replaceChildren(icon('warn', 'sm'), h('span', { text: 'The full check did not finish (' + (e.message || 'error') + '). This is the quick answer only.' })); return; } thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
         .then(function () { S.busy = false; send.disabled = false; paintBar(); input.focus(); });
     }
     function progressWork() {

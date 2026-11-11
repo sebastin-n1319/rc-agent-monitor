@@ -832,3 +832,7 @@ html.ax-full .ax-cbar{top:0}
 .ax-full>summary::-webkit-details-marker{display:none}
 .ax-full>summary:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:6px}
 .ax-sub{font-size:14px;font-weight:400;color:var(--t2)}
+
+/* Batch 273: quick answer while the full check runs */
+.ax-quickbar{display:flex;gap:8px;align-items:center;margin:0 0 10px;padding:8px 12px;border-radius:10px;background:var(--surface-2);font-size:13px;color:var(--t2)}
+.ax-orb.sm{width:10px;height:10px;flex:none}
