@@ -139,7 +139,7 @@ describe.skipIf(!sqlite3)('learning rules from past handling (Batch 274)', () =>
     await run(`CREATE TABLE tr_reviews (id INTEGER PRIMARY KEY, ticket_number TEXT, subject TEXT, channel TEXT, to_team TEXT, verdict TEXT, severity TEXT, comment TEXT, reviewed_at TEXT, voided INTEGER DEFAULT 0)`);
     for (const n of ['1', '2', '3', '4']) await run(`INSERT INTO tr_reviews (ticket_number, subject, to_team, verdict, comment, reviewed_at) VALUES (?,?,?,?,?, datetime('now'))`, ['42000' + n, 'Change voicemail greeting', 'VoIP', 'invalid', 'Help Center covers greetings, T1 handles']);
     let sent = '';
-    ex.setDeps({ ai: { anyConfigured: () => true, bestJSON: async (o) => { sent = o.user; return { json: { rules: [
+    ex.setDeps({ ai: { anyConfigured: () => true, bestJSON: async (o) => { if (/You write team rules/.test(o.system)) sent = o.user; return { json: { rules: [
       { title: 'Voicemail greeting changes stay in T1', body: 'Greeting changes are in the Help Center, so T1 completes them.', module: 'Adit Voice', evidence: ['420001', '420002', '420003'], count: 4 },
       { title: 'Weak rule', body: 'Only one ticket says so.', evidence: ['1'], count: 1 }], conflicts: [] } }; } } });
     const r = await ex.learnRules({ by: 'test' });
