@@ -167,3 +167,29 @@ describe.skipIf(!sqlite3)('lead review of a ticket (Batch 276)', () => {
     expect(a.answer.brief.replies[0].label).toMatch(/Coaching/);
   });
 });
+
+describe('lead questions (Batch 278)', () => {
+  it('treats asking for a suggestion for an agent as a lead review', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../lib/expert.js'), 'utf8');
+    const re = eval(src.match(/const REVIEW_RE = (\/.*\/i);/)[1]);
+    expect(re.test('#427294 - what suggestion I can give sabrina to handle this ticket')).toBe(true);
+    expect(re.test('#427294 forward texts to another number')).toBe(false);
+    expect(src).toMatch(/starts with a "Don't" line/);
+  });
+});
+
+describe.skipIf(!sqlite3)('several tickets in one question (Batch 279)', () => {
+  it('reads both in full and asks for a reply and a note for each', async () => {
+    const loads = []; let user = '';
+    const mk = (n, s) => ({ meta: { number: n, subject: s, channel: 'Email', account: 'Perla Dental Studio' }, text: 'Client asks ' + s, lastClient: s, prior: [], timeline: [] });
+    ex.setDeps({ ai: { anyConfigured: () => true, isAnthropicConfigured: () => true, isConfigured: () => false, chatJSON: async () => ({ json: { verdict: 'ok' } }),
+      bestJSON: async (o) => { if (/route questions/.test(o.system)) return { json: { search: 'mass text pricing', alt: [], intent: 'process' } }; if (/second reviewer/.test(o.system)) return { json: { verdict: 'ok' } }; user = o.user; return { json: { brief: { bottom_line: 'x', found: [], reply: 'Hi Sabrina', replies: [{ label: '#428073 client reply', text: 'a' }, { label: '#428073 internal note', text: 'b' }, { label: '#428078 client reply', text: 'c' }, { label: '#428078 internal note', text: 'd' }] }, answer: 'x', found: true, confidence: 'high', sources: [] }, provider: 'anthropic' }; } },
+      investigate: { isConfigured: () => false, needsLookup: () => false },
+      ticket: { detect: (q) => (/\d{6}/.exec(q) || [null])[0], detectAll: (q) => q.match(/\d{6}/g) || [], load: async (n, o) => { loads.push([n, !!(o && o.deep)]); return mk(n, n === '428073' ? 'ChatGPT integration' : 'Bulk text pricing'); } } });
+    const a = await ex.ask({ question: '#428073, #428078 How to handle both of it', email: 'a@adit.com', depth: 'thinking', fresh: true });
+    expect(loads).toEqual(expect.arrayContaining([['428073', true], ['428078', true]]));
+    expect(user).toMatch(/SEVERAL TICKETS/);
+    expect(user).toMatch(/Ticket #428078 \(also under review/);
+    expect(a.answer.brief.replies).toHaveLength(4);
+  });
+});
