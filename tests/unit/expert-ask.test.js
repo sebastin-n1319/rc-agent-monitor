@@ -202,3 +202,11 @@ describe('second check keeps the messages (Batch 282)', () => {
     expect(m.bottom_line).toBe('b'); expect(m.replies).toHaveLength(1); expect(m.found).toEqual(['f']); expect(m.reply).toBe('r');
   });
 });
+
+describe('client questions mapped to sources (Batch 283)', () => {
+  it('asks the writer for a What we can answer now part', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../lib/expert.js'), 'utf8');
+    expect(src).toMatch(/CLIENT QUESTIONS \(each searched in the Help Center on its own/);
+    expect(src).toMatch(/starts "What we can answer now"/);
+  });
+});
