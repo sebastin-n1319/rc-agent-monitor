@@ -391,6 +391,8 @@ What we can answer now (v1.19.486): Expert now tells the writer each client ques
 
 Fair share per question (v1.19.487): the per-question Help Center results now take each question's best match first (up to 30 sections), so when two tickets are asked together the first ticket's questions no longer crowd out the second's articles.
 
+Several tickets, brief only (v1.19.488): when a question covers more than one ticket, Expert writes everything into the short answer (a reply and a note per ticket) and leaves the older long fields empty, so the per-ticket messages are no longer cut off. A new team rule says account-specific asks still get the general Help Center answer first.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.
