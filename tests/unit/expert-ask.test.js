@@ -151,3 +151,19 @@ describe.skipIf(!sqlite3)('learning rules from past handling (Batch 274)', () =>
     expect((await ex.learnStatus()).added).toEqual(['Voicemail greeting changes stay in T1']);
   });
 });
+
+describe.skipIf(!sqlite3)('lead review of a ticket (Batch 276)', () => {
+  it('searches the whole history and answers the lead, not as a call script', async () => {
+    const asks = []; let user = '';
+    const inv = { isConfigured: () => true, needsLookup: () => false, investigate: async (o) => { asks.push(o.question); return { summary: 'ACCOUNT: Glendale Dental\nFINDINGS:\n- #345923 Apr 2026: Greg changed the Form Request Template [Desk ticket #345923]', steps: [{ what: 'x', ok: true }], ms: 5 }; } };
+    const tk = { meta: { number: '427211', subject: 'Medical history form', channel: 'Phone', account: 'Glendale Dental' }, text: 'Client: New Patient Forms say yearly medical update', lastClient: 'fix asap', prior: [], timeline: [] };
+    ex.setDeps({ ai: { anyConfigured: () => true, isAnthropicConfigured: () => true, isConfigured: () => false, chatJSON: async () => ({ json: { verdict: 'ok' } }),
+      bestJSON: async (o) => { if (/route questions/.test(o.system)) return { json: { search: 'form request template', alt: [], intent: 'process' } }; if (/second reviewer/.test(o.system)) return { json: { verdict: 'ok' } }; user = o.user; return { json: { brief: { bottom_line: 'Cause is #345923.', found: ['#345923'], reply_label: 'Reply to Lincy', reply: 'Hi Lincy', replies: [{ label: 'Coaching (keep private)', text: 'Read history first.' }] }, answer: 'x', found: true, confidence: 'high', sources: [] }, provider: 'anthropic' }; } },
+      investigate: inv, ticket: { detect: (q) => (/\d{6}/.exec(q) || [null])[0], load: async () => tk } });
+    const a = await ex.ask({ question: '#427211 - how to handle this better?', email: 'a@adit.com', depth: 'thinking', fresh: true });
+    expect(asks[0]).toMatch(/WHOLE ticket history/);
+    expect(user).toMatch(/LEAD REVIEW/);
+    expect(a.mode).toBe('answer');
+    expect(a.answer.brief.replies[0].label).toMatch(/Coaching/);
+  });
+});
