@@ -122,3 +122,12 @@ describe.skipIf(!sqlite3)('short answer first, general answers flagged (Batch 27
     expect(a.precedent.summary).toMatch(/400837/);
   });
 });
+
+describe.skipIf(!sqlite3)('Serene Dental lessons (Batch 272)', () => {
+  it('seeds the onboarding phone change and approval rules, and keeps extra messages', async () => {
+    const r = await ex.rules();
+    const t = r.map(x => x.title);
+    expect(t).toEqual(expect.arrayContaining(['Phone setup changes on accounts still in onboarding', 'Who can approve a change to the account']));
+    expect(r.find(x => x.title === 'T1 cannot make outbound calls').body).toMatch(/account CSM/);
+  });
+});

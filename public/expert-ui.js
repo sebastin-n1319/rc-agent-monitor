@@ -390,6 +390,7 @@
         if (B.bottom_line) card.appendChild(h('p', { class: 'ax-lead ax-bl' }, [linkTickets(B.bottom_line)]));
         if (B.found && B.found.length) card.appendChild(section('search', 'What I found', [h('ul', { class: 'ax-found' }, B.found.map(function (f) { return h('li', null, [linkTickets(f)]); }))]));
         if (B.reply) card.appendChild(section('chat', B.reply_label || 'Reply', [h('blockquote', { class: 'ax-say' }, [B.reply]), h('div', { class: 'ax-row' }, [copyBtn(B.reply, 'Copy reply', true)])], 'say'));
+        (B.replies || []).forEach(function (r) { card.appendChild(section('chat', r.label || 'Message', [h('blockquote', { class: 'ax-say' }, [r.text]), h('div', { class: 'ax-row' }, [copyBtn(r.text, 'Copy', true)])], 'say')); });
         if (B.unknown && B.unknown.length) card.appendChild(h('p', { class: 'ax-unk' }, [h('b', { text: 'Could not check: ' }), B.unknown.join(' ')]));
         var full = h('details', { class: 'ax-full' }, [h('summary', null, [icon('list', 'sm'), 'Show full review (steps, private note, sources)'])]);
         card.appendChild(full); card = full;
@@ -477,7 +478,7 @@
     }
     function plain(a, j) {
       var out = [];
-      if (a.brief) { var b = a.brief; out.push(b.bottom_line || ''); if (b.found && b.found.length) out.push('', 'What I found:', b.found.map(function (f) { return '- ' + f; }).join('\n')); if (b.reply) out.push('', (b.reply_label || 'Reply') + ':', b.reply); if (b.unknown && b.unknown.length) out.push('', 'Could not check: ' + b.unknown.join(' ')); return out.join('\n').trim(); }
+      if (a.brief) { var b = a.brief; out.push(b.bottom_line || ''); if (b.found && b.found.length) out.push('', 'What I found:', b.found.map(function (f) { return '- ' + f; }).join('\n')); if (b.reply) out.push('', (b.reply_label || 'Reply') + ':', b.reply); (b.replies || []).forEach(function (r) { out.push('', (r.label || 'Message') + ':', r.text); }); if (b.unknown && b.unknown.length) out.push('', 'Could not check: ' + b.unknown.join(' ')); return out.join('\n').trim(); }
       if (a.ticket) { out.push('Ticket #' + ((j.ticket && j.ticket.meta && j.ticket.meta.number) || '') + ': ' + (a.ticket.verdict ? a.ticket.verdict + ' ' : '') + a.ticket.summary);
         (a.ticket.findings || []).forEach(function (f, i) { out.push('Finding ' + (i + 1) + ': ' + f.title + (f.evidence ? ' Evidence: ' + f.evidence : '') + (f.recommendation ? ' Do: ' + f.recommendation : '')); });
         if (a.ticket.cluster && a.ticket.cluster.length) out.push('Same problem at other practices: ' + a.ticket.cluster.map(function (c) { return '#' + c.number + ' ' + c.account + ' (' + c.status + ')'; }).join('; ')); if (a.ticket.waiting) out.push('Waiting for: ' + a.ticket.waiting); if (a.ticket.next && a.ticket.next.length) out.push('Next: ' + a.ticket.next.join('; ')); if (a.ticket.improve && a.ticket.improve.length) out.push('Do better: ' + a.ticket.improve.join('; ')); out.push(''); }
