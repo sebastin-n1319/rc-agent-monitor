@@ -385,6 +385,8 @@ Help Center search per ticket (v1.19.483): Expert now also searches the Help Cen
 
 One search per client question (v1.19.484): for a ticket's full answer, Expert first lists the separate questions in the client's email (up to 10) and searches the Help Center for each one, so every part the Help Center covers reaches the answer with its article and only the rest is handed over.
 
+Second check keeps the messages (v1.19.485): when the second AI corrects an answer, it now keeps every per-ticket client reply and internal note and the Help Center answers in them, instead of returning a shorter brief that dropped them.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.

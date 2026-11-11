@@ -193,3 +193,12 @@ describe.skipIf(!sqlite3)('several tickets in one question (Batch 279)', () => {
     expect(a.answer.brief.replies).toHaveLength(4);
   });
 });
+
+describe('second check keeps the messages (Batch 282)', () => {
+  it('merges a corrected brief without losing replies', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../../lib/expert.js'), 'utf8');
+    const fn = new Function(src.match(/function mergeBrief\(a, b\) \{[\s\S]*?\n\}/)[0] + '; return mergeBrief;')();
+    const m = fn({ bottom_line: 'a', reply: 'r', found: ['f'], replies: [{ label: '#1 client reply', text: 'x' }] }, { bottom_line: 'b', found: [], replies: [] });
+    expect(m.bottom_line).toBe('b'); expect(m.replies).toHaveLength(1); expect(m.found).toEqual(['f']); expect(m.reply).toBe('r');
+  });
+});
