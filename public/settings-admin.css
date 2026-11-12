@@ -134,8 +134,8 @@
 /* ── Batch 294: sub pages + AI usage ─────────────────────────── */
 #settings-admin-root .stg-shell { padding-bottom:0 !important; }
 #settings-admin-root .stg-sub-body .stg-wrap { padding:0 0 32px !important; }
-#settings-admin-root .stg-subtabs { display:flex !important; gap:4px !important; padding:4px !important; background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; width:max-content !important; max-width:100% !important; margin-bottom:14px !important; }
-#settings-admin-root .stg-subtab { border:0 !important; background:transparent !important; color:var(--stg-ink2) !important; font:inherit !important; font-size:13px !important; font-weight:600 !important; padding:7px 14px !important; min-height:32px !important; border-radius:7px !important; cursor:pointer !important; }
+#settings-admin-root .stg-subtabs { overflow-x:auto !important; display:flex !important; gap:4px !important; padding:4px !important; background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; width:max-content !important; max-width:100% !important; margin-bottom:14px !important; }
+#settings-admin-root .stg-subtab { white-space:nowrap !important; flex:none !important; border:0 !important; background:transparent !important; color:var(--stg-ink2) !important; font:inherit !important; font-size:13px !important; font-weight:600 !important; padding:7px 14px !important; min-height:32px !important; border-radius:7px !important; cursor:pointer !important; }
 #settings-admin-root .stg-subtab[aria-selected="true"] { background:var(--stg-surface) !important; color:var(--stg-ink) !important; box-shadow:0 1px 2px rgba(15,24,36,.08) !important; }
 #settings-admin-root .stg-subtab:focus-visible, #settings-admin-root .aiu-seg button:focus-visible, #settings-admin-root .aiu-bar-col:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
 #settings-admin-root .aiu-head { display:flex !important; justify-content:space-between !important; gap:12px !important; align-items:flex-start !important; flex-wrap:wrap !important; }
@@ -182,3 +182,39 @@ html.dark-mode #settings-admin-root .aiu-pill.ok { color:#6EE7B7 !important; }
 html.dark-mode #settings-admin-root .aiu-pill.warn { color:#FCD34D !important; }
 html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admin-root .aiu-alert { color:#FCA5A5 !important; }
 @media (max-width: 720px) { #settings-admin-root .aiu-kpis { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } #settings-admin-root .aiu-chart { height:140px !important; } }
+
+/* ── Batch 301: Desk drafts + Desk webhook pages ─────────────── */
+#settings-admin-root .stg-btn-primary { background:var(--stg-accent) !important; color:#fff !important; }
+#settings-admin-root .aiu-head > .stg-btn { margin-bottom:10px !important; }
+#settings-admin-root .ddm-pills { display:flex !important; flex-wrap:wrap !important; gap:6px !important; margin:0 0 14px !important; }
+#settings-admin-root .ddm-radio { display:flex !important; flex-wrap:wrap !important; gap:8px 20px !important; font-size:13px !important; color:var(--stg-ink) !important; margin-bottom:10px !important; }
+#settings-admin-root .ddm-radio label, #settings-admin-root .ddm-agent { display:inline-flex !important; align-items:center !important; gap:8px !important; cursor:pointer !important; min-height:32px !important; }
+#settings-admin-root .ddm-agents { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)) !important; gap:2px 12px !important; padding:10px 12px !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; background:var(--stg-surface2) !important; font-size:13px !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .ddm-agents[hidden] { display:none !important; }
+#settings-admin-root .ddm-row { display:flex !important; flex-wrap:wrap !important; align-items:center !important; gap:10px !important; margin-top:12px !important; }
+#settings-admin-root .ddm-input { font:inherit !important; font-size:13px !important; padding:8px 12px !important; min-height:36px !important; border:1px solid var(--stg-border) !important; border-radius:8px !important; background:var(--stg-surface) !important; color:var(--stg-ink) !important; min-width:0 !important; }
+#settings-admin-root .ddm-run .ddm-input { width:240px !important; max-width:100% !important; }
+#settings-admin-root .ddm-ta { width:100% !important; display:block !important; resize:vertical !important; }
+#settings-admin-root .ddm-input:focus { outline:2px solid var(--stg-accent) !important; outline-offset:1px !important; }
+#settings-admin-root .ddm-run-msg { font-size:12.5px !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .ddm-sr { position:absolute !important; width:1px !important; height:1px !important; overflow:hidden !important; clip:rect(0 0 0 0) !important; }
+#settings-admin-root .ddm-job { cursor:pointer !important; }
+#settings-admin-root .ddm-job:hover td, #settings-admin-root .ddm-job[aria-expanded="true"] td { background:var(--stg-surface2) !important; }
+#settings-admin-root .ddm-job:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:-2px !important; }
+#settings-admin-root .ddm-job a, #settings-admin-root .aiu-tbl a { color:var(--stg-accent) !important; font-weight:600 !important; }
+#settings-admin-root .ddm-detail td { background:var(--stg-surface2) !important; }
+#settings-admin-root .ddm-cols { display:grid !important; grid-template-columns:1fr 1fr !important; gap:14px !important; }
+#settings-admin-root .ddm-pre { white-space:pre-wrap !important; word-break:break-word !important; font:inherit !important; font-size:12.5px !important; line-height:1.5 !important; margin:0 !important; padding:10px 12px !important; background:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; border-radius:8px !important; color:var(--stg-ink) !important; max-height:340px !important; overflow:auto !important; }
+#settings-admin-root .ddm-dl { display:grid !important; gap:10px !important; margin:0 !important; font-size:13px !important; }
+#settings-admin-root .ddm-dl > div { display:grid !important; grid-template-columns:150px 1fr !important; gap:10px !important; }
+#settings-admin-root .ddm-dl dt { color:var(--stg-ink3) !important; font-weight:600 !important; font-size:12px !important; }
+#settings-admin-root .ddm-dl dd { margin:0 !important; color:var(--stg-ink) !important; min-width:0 !important; }
+#settings-admin-root .ddm-dl code { font-size:12px !important; word-break:break-all !important; background:var(--stg-surface2) !important; padding:2px 6px !important; border-radius:5px !important; }
+#settings-admin-root .ddm-hint { font-size:11.5px !important; color:var(--stg-ink3) !important; margin-top:3px !important; }
+#settings-admin-root .ddm-bars { display:grid !important; gap:6px !important; }
+#settings-admin-root .ddm-bar-row { display:grid !important; grid-template-columns:minmax(140px,280px) 1fr 50px !important; gap:10px !important; align-items:center !important; font-size:12.5px !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .ddm-wide { width:100% !important; margin:0 !important; height:8px !important; }
+#settings-admin-root .ddm-bar-n { text-align:right !important; font-variant-numeric:tabular-nums !important; color:var(--stg-ink) !important; font-weight:600 !important; }
+#settings-admin-root .ddm-chips { display:flex !important; flex-wrap:wrap !important; gap:6px !important; }
+#settings-admin-root .ddm-chip { font-size:11.5px !important; padding:3px 8px !important; border-radius:999px !important; background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; color:var(--stg-ink2) !important; }
+@media (max-width: 720px) { #settings-admin-root .ddm-cols, #settings-admin-root .ddm-dl > div { grid-template-columns:1fr !important; } #settings-admin-root .ddm-bar-row { grid-template-columns:1fr 60px 40px !important; } }

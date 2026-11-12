@@ -2345,6 +2345,7 @@ function draftKey(req, res) {
 }
 app.post('/api/expert/desk-draft', rateLimit(60, 60000), async (req, res) => {
   if (!draftKey(req, res)) return;
+  if (expertDraft().settings().paused) return res.status(503).json({ success: false, error: 'Expert drafts are paused on Settings > Desk drafts' });
   try { const b = req.body || {}; const r = await expertDraft().start({ ticketId: b.ticketId || b.ticket_id || b.id, ticketNumber: b.ticketNumber || b.ticket_number, mode: b.mode }); res.status(r.status === 'queued' || r.pending ? 202 : 200).json(Object.assign({ success: true }, r)); }
   catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
 });
@@ -2368,6 +2369,38 @@ app.get('/api/admin/expert-sheet', requireAdmin, async (req, res) => {
 });
 app.post('/api/admin/expert-sheet/sync', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-sheet').syncAll())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 301: Settings > Desk drafts and Settings > Desk webhook.
+async function deskT1Agents() {
+  const byName = new Map();
+  for (const [id, n] of await require('./lib/desk-lifecycle').agentNameById().catch(() => new Map())) byName.set(String(n).trim().toLowerCase(), String(id).replace(/\D/g, ''));
+  const out = [];
+  for (const a of await getMonitoredAgents().catch(() => [])) { const id = byName.get(String(a.name || '').trim().toLowerCase()); if (id && !out.some((x) => x.id === id)) out.push({ id, name: a.name }); }
+  return out.sort((x, y) => x.name.localeCompare(y.name));
+}
+app.get('/api/admin/desk-drafts/state', requireAdmin, async (req, res) => {
+  try {
+    const xd = expertDraft(), st = xd.settings(), agents = await deskT1Agents();
+    const pilotIds = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const name = (id) => (agents.find((a) => a.id === id) || {}).name || ('Desk ID ' + id);
+    res.json({ success: true, enabled: xd.enabled(), canSave: xd.canWrite(), separateWriter: !!process.env.ZOHO_DESK_WRITE_CLIENT_ID, settings: st,
+      pilot: pilotIds.map((id) => ({ id, name: name(id) })), agents, stats: await xd.stats(), team: xd.T1_TEAM(), skipSenders: xd.SKIP_SENDERS, skipSubjects: xd.SKIP_SUBJECTS,
+      webhookPath: '/api/expert/desk-webhook?key=' + (process.env.EXPERT_DESK_KEY ? '\u2022\u2022\u2022\u2022' + String(process.env.EXPERT_DESK_KEY).slice(-4) : '(set EXPERT_DESK_KEY)') });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/desk-drafts/settings', requireAdmin, async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, settings: await expertDraft().saveSettings({ paused: b.paused, pilot: b.pilot, extraSkip: b.extraSkip }, req.session.email) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/desk-drafts/jobs', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, jobs: await expertDraft().jobs({ limit: req.query.limit, status: String(req.query.status || '') }) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/desk-drafts/run', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const xd = expertDraft(); const r = await xd.start({ ticketNumber: (req.body || {}).ticketNumber, mode: xd.canWrite() ? 'save' : 'text' }); res.json(Object.assign({ success: true }, r)); }
+  catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/desk-drafts/webhook', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await expertDraft().hookLog({ limit: req.query.limit, result: String(req.query.result || '') }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
   try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), pilot: String(process.env.EXPERT_PILOT_OWNERS || '').split(',').filter(Boolean).length, jobs: await expertDraft().recent(req.query.limit), webhook: expertDraft().hooks() }); }

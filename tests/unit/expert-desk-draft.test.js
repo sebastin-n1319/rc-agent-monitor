@@ -106,3 +106,25 @@ describe('desk webhook', () => {
     expect((await xd.decide({ eventType: 'Ticket_Add', payload: { id: '1978000888', channel: 'Email', email: 'dr@x.com' } })).tid).toBe('1978000888');
   });
 });
+
+describe('desk drafts settings', () => {
+  it('page settings take over from the Railway pilot list, pause stops webhook drafts, extra senders are skipped', async () => {
+    process.env.EXPERT_PILOT_OWNERS = '111';
+    expect(xd.settings().pilotFromEnv).toBe(true);
+    await xd.saveSettings({ pilot: ['222', 'x'], extraSkip: ['@vendor.com', 'ab'] }, 'a@adit.com');
+    expect(xd.settings()).toMatchObject({ pilot: ['222'], pilotFromEnv: false, extraSkip: ['@vendor.com'] });
+    const T = { ticketNumber: '428300', teamId: '197800000052125116', status: 'Open', channel: 'Email', email: 'x@vendor.com', subject: 'Hi', assigneeId: '222', lastThread: { direction: 'in' } };
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : T });
+    const ev = { eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000300', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'x@vendor.com' } };
+    expect((await xd.decide(ev)).skip).toMatch(/automated or internal/);
+    await xd.saveSettings({ pilot: [], extraSkip: [] });
+    expect((await xd.decide(ev)).skip).toBeUndefined();
+    await xd.saveSettings({ paused: true });
+    expect(await xd.handleWebhook([Object.assign({}, ev, { payload: Object.assign({}, ev.payload, { ticketId: '1978000301' }) })])).toEqual(['paused']);
+    await xd.saveSettings({ paused: false, pilot: null });
+    expect(xd.settings().pilotFromEnv).toBe(true);
+    delete process.env.EXPERT_PILOT_OWNERS;
+    const h = await xd.hookLog({ limit: 5 }); expect(h.rows.length).toBeGreaterThan(0);
+    expect((await xd.jobs({ status: 'done' })).every((j) => j.status === 'done')).toBe(true);
+  });
+});

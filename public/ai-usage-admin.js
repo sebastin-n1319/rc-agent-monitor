@@ -106,9 +106,10 @@
         <div class="stg-card-sub">Most expensive first. "From cache" is the share of input read from the prompt cache, at a tenth of the price.</div>
         ${featureTable(u)}</div>
       ${lightCard(u)}
-      ${draftsCard(d)}
+      <div class="stg-card"><div class="stg-card-title">Zoho Desk drafts</div><div class="stg-card-sub">${num((d.jobs || []).length)} recent drafts. Manage them on the Desk drafts and Desk webhook pages.</div><button type="button" class="stg-btn stg-btn-ghost aiu-go-drafts">Open Desk drafts</button></div>
       ${sheetCard(s)}`;
     root.querySelectorAll('.aiu-seg button').forEach((b) => b.addEventListener('click', () => { store.set('range', b.dataset.range); render(root); }));
+    const gd = root.querySelector('.aiu-go-drafts'); if (gd) gd.addEventListener('click', () => window.openSettingsAdmin && window.openSettingsAdmin('drafts'));
     const sb = root.querySelector('.aiu-sync');
     if (sb) sb.addEventListener('click', async () => { sb.disabled = true; sb.textContent = 'Copying...'; try { await getJ('/api/admin/expert-sheet/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); } catch (e) { /* shown after reload */ } render(root); });
   }
