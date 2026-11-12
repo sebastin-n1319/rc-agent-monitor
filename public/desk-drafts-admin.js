@@ -13,7 +13,7 @@
   const deskUrl = (id) => 'https://help.adit.com/agent/aditadvertising/support/tickets/details/' + encodeURIComponent(id);
   const pill = (cls, t) => `<span class="aiu-pill ${cls}">${esc(t)}</span>`;
   const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : s === 'skipped' ? pill('warn', 'Not needed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
-  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first' };
+  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
   // ── Desk drafts ──────────────────────────────────────────────────────

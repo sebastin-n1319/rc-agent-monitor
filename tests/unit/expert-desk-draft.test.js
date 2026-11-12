@@ -173,3 +173,18 @@ describe('agent replies while Expert writes', () => {
     expect(calls.some((c) => c.method === 'DELETE' && /draftReply\/d9/.test(c.url))).toBe(true);
   });
 });
+
+describe('replacing an older Expert draft', () => {
+  it('a new client message replaces our unsent draft, but an agent draft still skips', async () => {
+    const T = { ticketNumber: '428002', teamId: '197800000052125116', status: 'Open', channel: 'Email', email: 'dr@x.com', subject: 'Hi', assigneeId: '', lastThread: { direction: 'in' } };
+    let threads = [{ id: 'd1', status: 'DRAFT', direction: 'out' }];
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: threads } : T });
+    await xd.saveSettings({ pilot: [] });
+    const ev = { eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000002', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'dr@x.com' } };
+    const d = await xd.decide(ev, { assignWaitMs: 0 });
+    expect(d.skip).toBeUndefined(); expect(d.replace).toEqual(['d1']);
+    threads = [{ id: 'zz', status: 'DRAFT', direction: 'out' }];
+    expect((await xd.decide(ev, { assignWaitMs: 0 })).skip).toMatch(/agent has a draft/);
+    await xd.saveSettings({ pilot: null });
+  });
+});
