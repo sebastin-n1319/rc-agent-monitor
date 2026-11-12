@@ -2345,12 +2345,12 @@ function draftKey(req, res) {
 }
 app.post('/api/expert/desk-draft', rateLimit(60, 60000), async (req, res) => {
   if (!draftKey(req, res)) return;
-  try { const b = req.body || {}; const r = await expertDraft().start({ ticketId: b.ticketId || b.ticket_id || b.id, ticketNumber: b.ticketNumber || b.ticket_number, mode: b.mode }); res.status(r.status === 'queued' ? 202 : 200).json(Object.assign({ success: true }, r)); }
+  try { const b = req.body || {}; const r = await expertDraft().start({ ticketId: b.ticketId || b.ticket_id || b.id, ticketNumber: b.ticketNumber || b.ticket_number, mode: b.mode }); res.status(r.status === 'queued' || r.pending ? 202 : 200).json(Object.assign({ success: true }, r)); }
   catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
 });
 app.get('/api/expert/desk-draft/:id', rateLimit(120, 60000), async (req, res) => {
   if (!draftKey(req, res)) return;
-  try { res.json(Object.assign({ success: true }, await expertDraft().status(req.params.id))); }
+  try { res.json(Object.assign({ success: true }, await expertDraft().status(req.params.id, { waitMs: Number(req.query.wait || 0) * 1000 }))); }
   catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
 // Batch 292: the Google Sheet that keeps every Expert question.

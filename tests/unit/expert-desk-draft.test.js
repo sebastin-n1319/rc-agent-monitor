@@ -26,6 +26,17 @@ describe('expert desk drafts', () => {
     const r = await xd.start({ ticketId: '197800000482093238', mode: 'text' });
     expect(r.reply).toMatch(/^Hi Dr. A/); expect(r.ticketNumber).toBe('428073');
   });
+  it('text mode says pending when Expert is slow, and the status call collects the reply', async () => {
+    process.env.EXPERT_DRAFT_WAIT_MS = '1000';
+    let release; xd.setDeps({ deskRead: async () => ({ ticketNumber: '428099' }), expert: { ask: () => new Promise((r) => { release = () => r({ logId: 6, answer: { brief } }); }) } });
+    const r = await xd.start({ ticketId: '1978000009', mode: 'text' });
+    expect(r.pending).toBe(true);
+    setTimeout(() => release(), 50);
+    const s = await xd.status(r.jobId, { waitMs: 2000 });
+    expect(s.status).toBe('done'); expect(s.replyHtml).toMatch(/<p>Hi Dr. A/);
+    const again = await xd.start({ ticketId: '1978000009', mode: 'text' });
+    expect(again.duplicate).toBe(true); expect(again.reply).toMatch(/^Hi Dr. A/);
+  });
   it('save mode refuses without a write token, then saves a draft and a private note', async () => {
     await expect(xd.start({ ticketId: '1978000001', mode: 'save' })).rejects.toThrow(/WRITE_REFRESH_TOKEN/);
     Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1' });
