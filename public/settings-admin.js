@@ -355,15 +355,29 @@
     });
   }
 
-  window.openSettingsAdmin = async function () {
+  // Batch 294: sub pages. General (pause controls, jobs, system) and AI usage (cost, Desk drafts, Expert log sheet).
+  const SUBS = [['general', 'General'], ['ai', 'AI usage']];
+  function subNow() { try { const v = localStorage.getItem('stg.sub'); return SUBS.some((x) => x[0] === v) ? v : 'general'; } catch (e) { return 'general'; } }
+  function setSub(v) { try { localStorage.setItem('stg.sub', v); } catch (e) { /* private mode */ } }
+  window.openSettingsAdmin = async function (sub) {
     const root = document.getElementById('settings-admin-root');
     if (!root) return;
-    root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading settings…</div>';
+    if (sub) setSub(sub);
+    const cur = subNow();
+    root.innerHTML = `<div class="stg-wrap stg-shell"><div class="stg-subtabs" role="tablist" aria-label="Settings pages">${SUBS.map((x) => `<button type="button" role="tab" class="stg-subtab" aria-selected="${x[0] === cur}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div><div class="stg-sub-body" role="tabpanel"></div></div>`;
+    root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
+    const body = root.querySelector('.stg-sub-body');
+    if (cur === 'ai') {
+      if (typeof window.renderAiUsageAdmin === 'function') return window.renderAiUsageAdmin(body);
+      body.innerHTML = '<div class="stg-error">The AI usage page did not load. Refresh the page.</div>';
+      return;
+    }
+    body.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading settings…</div>';
     try {
       const data = await loadSettings();
-      render(root, data);
+      render(body, data);
     } catch (e) {
-      root.innerHTML = `<div class="stg-error">❌ ${esc(e.message)}</div>`;
+      body.innerHTML = `<div class="stg-error">❌ ${esc(e.message)}</div>`;
     }
   };
 })();

@@ -130,3 +130,54 @@
   #settings-admin-root .stg-sys-grid { grid-template-columns:1fr !important; }
   #settings-admin-root .stg-banner { flex-direction:column !important; align-items:flex-start !important; }
 }
+
+/* ── Batch 294: sub pages + AI usage ─────────────────────────── */
+#settings-admin-root .stg-shell { padding-bottom:0 !important; }
+#settings-admin-root .stg-sub-body .stg-wrap { padding:0 0 32px !important; }
+#settings-admin-root .stg-subtabs { display:flex !important; gap:4px !important; padding:4px !important; background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; width:max-content !important; max-width:100% !important; margin-bottom:14px !important; }
+#settings-admin-root .stg-subtab { border:0 !important; background:transparent !important; color:var(--stg-ink2) !important; font:inherit !important; font-size:13px !important; font-weight:600 !important; padding:7px 14px !important; min-height:32px !important; border-radius:7px !important; cursor:pointer !important; }
+#settings-admin-root .stg-subtab[aria-selected="true"] { background:var(--stg-surface) !important; color:var(--stg-ink) !important; box-shadow:0 1px 2px rgba(15,24,36,.08) !important; }
+#settings-admin-root .stg-subtab:focus-visible, #settings-admin-root .aiu-seg button:focus-visible, #settings-admin-root .aiu-bar-col:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+#settings-admin-root .aiu-head { display:flex !important; justify-content:space-between !important; gap:12px !important; align-items:flex-start !important; flex-wrap:wrap !important; }
+#settings-admin-root .aiu-head > div:first-child { flex:1 1 380px !important; min-width:0 !important; }
+#settings-admin-root .aiu-seg { display:flex !important; gap:2px !important; padding:3px !important; border:1px solid var(--stg-border) !important; border-radius:8px !important; background:var(--stg-surface2) !important; }
+#settings-admin-root .aiu-seg button { border:0 !important; background:transparent !important; color:var(--stg-ink2) !important; font:inherit !important; font-size:12px !important; font-weight:600 !important; padding:5px 10px !important; min-height:28px !important; border-radius:6px !important; cursor:pointer !important; }
+#settings-admin-root .aiu-seg button[aria-checked="true"] { background:var(--stg-surface) !important; color:var(--stg-ink) !important; }
+#settings-admin-root .aiu-kpis { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:10px !important; margin:4px 0 16px !important; }
+#settings-admin-root .aiu-kpi { background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; padding:10px 12px !important; min-width:0 !important; }
+#settings-admin-root .aiu-kpi-l { font-size:11.5px !important; color:var(--stg-ink3) !important; font-weight:600 !important; }
+#settings-admin-root .aiu-kpi-v { font-size:20px !important; font-weight:700 !important; color:var(--stg-ink) !important; font-variant-numeric:tabular-nums !important; margin-top:2px !important; }
+#settings-admin-root .aiu-kpi-sm { font-size:15px !important; }
+#settings-admin-root .aiu-mute { color:var(--stg-ink3) !important; font-weight:400 !important; }
+#settings-admin-root .aiu-chart { display:flex !important; gap:8px !important; height:170px !important; }
+#settings-admin-root .aiu-chart-y { display:flex !important; flex-direction:column !important; justify-content:space-between !important; font-size:11px !important; color:var(--stg-ink3) !important; padding-bottom:18px !important; font-variant-numeric:tabular-nums !important; }
+#settings-admin-root .aiu-bars { flex:1 !important; display:flex !important; align-items:stretch !important; gap:3px !important; border-bottom:1px solid var(--stg-border) !important; min-width:0 !important; }
+#settings-admin-root .aiu-bar-col { position:relative !important; flex:1 !important; display:flex !important; flex-direction:column !important; justify-content:flex-end !important; min-width:0 !important; padding-bottom:18px !important; cursor:default !important; }
+#settings-admin-root .aiu-bar { background:var(--stg-accent) !important; border-radius:4px 4px 0 0 !important; min-height:0 !important; }
+#settings-admin-root .aiu-bar-col:hover .aiu-bar, #settings-admin-root .aiu-bar-col:focus .aiu-bar { filter:brightness(.9) !important; }
+#settings-admin-root .aiu-bar-x { position:absolute !important; bottom:0 !important; left:50% !important; transform:translateX(-50%) !important; font-size:10.5px !important; color:var(--stg-ink3) !important; white-space:nowrap !important; }
+#settings-admin-root .aiu-tip { display:none !important; position:absolute !important; bottom:calc(100% - 10px) !important; left:50% !important; transform:translateX(-50%) !important; background:var(--stg-ink) !important; color:var(--stg-surface) !important; font-size:11.5px !important; padding:5px 8px !important; border-radius:6px !important; white-space:nowrap !important; z-index:2 !important; }
+#settings-admin-root .aiu-tip b { margin-left:6px !important; }
+#settings-admin-root .aiu-bar-col:hover .aiu-tip, #settings-admin-root .aiu-bar-col:focus .aiu-tip { display:block !important; }
+#settings-admin-root .aiu-tbl-wrap { overflow-x:auto !important; }
+#settings-admin-root .aiu-tbl { width:100% !important; border-collapse:collapse !important; font-size:12.5px !important; }
+#settings-admin-root .aiu-tbl th { text-align:left !important; font-size:11.5px !important; color:var(--stg-ink3) !important; font-weight:600 !important; padding:6px 8px !important; border-bottom:1px solid var(--stg-border) !important; white-space:nowrap !important; }
+#settings-admin-root .aiu-tbl td { padding:7px 8px !important; border-bottom:1px solid var(--stg-border) !important; color:var(--stg-ink2) !important; vertical-align:top !important; }
+#settings-admin-root .aiu-tbl td b { color:var(--stg-ink) !important; }
+#settings-admin-root .aiu-tbl .r { text-align:right !important; font-variant-numeric:tabular-nums !important; white-space:nowrap !important; }
+#settings-admin-root .aiu-share { display:inline-block !important; width:44px !important; height:6px !important; background:var(--stg-border) !important; border-radius:3px !important; margin-right:6px !important; vertical-align:middle !important; overflow:hidden !important; }
+#settings-admin-root .aiu-share span { display:block !important; height:100% !important; background:var(--stg-accent) !important; }
+#settings-admin-root .aiu-pill { display:inline-block !important; font-size:11.5px !important; font-weight:600 !important; padding:2px 8px !important; border-radius:999px !important; background:var(--stg-surface2) !important; color:var(--stg-ink2) !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .aiu-pill.ok { background:rgba(16,185,129,.1) !important; color:#047857 !important; border-color:rgba(16,185,129,.3) !important; }
+#settings-admin-root .aiu-pill.warn { background:rgba(245,158,11,.12) !important; color:#B45309 !important; border-color:rgba(245,158,11,.3) !important; }
+#settings-admin-root .aiu-pill.bad { background:rgba(239,68,68,.1) !important; color:#B91C1C !important; border-color:rgba(239,68,68,.3) !important; }
+#settings-admin-root .aiu-err { color:var(--stg-red) !important; max-width:320px !important; }
+#settings-admin-root .aiu-empty { font-size:13px !important; color:var(--stg-ink3) !important; margin:4px 0 !important; }
+#settings-admin-root .aiu-sheet { display:flex !important; flex-wrap:wrap !important; gap:12px 28px !important; align-items:flex-end !important; font-size:13px !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .aiu-sheet a { color:var(--stg-accent) !important; font-weight:600 !important; }
+#settings-admin-root .aiu-alert { margin-top:12px !important; padding:10px 12px !important; border-radius:8px !important; background:rgba(239,68,68,.08) !important; color:#B91C1C !important; font-size:13px !important; }
+#settings-admin-root .aiu-kpis-sm { margin-top:0 !important; }
+html.dark-mode #settings-admin-root .aiu-pill.ok { color:#6EE7B7 !important; }
+html.dark-mode #settings-admin-root .aiu-pill.warn { color:#FCD34D !important; }
+html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admin-root .aiu-alert { color:#FCA5A5 !important; }
+@media (max-width: 720px) { #settings-admin-root .aiu-kpis { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } #settings-admin-root .aiu-chart { height:140px !important; } }
