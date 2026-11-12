@@ -15,8 +15,20 @@ describe('expert desk drafts', () => {
   it('picks the client reply, not the handover, and builds the note', () => {
     const p = xd.pick({ answer: { brief: Object.assign({}, brief, { reply_label: 'Handover to Philip Rivera', reply: 'Hi Philip', replies: [{ label: '#1 client reply', text: 'Hi Dr. Doori' }, { label: '#1 internal note', text: 'Checked KB' }] }) } });
     expect(p.reply).toBe('Hi Dr. Doori');
-    expect(p.note).toMatch(/Bottom line/); expect(p.note).toMatch(/Handover to Philip/); expect(p.note).toMatch(/Checked KB/);
+    expect(p.note).toMatch(/^T1 handles this, no transfer.\nAnswered: T1 can answer this/);
+    const full = 'Client: A\nReason for contact: Wants a form built\nWhat was checked: Earlier form tickets\nNext team should: Forms team builds the form';
+    expect(xd.pick({ answer: { note: full, brief } }).note).toBe(full);
+    const t1 = 'Client: A\nReason for contact: Reminder steps\nWhat was checked: Help Center reminders article\nNext team should: nothing yet, T1 keeps it.';
+    expect(xd.pick({ answer: { note: t1, brief } }).note).toBe('T1 handles this, no transfer.\nReason for contact: Reminder steps\nWhat was checked: Help Center reminders article');
+    expect(xd.pick({ answer: { note: t1, owner: { who: 'CSM pod' }, brief } }).note).toBe(t1);
     expect(xd.pick({ answer: { brief } }).reply).toMatch(/^Hi Dr. A/);
+  });
+  it('adds the Help Center link the email promises, or drops the promise', () => {
+    const say = 'Hi Ronnie,\n\nSteps here. Once I have that, I will follow up. The Help Center guide is linked below.\n\nBest regards,';
+    const a = xd.pick({ answer: { say, brief: {} }, share: { title: 'Appointment reminders', url: 'https://help.adit.com/a' } }).reply;
+    expect(a).toMatch(/guide: https:\/\/help.adit.com\/a\n\nBest regards,$/);
+    const b = xd.pick({ answer: { say, brief: {} } }).reply;
+    expect(b).toBe('Hi Ronnie,\n\nSteps here. Once I have that, I will follow up.\n\nBest regards,');
   });
   it('turns text into safe html with links', () => {
     expect(xd.html('a <b>\n\nsee https://help.adit.com/x')).toBe('<p>a &lt;b&gt;</p><p>see <a href="https://help.adit.com/x">https://help.adit.com/x</a></p>');
