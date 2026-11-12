@@ -417,6 +417,8 @@ Desk webhook pilot fix (v1.19.497): a brand-new ticket reaches the webhook befor
 
 Desk webhook new tickets (v1.19.498): the webhook also takes Ticket_Add (a new ticket), handled like an incoming email, with the same 2-minute wait for the owner during the pilot. A new email sends both Ticket_Add and Ticket_Thread_Add; the second one for the same ticket is skipped, and the 10-minute job check stops a second draft.
 
+Desk webhook new tickets fix (v1.19.499): a brand-new ticket has no team until the T1 Assignment Helper runs, so it was skipped as "not a T1 ticket". Now a ticket with no team (or, during the pilot, no owner) is read again after 2 minutes before the checks.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.

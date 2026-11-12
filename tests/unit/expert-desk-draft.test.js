@@ -67,6 +67,9 @@ describe('desk webhook', () => {
     const reads = { t: T, threads: { data: [] } };
     xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? reads.threads : reads.t });
     const ev = (pl) => ({ eventType: 'Ticket_Thread_Add', payload: Object.assign({ ticketId: '1978000100', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'Dr <dr@x.com>' }, pl) });
+    let n2 = 0; xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : (n2++ ? T : Object.assign({}, T, { teamId: '', assigneeId: '' })) });
+    expect((await xd.decide(ev({}), { assignWaitMs: 5 })).skip).toBeUndefined();
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? reads.threads : reads.t });
     expect((await xd.decide(ev({ direction: 'out' }))).skip).toMatch(/incoming/);
     expect((await xd.decide(ev({ fromEmailAddress: 'alerts@ringcentral.com' }))).skip).toMatch(/automated/);
     reads.t = Object.assign({}, T, { teamId: '9' }); expect((await xd.decide(ev({}))).skip).toMatch(/T1/);
