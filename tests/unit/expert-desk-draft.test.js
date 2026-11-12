@@ -84,5 +84,10 @@ describe('desk webhook', () => {
     expect(out[0]).toMatch(/no write token|started/);
     expect(xd.hooks()[0].skip || xd.hooks()[0].started).toBeTruthy();
     expect(await xd.handleWebhook({})).toEqual([]);
+    // a new email sends Ticket_Add and Ticket_Thread_Add together: one draft only
+    const both = await xd.handleWebhook([{ eventType: 'Ticket_Add', payload: { id: '1978000777', channel: 'Email', email: 'dr@x.com' } }, ev({ ticketId: '1978000777' })]);
+    expect(both.length).toBe(1);
+    expect(xd.hooks().some((h) => /second event/.test(h.skip || ''))).toBe(true);
+    expect((await xd.decide({ eventType: 'Ticket_Add', payload: { id: '1978000888', channel: 'Email', email: 'dr@x.com' } })).tid).toBe('1978000888');
   });
 });
