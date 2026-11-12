@@ -128,3 +128,17 @@ describe('desk drafts settings', () => {
     expect((await xd.jobs({ status: 'done' })).every((j) => j.status === 'done')).toBe(true);
   });
 });
+
+describe('draft voice', () => {
+  it('uses the rewrite when it keeps every link, else keeps Expert text', async () => {
+    const reply = 'Hi Ronnie,\n\nWhat we can answer now:\n1. Topic\nSee https://help.adit.com/a\n\nBest regards,';
+    xd.setDeps({ ai: { bestJSON: async (o) => { expect(o.system).toMatch(/real person on Adit/); expect(o.user).toMatch(/Client first name: Ronnie/); return { json: { reply: 'Hi Ronnie,\n\nThanks for writing in — here you go.\nhttps://help.adit.com/a\n\nBest regards,' } }; } } });
+    const a = await xd.humanize({ reply, firstName: 'Ronnie' });
+    expect(a).toMatch(/Thanks for writing in, here you go/); expect(a).toMatch(/help.adit.com\/a/);
+    xd.setDeps({ ai: { bestJSON: async () => ({ json: { reply: 'Hi Ronnie, a friendly reply with no link at all, so it is not used.' } }) } });
+    expect(await xd.humanize({ reply })).toBe(reply);
+    xd.setDeps({ ai: { bestJSON: async () => { throw new Error('busy'); } } });
+    expect(await xd.humanize({ reply })).toBe(reply);
+    xd.setDeps({ ai: null });
+  });
+});
