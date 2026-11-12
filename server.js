@@ -148,7 +148,7 @@ app.use((req, res, next) => {
   res.on('finish', done); res.on('close', done);
   next();
 });
-app.use(express.json());
+app.use(express.json({ limit: '1mb' })); // Batch 289: Expert questions can carry the text of attached files
 app.use(cookieParser());
 // Session 86: Speed check. Records how long each API route takes (in memory only, no
 // request data), plus event-loop delay, so slow pages can be traced to a route.
@@ -797,6 +797,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 260: T1 CS ticket hygiene (read-only buckets and dashboards), refreshed hourly on business hours.
     { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kbRow: (t, o) => escalationWatch.kbHi(t, o) });
       { const ta = require('./lib/ticket-ask'); ta.setDB(db); await ta.initSchema(); ta.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
+      // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
+      { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
+        setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
       // Batch 264: every 15 minutes on business hours, hourly otherwise (AI labels are cached, so a refresh is quick).
       if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (th.isRunning()) return; const every = th.due() ? 14 * 60 * 1000 : 59 * 60 * 1000; th.latest().then((r) => { if (r && Date.now() - r.at < every) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 3 * 60 * 1000); }
     { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
@@ -2302,7 +2305,19 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
   try {
     const b = req.body || {}, ai = require('./lib/ai');
     if (!b.reuse) { const wk = await expertWorkload(req, String(b.question || '')).catch(e => { console.warn('expert workload:', e.message); return null; }); if (wk) return res.json({ success: true, mode: 'workload', found: true, ...wk }); }
-    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
+    // Batch 288: team-wide list and count questions ("which T1 tickets...", "how many phone tickets today by version") are
+    // answered from the Ticket hygiene data and its Ask AI engine, for admins and SPOCs, so every page gives the same answer.
+    if (!b.reuse && !(b.history && b.history.length)) { const rp = await expertReport(req, String(b.question || '')).catch(e => { console.warn('expert report:', e.message); return null; }); if (rp) return res.json({ success: true, ...rp }); }
+    // Batch 289: a Zoho Desk ticket link in the question becomes that ticket's number, so Expert reads the ticket.
+    let question = String(b.question || '');
+    for (const l of require('./lib/expert-files').linksIn(question).map(u => require('./lib/expert-files').classify(u)).filter(l => l && l.type === 'desk').slice(0, 3)) {
+      let num = l.number;
+      if (!num && l.id) { try { const t = await require('./lib/desk-service').fetchRaw(`/tickets/${l.id}`); num = t && t.ticketNumber; } catch (e) { /* not found */ } }
+      if (num && question.indexOf('#' + num) < 0) question = question.replace(l.url, l.url + ' (#' + num + ')');
+    }
+    b.question = question;
+    const attachments = (Array.isArray(b.attachments) ? b.attachments : []).slice(0, 5).map(a => ({ name: String((a && a.name) || 'file').slice(0, 120), kind: String((a && a.kind) || '').slice(0, 10), text: String((a && a.text) || '').slice(0, 16000) }));
+    const out = await expertMod().ask({ attachments, question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
@@ -2311,6 +2326,51 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
 app.post('/api/guides/expert/review', requireAuth, rateLimit(10, 60000), async (req, res) => {
   try { res.json({ success: true, review: await expertMod().reviewLater({ logId: (req.body || {}).logId, email: req.session.email }) }); }
   catch (e) { expertErr(res, e, 'Could not write the review. Try again.'); }
+});
+const REPORT_RE = /\b(list|show|which|how many|count|number of|split|breakdown|per (agent|team|version|day|hour)|by (agent|team|version|status|day|hour|module|channel)|trend|report)\b[\s\S]*\btickets?\b|\btickets?\b[\s\S]*\b(today|yesterday|this week|last \d+ days|by version|per agent|by agent|by team|split)\b/i;
+const UNACT_RE = /\b(unaction\w*|not actioned|no action|untouched|after (an |the )?(ack|acknowledg\w*))\b/i;
+// The page asks a quick and a full answer at once; both share one report run.
+const _reportRuns = new Map();
+async function expertReport(req, q) {
+  const key = String(req.session.email || '').toLowerCase() + '|' + String(q || '').trim().toLowerCase();
+  const hit = _reportRuns.get(key);
+  if (hit && Date.now() - hit.at < 120000) return hit.p;
+  const p = expertReportRun(req, q);
+  _reportRuns.set(key, { at: Date.now(), p }); if (_reportRuns.size > 200) _reportRuns.delete(_reportRuns.keys().next().value);
+  p.catch(() => _reportRuns.delete(key));
+  return p;
+}
+async function expertReportRun(req, q) {
+  if (!q || /(?:#\s?|ticket\s*(?:no\.?|number|id)?\s*#?)\d{5,7}\b/i.test(q)) return null;
+  if (!REPORT_RE.test(q) && !UNACT_RE.test(q)) return null;
+  const c = await auditCtx(req); if (!c.access) return null;
+  const t0 = Date.now();
+  if (UNACT_RE.test(q)) {
+    const rep = await require('./lib/ticket-hygiene').latest();
+    if (!rep || !Array.isArray(rep.tickets)) return null;
+    const hrs = Number((q.match(/(\d{1,3})\s*(?:h|hours?)/i) || [])[1]) || (/\bday\b/i.test(q) ? 24 : 24);
+    const now = Date.now(), ms = (x) => typeof x === 'number' ? x : Date.parse(x);
+    const list = rep.tickets.filter(r => r.bucket === 'unactioned' && ['ack', 'none', 'nocontact'].includes(r.code) && (!r.ack || (now - ms(r.ack)) / 3600e3 >= hrs))
+      .map(r => ({ ticket: '#' + r.number, url: r.url, agent: r.agent, account: r.account, status: r.status, acknowledged: r.ack ? new Date(r.ack).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'no contact yet', hours_waiting: r.ack ? Math.round((now - ms(r.ack)) / 3600e3) : (r.created ? Math.round((now - r.created) / 3600e3) : null), esc: r.esc ? 'yes' : '' }))
+      .sort((a, b) => (b.hours_waiting || 0) - (a.hours_waiting || 0));
+    const by = {}; list.forEach(r => { by[r.agent] = (by[r.agent] || 0) + 1; });
+    const asOf = rep.at ? new Date(rep.at).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit' }) + ' CT' : 'the last read';
+    const text = list.length ? `${list.length} T1 ticket${list.length === 1 ? ' has' : 's have'} had no action for ${hrs} hours or more after the acknowledgement (or no contact at all), as of ${asOf}.\n\nBy agent: ${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([a, n]) => a + ' ' + n).join(', ')}.\n\nStart with the oldest and the escalated ones. Each needs a real reply or a call back from the owner today.` : `No T1 ticket is waiting more than ${hrs} hours after an acknowledgement, as of ${asOf}.`;
+    return { mode: 'report', found: true, scope: 'team', ms: Date.now() - t0, report: { title: 'T1 tickets with no action after the acknowledgement', answer: text, source: 'Ticket hygiene', results: [{ purpose: 'Tickets, oldest wait first', chart: 'table', columns: ['ticket', 'agent', 'account', 'status', 'acknowledged', 'hours_waiting', 'esc'], rows: list.slice(0, 200) }] },
+      answer: { brief: { bottom_line: text.split('\n\n')[0], found: [], reply_label: 'Answer', reply: text, unknown: [] }, answer: text.split('\n\n')[0], steps: [], confidence: 'high' } };
+  }
+  const r = await require('./lib/ticket-ask').ask({ question: q, by: c.email });
+  return { mode: 'report', found: true, scope: 'team', ms: Date.now() - t0, report: { title: r.title, answer: r.answer, assumptions: r.assumptions, cannot: r.cannot, limits: r.limits, source: 'Ticket hygiene Ask AI', results: (r.results || []).map(x => ({ purpose: x.purpose, chart: x.chart, columns: x.columns, rows: (x.rows || []).slice(0, 200), error: x.error })) },
+    answer: { brief: { bottom_line: String(r.answer || '').split('\n')[0], found: [], reply_label: 'Answer', reply: r.answer, unknown: r.cannot ? [r.cannot] : [] }, answer: String(r.answer || '').split('\n')[0], steps: [], confidence: 'medium' } };
+}
+// Batch 289: Expert reads a file the agent attaches (screenshot, PDF, Word, Excel, CSV, text or a recording) and returns
+// its text to the page, which sends it with the question. Nothing is stored.
+app.post('/api/guides/expert/read-file', requireAuth, rateLimit(20, 60000), express.raw({ type: () => true, limit: '25mb' }), async (req, res) => {
+  try {
+    const name = decodeURIComponent(String(req.headers['x-file-name'] || 'file')).slice(0, 160);
+    const mime = String(req.headers['content-type'] || '').split(';')[0];
+    res.json({ success: true, file: await require('./lib/expert-files').readUpload({ buf: req.body, name, mime }) });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Could not read that file' }); }
 });
 // Batch 236: admin check of Expert's investigator: lists the data tools it can use and, with ?q=, runs one lookup.
 app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) => {
@@ -10027,6 +10087,11 @@ app.post('/api/ticket-hygiene/chat', requireAuth, requireAuditAccess, rateLimit(
   res.json({ success: true, ...(await require('./lib/ticket-hygiene').composeChat((req.body || {}).prompt)) });
 }));
 // Batch 263: Ask AI about tickets (any team). Admins and SPOCs; read-only.
+// Batch 287: the outage banner (everyone signed in sees an active alert) and admin controls.
+app.get('/api/outage-watch', requireAuth, async (req, res) => { try { res.json({ success: true, alert: await require('./lib/outage-watch').current() }); } catch (e) { res.json({ success: true, alert: null }); } });
+app.get('/api/outage-watch/history', requireAdmin, async (req, res) => { try { res.json({ success: true, alerts: await require('./lib/outage-watch').recentAlerts(30) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
+app.post('/api/outage-watch/check', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, result: await require('./lib/outage-watch').check({ force: true }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); } });
+app.post('/api/outage-watch/:id/close', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await require('./lib/outage-watch').close(req.params.id, req.session.email)) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
 app.post('/api/ticket-hygiene/ask', requireAuth, requireAuditAccess, rateLimit(12, 60000), auditWrap(async (req, res) => {
   const b = req.body || {};
   res.json({ success: true, result: await require('./lib/ticket-ask').ask({ question: b.question, context: b.context, by: req.audit.email }) });

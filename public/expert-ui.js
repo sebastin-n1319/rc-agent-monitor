@@ -14,6 +14,7 @@
   }
   var P = {
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+    clip: '<path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/>',
     send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/>', flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', shield: '<path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/>',
     book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
@@ -204,8 +205,40 @@
     function paintDepth() { clear(depthBox); DEPTHS.forEach(function (d) { depthBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.depth === d[0]), title: d[2], onclick: function () { S.depth = d[0]; store.set('depth', S.depth); paintDepth(); } }, [d[1]])); }); }
     paintDepth();
     var scopeChip = h('span', { class: 'ax-scope' });
-    var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
-      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, depthBox, scopeChip, h('span', { class: 'ax-sp' }), micButton(ctx, input), send])]);
+    // Batch 289: attach screenshots, PDFs, Word, Excel, CSV or text files and recordings; paste or drop them too.
+    // Each file is read on the server and only its text is sent with the question; nothing is kept.
+    S.files = [];
+    var chips = h('div', { class: 'ax-files', 'aria-live': 'polite' });
+    var picker = h('input', { type: 'file', multiple: true, hidden: true, accept: 'image/*,application/pdf,.pdf,.docx,.xlsx,.csv,.txt,.log,.json,.md,.eml,.html,audio/*,video/mp4,video/webm,.mp3,.m4a,.wav,.webm,.mp4' });
+    var attachB = h('button', { type: 'button', class: 'ax-mic', 'aria-label': 'Attach a file, screenshot or recording', title: 'Attach a screenshot, document or recording (you can also paste or drop it)', onclick: function () { picker.click(); } }, [icon('clip', 'sm')]);
+    function paintFiles() {
+      clear(chips);
+      S.files.forEach(function (f, i) {
+        chips.appendChild(h('span', { class: 'ax-file ' + f.status, title: f.err || (f.status === 'ready' ? 'Read: ' + (f.text || '').slice(0, 200) : 'Reading...') }, [icon(f.kind === 'audio' ? 'mic' : f.kind === 'image' ? 'list' : 'book', 'sm'),
+          h('span', { text: f.name + (f.status === 'reading' ? ' (reading...)' : f.status === 'error' ? ' (' + f.err + ')' : '') }),
+          h('button', { type: 'button', class: 'ax-file-x', 'aria-label': 'Remove ' + f.name, onclick: function () { S.files.splice(i, 1); paintFiles(); } }, ['\u00d7'])]));
+      });
+      chips.hidden = !S.files.length;
+    }
+    function addFiles(list) {
+      Array.prototype.slice.call(list || []).slice(0, 5 - S.files.length).forEach(function (file) {
+        var f = { name: file.name || 'pasted image.png', kind: /^image\//.test(file.type) ? 'image' : /^(audio|video)\//.test(file.type) ? 'audio' : 'doc', status: 'reading', text: '' };
+        if (file.size > 24 * 1024 * 1024) { f.status = 'error'; f.err = 'too big, 24 MB max'; S.files.push(f); paintFiles(); return; }
+        S.files.push(f); paintFiles();
+        var type = /json$/.test(file.type) ? 'text/plain' : (file.type || 'application/octet-stream');
+        fetch('/api/guides/expert/read-file', { method: 'POST', credentials: 'include', headers: { 'Content-Type': type, 'X-File-Name': encodeURIComponent(f.name) }, body: file })
+          .then(function (r) { return r.json(); }).then(function (j) { if (!j.success) throw new Error(j.error || 'could not read'); f.status = 'ready'; f.kind = j.file.kind; f.text = j.file.text; })
+          .catch(function (e) { f.status = 'error'; f.err = e.message || 'could not read'; }).then(paintFiles);
+      });
+    }
+    picker.addEventListener('change', function () { addFiles(picker.files); picker.value = ''; });
+    input.addEventListener('paste', function (ev) { var fs = ev.clipboardData && ev.clipboardData.files; if (fs && fs.length) { ev.preventDefault(); addFiles(fs); } });
+    var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input, chips, picker,
+      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, depthBox, scopeChip, h('span', { class: 'ax-sp' }), attachB, micButton(ctx, input), send])]);
+    form.addEventListener('dragover', function (ev) { ev.preventDefault(); form.classList.add('drop'); });
+    form.addEventListener('dragleave', function () { form.classList.remove('drop'); });
+    form.addEventListener('drop', function (ev) { ev.preventDefault(); form.classList.remove('drop'); if (ev.dataTransfer && ev.dataTransfer.files) addFiles(ev.dataTransfer.files); });
+    paintFiles();
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
     // As soon as the agent types, the side bar folds and the suggestions fade, so the page is about the conversation.
@@ -287,7 +320,11 @@
     // Batch 248 (from Aria): "what was Evan's workload yesterday" is answered from the tool's records, so it skips the channel question.
     var WKRE = /work\s?load|productivity|how (?:busy|productive)|what did .{2,40}? (?:do|work on|handle)|how (?:much|many) (?:work|tickets?|chats?|calls?)\b|\bactivity (?:of|for)\b|\b(?:day|stats|numbers|performance) (?:of|for)\b|(?:tickets?|chats?|calls?) (?:did|has|have) .{2,40}? (?:handle|close|take|answer|do|reply)|\b(?:rc|ringcentral) (?:avail|time)|available time/i;
     function submit(again, fresh, reuse, depthOnce) {
-      var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
+      var q = typeof again === 'string' ? again : input.value.trim();
+      var ready = (S.files || []).filter(function (f) { return f.status === 'ready'; });
+      if (typeof again !== 'string' && (S.files || []).some(function (f) { return f.status === 'reading'; })) { ctx.toast && ctx.toast('Still reading the attached file. Ask again in a moment.'); return; }
+      if (!q && ready.length && typeof again !== 'string') q = 'Read the attached ' + (ready.length > 1 ? 'files' : 'file') + ' and tell me how to handle this.';
+      if (!q || S.busy) return;
       var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
       var isWork = !!S.wkAdmin && !reuse && !TKRE.test(q) && WKRE.test(q);
       if (isWork) { S.dymDone = true; }
@@ -315,7 +352,8 @@
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
-      var depthNow = depthOnce || S.depth, body = { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthNow, lazyReview: true };
+      var depthNow = depthOnce || S.depth, body = { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthNow, lazyReview: true, attachments: ready.map(function (f) { return { name: f.name, kind: f.kind, text: f.text }; }) };
+      if (ready.length) { S.files = S.files.filter(function (f) { return f.status !== 'ready'; }); paintFiles(); }
       // Batch 273: on a live call two minutes is too long. A quick answer (Help Center, guides, team rules and the ticket, no
       // account lookups) is shown as soon as it is ready, and the full answer replaces it when the lookups finish.
       var holder = pg.el, deepDone = false;
@@ -323,13 +361,14 @@
         ctx.api('/api/guides/expert/ask', Object.assign({}, body, { depth: 'fast' })).then(function (qj) {
           if (deepDone || !qj || !qj.answer || qj.mode === 'workload') return;
           qj.mode = qj.mode || mode;
-          var qc = answerCard(qj, q); qc.classList.add('ax-quick'); var qs = qc.querySelector('.ax-scope'); if (qs) qs.remove();
+          var qc = answerCard(qj, q); qc.classList.add('ax-quick'); var qs = qc.querySelector('.ax-general'); if (qs) qs.remove();
           qc.insertBefore(h('p', { class: 'ax-quickbar', role: 'status' }, [h('span', { class: 'ax-orb sm' }), h('span', null, [h('b', { text: 'Quick answer. ' }), 'Still checking the account, earlier tickets and past cases; the full answer replaces this in a minute or so.'])]), qc.firstChild);
           if (holder.parentNode) { pg.stop(); thread.replaceChild(qc, holder); holder = qc; }
         }).catch(function () {});
       }
       ctx.api('/api/guides/expert/ask', body).then(function (j) {
         deepDone = true; pg.stop(); pg.el = holder;
+        if (j.mode === 'report') { j.mode = 'answer'; }
         if (j.mode === 'workload') { var wc = workloadCard(j, q); thread.replaceChild(wc, pg.el); S.lastCard = wc; if (j.workload) { S.items.push({ q: q, mode: 'workload', j: j }); S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.workload.text }); } wc.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
         j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.answer.brief ? [j.answer.brief.bottom_line].concat(j.answer.brief.found || [], j.answer.brief.reply ? ['Reply: ' + j.answer.brief.reply] : []).join('\n') : [j.answer.answer].concat(j.answer.steps || []).join('\n') });
@@ -385,6 +424,29 @@
     }
     function section(ic, title, kids, cls) { return h('section', { class: 'ax-sec ' + (cls || '') }, [h('h4', null, [icon(ic), title])].concat(kids)); }
     function copyBtn(text, label, rich) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { (rich ? copyRich : copy)(text, b); }); return b; }
+    function reportBox(R) {
+      var box = h('div', { class: 'ax-rep' }, [h('h3', { class: 'ax-rep-t', text: R.title || 'Ticket report' }), h('p', { class: 'ax-say ax-rep-a' }, [linkTickets(R.answer || '')]),
+        R.assumptions ? h('p', { class: 'ax-unk', text: 'How it was read: ' + R.assumptions }) : null,
+        R.cannot ? h('p', { class: 'ax-unk', text: 'Could not answer: ' + R.cannot }) : null,
+        (R.limits || []).length ? h('p', { class: 'ax-unk', text: R.limits.join(' ') }) : null]);
+      (R.results || []).forEach(function (x) {
+        if (x.error) { box.appendChild(h('p', { class: 'ax-unk', text: x.purpose + ': could not be read' })); return; }
+        if (!x.rows || !x.rows.length || !x.columns || !x.columns.length) return;
+        var cols = x.columns.filter(function (c) { return c !== 'url' && c !== 'web_url'; }).slice(0, 8);
+        var cell = function (row, c) {
+          var v = row[c]; if (v == null) return '';
+          if ((c === 'ticket' || c === 'ticket_number') && (row.url || row.web_url)) return h('a', { href: row.url || row.web_url, target: '_blank', rel: 'noopener', text: String(v).charAt(0) === '#' ? v : '#' + v });
+          if (typeof v === 'string' && /^\d{4}-\d\d-\d\dT/.test(v)) return new Date(v).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          return String(v);
+        };
+        var tbl = h('table', { class: 'ax-rep-tbl' }, [h('thead', null, [h('tr', null, cols.map(function (c) { return h('th', { scope: 'col', text: c.replace(/_/g, ' ') }); }))]),
+          h('tbody', null, x.rows.slice(0, 100).map(function (row) { return h('tr', null, cols.map(function (c) { var v = cell(row, c); return h('td', null, [v]); })); }))]);
+        box.appendChild(h('div', { class: 'ax-rep-r' }, [h('h4', { text: x.purpose + (x.rows.length > 100 ? ' (first 100 of ' + x.rows.length + ')' : '') }), h('div', { class: 'ax-rep-scroll' }, [tbl])]));
+      });
+      box.appendChild(h('p', { class: 'ax-unk', text: 'From ' + (R.source || 'Ticket hygiene') + '. For charts and follow-up questions, open Ticket hygiene > Ask AI.' }));
+      box.appendChild(h('div', { class: 'ax-row' }, [copyBtn(R.answer || '', 'Copy answer', true)]));
+      return box;
+    }
     function answerCard(j, q) {
       var a = j.answer || {}, conf = a.confidence || 'medium';
       var badges = h('div', { class: 'ax-badges' }, [
@@ -398,7 +460,9 @@
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       // Batch 271: the short answer comes first (bottom line, what was found, one reply to paste); the rest is one click away.
       var B = a.brief, outer = card;
-      if (j.scope === 'general') card.appendChild(h('p', { class: 'ax-scope', role: 'note' }, [icon('warn', 'sm'), h('span', null, [h('b', { text: 'General answer. ' }), 'Not checked against a client. Add the ticket number, deal or account name for an answer based on their record.'])]));
+      // Batch 288: team-wide list and count answers come from Ticket hygiene: the answer, then each result as a table.
+      if (j.report) { card.appendChild(reportBox(j.report)); card.appendChild(feedbackRow(j, q)); return card; }
+      if (j.scope === 'general') card.appendChild(h('p', { class: 'ax-general', role: 'note' }, [icon('warn', 'sm'), h('span', null, [h('b', { text: 'General answer. ' }), 'Not checked against a client. Add the ticket number, deal or account name for an answer based on their record.'])]));
       if (B) {
         if (B.bottom_line) card.appendChild(h('p', { class: 'ax-lead ax-bl' }, [linkTickets(B.bottom_line)]));
         if (B.found && B.found.length) card.appendChild(section('search', 'What I found', [h('ul', { class: 'ax-found' }, B.found.map(function (f) { return h('li', null, [linkTickets(f)]); }))]));
