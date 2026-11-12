@@ -58,3 +58,26 @@ describe('expert desk drafts', () => {
     expect(again.duplicate).toBe(true);
   });
 });
+
+describe('desk webhook', () => {
+  const env = { ...process.env };
+  afterEach(() => { process.env = { ...env }; });
+  const T = { ticketNumber: '428200', teamId: '197800000052125116', status: 'Open', channel: 'Email', email: 'dr@x.com', subject: 'Question about texts', assigneeId: '111', lastThread: { direction: 'in' } };
+  it('skips what it should and starts a save job for a client email', async () => {
+    const reads = { t: T, threads: { data: [] } };
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? reads.threads : reads.t });
+    const ev = (pl) => ({ eventType: 'Ticket_Thread_Add', payload: Object.assign({ ticketId: '1978000100', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'Dr <dr@x.com>' }, pl) });
+    expect((await xd.decide(ev({ direction: 'out' }))).skip).toMatch(/incoming/);
+    expect((await xd.decide(ev({ fromEmailAddress: 'alerts@ringcentral.com' }))).skip).toMatch(/automated/);
+    reads.t = Object.assign({}, T, { teamId: '9' }); expect((await xd.decide(ev({}))).skip).toMatch(/T1/);
+    reads.t = Object.assign({}, T, { subject: 'Automatic reply: out' }); expect((await xd.decide(ev({}))).skip).toMatch(/automatic/);
+    reads.t = T; reads.threads = { data: [{ status: 'DRAFT' }] }; expect((await xd.decide(ev({}))).skip).toMatch(/draft/);
+    reads.threads = { data: [] };
+    process.env.EXPERT_PILOT_OWNERS = '222'; expect((await xd.decide(ev({}))).skip).toMatch(/pilot/);
+    process.env.EXPERT_PILOT_OWNERS = '111,222'; expect((await xd.decide(ev({}))).skip).toBeUndefined();
+    const out = await xd.handleWebhook([ev({}), { eventType: 'Ticket_Update', payload: {} }]);
+    expect(out[0]).toMatch(/no write token|started/);
+    expect(xd.hooks()[0].skip || xd.hooks()[0].started).toBeTruthy();
+    expect(await xd.handleWebhook({})).toEqual([]);
+  });
+});

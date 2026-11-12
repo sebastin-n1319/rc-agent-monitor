@@ -2348,6 +2348,15 @@ app.post('/api/expert/desk-draft', rateLimit(60, 60000), async (req, res) => {
   try { const b = req.body || {}; const r = await expertDraft().start({ ticketId: b.ticketId || b.ticket_id || b.id, ticketNumber: b.ticketNumber || b.ticket_number, mode: b.mode }); res.status(r.status === 'queued' || r.pending ? 202 : 200).json(Object.assign({ success: true }, r)); }
   catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
 });
+// Batch 295: Zoho Desk webhook (Ticket Thread Add). The key is in the URL because Desk webhooks cannot send headers.
+// Answers 200 at once; the drafting runs in the background. GET and HEAD answer 200 so Desk can check the URL.
+app.all('/api/expert/desk-webhook', rateLimit(120, 60000), (req, res) => {
+  if (req.method === 'GET' || req.method === 'HEAD') return res.status(200).json({ success: true });
+  if (req.method !== 'POST') return res.status(405).end();
+  if (!expertDraft().enabled() || !expertDraft().keyOk(req.query.key)) return res.status(401).json({ success: false });
+  res.status(200).json({ success: true });
+  expertDraft().handleWebhook(req.body).catch((e) => console.warn('expert desk webhook:', e.message));
+});
 app.get('/api/expert/desk-draft/:id', rateLimit(120, 60000), async (req, res) => {
   if (!draftKey(req, res)) return;
   try { res.json(Object.assign({ success: true }, await expertDraft().status(req.params.id, { waitMs: Number(req.query.wait || 0) * 1000 }))); }
@@ -2361,7 +2370,7 @@ app.post('/api/admin/expert-sheet/sync', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-sheet').syncAll())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
-  try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), jobs: await expertDraft().recent(req.query.limit) }); }
+  try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), pilot: String(process.env.EXPERT_PILOT_OWNERS || '').split(',').filter(Boolean).length, jobs: await expertDraft().recent(req.query.limit), webhook: expertDraft().hooks() }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 274: the ticket review is written when the agent opens Show full review.

@@ -177,6 +177,7 @@
 #settings-admin-root .aiu-sheet a { color:var(--stg-accent) !important; font-weight:600 !important; }
 #settings-admin-root .aiu-alert { margin-top:12px !important; padding:10px 12px !important; border-radius:8px !important; background:rgba(239,68,68,.08) !important; color:#B91C1C !important; font-size:13px !important; }
 #settings-admin-root .aiu-kpis-sm { margin-top:0 !important; }
+#settings-admin-root .aiu-sub-h { font-size:12.5px !important; font-weight:700 !important; color:var(--stg-ink) !important; margin:16px 0 4px !important; }
 html.dark-mode #settings-admin-root .aiu-pill.ok { color:#6EE7B7 !important; }
 html.dark-mode #settings-admin-root .aiu-pill.warn { color:#FCD34D !important; }
 html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admin-root .aiu-alert { color:#FCA5A5 !important; }

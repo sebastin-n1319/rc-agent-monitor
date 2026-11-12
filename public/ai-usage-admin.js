@@ -71,7 +71,9 @@
         <div class="aiu-kpi"><div class="aiu-kpi-l">Failed</div><div class="aiu-kpi-v">${num(failed.length)}</div></div>
         <div class="aiu-kpi"><div class="aiu-kpi-l">Average time</div><div class="aiu-kpi-v">${avg == null ? '-' : avg + 's'}</div></div></div>
       ${jobs.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Mode</th><th>Status</th><th class="r">Time</th><th>Problem</th></tr></thead><tbody>${jobs.map((j) => `
-        <tr><td>${esc(ctTime(j.created_at))}</td><td>#${esc(j.number)}</td><td>${j.mode === 'save' ? 'Full review, saved by tool' : 'Quick, saved by Desk'}</td><td>${st(j.status)}</td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td><td class="aiu-err">${esc(j.error || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="aiu-empty">No drafts yet.</p>'}</div>`;
+        <tr><td>${esc(ctTime(j.created_at))}</td><td>#${esc(j.number)}</td><td>${j.mode === 'save' ? 'Full review, saved by tool' : 'Quick, saved by Desk'}</td><td>${st(j.status)}</td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td><td class="aiu-err">${esc(j.error || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="aiu-empty">No drafts yet.</p>'}
+      ${(d.webhook || []).length ? `<div class="aiu-sub-h">Recent Desk webhook calls${d.pilot ? ' (pilot: ' + d.pilot + ' agents)' : ''}</div><div class="aiu-tbl-wrap"><table class="aiu-tbl"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Result</th></tr></thead><tbody>${d.webhook.slice(0, 15).map((w) => `
+        <tr><td>${esc(new Date(w.at).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}</td><td>${w.ticket ? '#' + esc(w.ticket) : '-'}</td><td>${w.started ? (w.duplicate ? 'Already drafting (job ' + esc(w.started) + ')' : 'Draft started (job ' + esc(w.started) + ')') : 'Skipped: ' + esc(w.skip || w.event || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
   }
   function sheetCard(s) {
     const url = s.sheetId ? 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(s.sheetId) + '/edit' : '';
