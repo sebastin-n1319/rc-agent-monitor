@@ -465,6 +465,14 @@ async function buildBreakChatPayload(event){
 const ALERT_HOURS = { start: 7, end: 19, tz: 'America/Chicago', label: '7 AM to 7 PM CST' };
 // Break log alerts alone run on a wider window: 6 AM to 8 PM Central.
 const BREAK_ALERT_HOURS = { start: 6, end: 20, tz: 'America/Chicago', label: '6 AM to 8 PM CST' };
+// Batch 290: background AI jobs run in T1 working hours only (weekdays, 7 AM to 7 PM Central). Work that arrives after
+// hours is picked up the next morning. Set AI_BACKGROUND_ALWAYS=1 to run them around the clock.
+function inWorkHours(d = new Date()) {
+  if (process.env.AI_BACKGROUND_ALWAYS === '1') return true;
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short', hour: 'numeric', hourCycle: 'h23' }).formatToParts(d).map((x) => [x.type, x.value]));
+  const h = Number(p.hour) % 24;
+  return !['Sat', 'Sun'].includes(p.weekday) && h >= 7 && h < 19;
+}
 function inAlertHours(d = new Date(), win = ALERT_HOURS) {
   const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: win.tz, hour: 'numeric', hourCycle: 'h23' }).format(d));
   return h >= win.start && h < win.end;
@@ -718,7 +726,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     }, 40000);
     // Batch 263: AI approves clear moved tickets, a few every 2 minutes.
     setTimeout(() => {
-      setInterval(() => { transferReview.autoApprove().then(r => { if (r && r.approved) console.log('🤖 Transfer review AI approved', r.approved); }).catch(e => console.warn('transfer review AI approval failed:', e.message)); }, 120 * 1000);
+      setInterval(() => { if (!inWorkHours()) return; transferReview.autoApprove().then(r => { if (r && r.approved) console.log('🤖 Transfer review AI approved', r.approved); }).catch(e => console.warn('transfer review AI approval failed:', e.message)); }, 5 * 60 * 1000);
     }, 90000);
     // Session 90: escalation watch, every 15 minutes (does nothing until enabled with a webhook)
     escalationWatch.setDB(db);
@@ -744,8 +752,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       vp.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
         roster: () => deskLifecycleAgentRoster(), dayWindow: getDateWindow, flow: () => t1MonthlyFlow() });
       setTimeout(() => {
-        const tick = () => vp.work({ max: 30 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
-        tick(); setInterval(tick, 90 * 1000);
+        const tick = () => !inWorkHours() ? Promise.resolve() : vp.work({ max: 30 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
+        tick(); setInterval(tick, 5 * 60 * 1000);
       }, 60 * 1000); }
     // Batch 265: Call QA (Call Logs > Call QA). The AI audits every recorded T1 call the way the human QA team does. Scores stay here.
     { const cq = require('./lib/call-qa'); cq.setDB(db); await cq.initSchema();
@@ -763,8 +771,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
           return _deskIds.m.get(String(email || '').toLowerCase()) || null;
         } });
       setTimeout(() => {
-        const tick = () => cq.work({ max: 6 }).then(r => { if (r && (r.audited || r.discovered)) console.log('🎧 Call QA:', JSON.stringify(r)); }).catch(e => console.warn('call qa work failed:', e.message));
-        tick(); setInterval(tick, 120 * 1000);
+        const tick = () => !inWorkHours() ? Promise.resolve() : cq.work({ max: 12 }).then(r => { if (r && (r.audited || r.discovered)) console.log('🎧 Call QA:', JSON.stringify(r)); }).catch(e => console.warn('call qa work failed:', e.message));
+        tick(); setInterval(tick, 10 * 60 * 1000);
       }, 180 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
     { const expert = require('./lib/expert'); expert.setDB(db);
@@ -781,7 +789,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         await gf.initSchema(); await sq.initSchema();
         { const rs = require('./lib/expert-research'); rs.setDB(db); await rs.initSchema(); }
         expert.setDeps({ onGap: (g) => { gf.enqueue(g).catch(e => console.warn('expert gap queue:', e.message)); } });
-        setInterval(() => { gf.work().catch(e => console.warn('expert gap fix:', e.message)); }, 5 * 60 * 1000);
+        setInterval(() => { if (!inWorkHours()) return; gf.work().catch(e => console.warn('expert gap fix:', e.message)); }, 15 * 60 * 1000);
         setInterval(() => { sq.runDue().catch(e => console.warn('expert schedule:', e.message)); }, 60 * 1000); }
       // Batch 185: the Help Center is read live from help.adit.com, 30 seconds after start and then every 30 minutes.
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
@@ -798,10 +806,11 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kbRow: (t, o) => escalationWatch.kbHi(t, o) });
       { const ta = require('./lib/ticket-ask'); ta.setDB(db); await ta.initSchema(); ta.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
+      { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
         setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
       // Batch 264: every 15 minutes on business hours, hourly otherwise (AI labels are cached, so a refresh is quick).
-      if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (th.isRunning()) return; const every = th.due() ? 14 * 60 * 1000 : 59 * 60 * 1000; th.latest().then((r) => { if (r && Date.now() - r.at < every) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 3 * 60 * 1000); }
+      if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (th.isRunning() || !inWorkHours()) return; const every = th.due() ? 14 * 60 * 1000 : 59 * 60 * 1000; th.latest().then((r) => { if (r && Date.now() - r.at < every) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 3 * 60 * 1000); }
     { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
     { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
       cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
@@ -813,7 +822,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       setTimeout(() => {
         let busy = false;
         const tick = async () => {
-          if (busy) return; busy = true;
+          if (busy || !inWorkHours()) return; busy = true;
           try {
             if (!require('./lib/desk-service').isConfigured() || !require('./lib/ai').anyConfigured()) return;
             const ago = async (k) => { const v = await tt.getState(k); return v ? Date.now() - Date.parse(v) : Infinity; };
@@ -823,7 +832,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
             await tt.runAll({ by: 'auto', auto: true });
           } catch (e) { console.warn('ticket triage tick:', e.message); } finally { busy = false; }
         };
-        tick(); setInterval(tick, 5 * 60 * 1000);
+        tick(); setInterval(tick, 15 * 60 * 1000);
       }, 4 * 60 * 1000); }
     // Batch 187: 1025 Call Flow & Capacity.
     { const cf = require('./lib/cf1025'); cf.setDB(db); await cf.initSchema(); }
@@ -2382,6 +2391,11 @@ app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) =>
     const out = q ? await inv.investigate({ question: q, budgetMs: 85000 }) : null;
     res.json({ success: true, configured: true, tools, allowed: tools.filter(n => inv.ALLOW.has(n)), result: out });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }
+});
+// Batch 290: AI spend by feature (estimates from list prices), and the light-model quality check.
+app.get('/api/admin/ai-usage', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/ai-usage').report({ days: Number(req.query.days) || 14 }), { light: { provider: require('./lib/ai').LIGHT_PROVIDER(), features: [...require('./lib/ai').LIGHT_FEATURES] }, workHours: inWorkHours() })); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/busy', requireAdmin, async (req, res) => {
   try {
