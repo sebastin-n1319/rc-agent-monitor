@@ -142,3 +142,34 @@ describe('draft voice', () => {
     xd.setDeps({ ai: null });
   });
 });
+
+describe('agent replies while Expert writes', () => {
+  const env = { ...process.env };
+  afterEach(() => { process.env = { ...env }; });
+  it('skips the draft when an agent replied, and the sweep removes drafts an agent replaced', async () => {
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    const calls = []; let threads = [];
+    const brief = { bottom_line: 'x', reply: 'Hi Dr. A,\n\nSteps.\n\nBest regards,', replies: [] };
+    xd.setDeps({ ai: null,
+      deskRead: async (p) => /threads/.test(p) ? { data: threads } : { ticketNumber: '428900', email: 'dr@x.com' },
+      expert: { ask: async () => { threads = [{ id: 'a1', direction: 'out', status: 'SUCCESS', createdTime: new Date().toISOString() }]; return { logId: 1, answer: { brief } }; } },
+      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd9' : 'c9' }) }; } });
+    const r = await xd.start({ ticketId: '1978000900', mode: 'save' });
+    await new Promise((res) => setTimeout(res, 60));
+    const st = await xd.status(r.jobId);
+    expect(st.status).toBe('skipped');
+    expect(calls.some((c) => /draftReply/.test(c.url))).toBe(false);
+    expect(calls.some((c) => c.method === 'PATCH' && /comments\/c9/.test(c.url) && /did not add a draft/.test(c.body))).toBe(true);
+    expect(calls.some((c) => /dissociateTag/.test(c.url))).toBe(true);
+    // a saved draft, then the agent sends their own reply: the sweep deletes the Expert draft
+    threads = []; calls.length = 0;
+    xd.setDeps({ expert: { ask: async () => ({ logId: 2, answer: { brief } }) } });
+    const r2 = await xd.start({ ticketId: '1978000901', mode: 'save' });
+    await new Promise((res) => setTimeout(res, 60));
+    expect((await xd.status(r2.jobId)).status).toBe('done');
+    threads = [{ id: 'd9', direction: 'out', status: 'DRAFT', createdTime: new Date().toISOString() }, { id: 'a2', direction: 'out', status: 'SUCCESS', createdTime: new Date(Date.now() + 5000).toISOString() }];
+    const sw = await xd.sweep();
+    expect(sw.removed).toBe(1);
+    expect(calls.some((c) => c.method === 'DELETE' && /draftReply\/d9/.test(c.url))).toBe(true);
+  });
+});

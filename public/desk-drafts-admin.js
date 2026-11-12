@@ -12,7 +12,8 @@
   }
   const deskUrl = (id) => 'https://help.adit.com/agent/aditadvertising/support/tickets/details/' + encodeURIComponent(id);
   const pill = (cls, t) => `<span class="aiu-pill ${cls}">${esc(t)}</span>`;
-  const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
+  const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : s === 'skipped' ? pill('warn', 'Not needed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
+  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
   // ── Desk drafts ──────────────────────────────────────────────────────
@@ -141,7 +142,7 @@
       <tr class="ddm-job" tabindex="0" aria-expanded="false"><td>${esc(ct(j.created_at))}</td>
         <td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a><div class="ddm-sub">${esc(j.subject || '')}</div></td>
         <td>${esc(j.owner || '-')}</td><td>${esc(j.account || '-')}${j.deal ? `<div class="ddm-sub">${esc(j.deal)}</div>` : ''}</td>
-        <td>${statusPill(j.status)}<div class="ddm-sub">${esc(src[j.source || 'automation'] || j.source)}</div></td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td></tr>
+        <td>${statusPill(j.status)}<div class="ddm-sub">${esc(STATE[j.draft_state] || src[j.source || 'automation'] || j.source)}</div></td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td></tr>
       <tr class="ddm-detail" hidden><td colspan="6">${j.error ? `<div class="aiu-alert">${esc(j.error)}</div>` : ''}<div class="ddm-cols"><div><div class="aiu-sub-h">Draft reply</div><pre class="ddm-pre">${esc(j.reply || 'No reply text.')}</pre></div>
         <div><div class="aiu-sub-h">Private note</div><pre class="ddm-pre">${esc(j.note || 'No note.')}</pre></div></div>
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-redo" data-n="${esc(j.number)}">Draft this ticket again</button></div></td></tr>`).join('');
@@ -153,7 +154,7 @@
         <div class="stg-card-sub">Every ticket Adit Expert drafted a reply for. Click a row to read the draft and the private note.</div>
         <form class="ddm-filters" role="search" aria-label="Filter drafted tickets">
           <label>Search<input class="ddm-input" name="q" value="${esc(F.q)}" placeholder="Ticket number or words"></label>
-          <label>Status<select class="ddm-input" name="status">${opt('', 'All', F.status)}${opt('done', 'Done', F.status)}${opt('failed', 'Failed', F.status)}${opt('working', 'Writing', F.status)}${opt('queued', 'Waiting', F.status)}</select></label>
+          <label>Status<select class="ddm-input" name="status">${opt('', 'All', F.status)}${opt('done', 'Done', F.status)}${opt('failed', 'Failed', F.status)}${opt('working', 'Writing', F.status)}${opt('queued', 'Waiting', F.status)}${opt('skipped', 'Not needed', F.status)}</select></label>
           <label>Owner<select class="ddm-input" name="owner">${opt('', 'All owners', F.owner)}${d.owners.map((o) => opt(o.name, o.name + ' (' + o.n + ')', F.owner)).join('')}</select></label>
           <label>Account<input class="ddm-input" name="account" value="${esc(F.account)}" placeholder="Practice or account"></label>
           <label>Deal<input class="ddm-input" name="deal" value="${esc(F.deal)}" placeholder="Deal name"></label>
@@ -163,6 +164,7 @@
         </form>
         <div class="ddm-count" role="status">${num(d.total)} ${d.total === 1 ? 'ticket' : 'tickets'}</div>
         ${d.rows.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl ddm-jobs ddm-tickets"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Owner</th><th>Account / deal</th><th>Status</th><th class="r">Time</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ddm-row ddm-more-wrap"></div>` : '<p class="aiu-empty">No drafted tickets match these filters.</p>'}
+        <p class="ddm-hint">"Not needed": an agent replied or started a draft while Expert was writing, so no draft was added. Drafts left after an agent sends their own reply are removed within about 5 minutes.</p>
       </div>`;
     const form = root.querySelector('.ddm-filters');
     form.addEventListener('submit', (e) => { e.preventDefault(); new FormData(form).forEach((v, k) => { F[k] = String(v).trim(); }); store.set('filters', JSON.stringify(F)); renderTickets(root); });

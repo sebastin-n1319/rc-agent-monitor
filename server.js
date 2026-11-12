@@ -808,7 +808,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
       { const xs = require('./lib/expert-sheet'); xs.setDB(db); await xs.initSchema().catch((e) => console.warn('expert sheet schema:', e.message));
         setTimeout(() => { const t = () => xs.syncAll().then((r) => { if (r && (r.addedTotal || r.error)) console.log('📒 Expert log sheet:', JSON.stringify(r)); }).catch((e) => console.warn('expert sheet:', e.message)); t(); setInterval(t, 10 * 60 * 1000); }, 2 * 60 * 1000); }
-      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai') }); }
+      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai') });
+        setTimeout(() => { const sw = () => xd.sweep().then((r) => { if (r && (r.removed || r.failed)) console.log('🧹 Expert drafts:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft sweep:', e.message)); sw(); setInterval(sw, 5 * 60 * 1000); }, 2 * 60 * 1000); }
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
         setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
