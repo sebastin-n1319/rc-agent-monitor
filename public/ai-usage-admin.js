@@ -78,11 +78,12 @@
   function sheetCard(s) {
     const url = s.sheetId ? 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(s.sheetId) + '/edit' : '';
     return `<div class="stg-card"><div class="stg-card-title">Expert search log (Google Sheet)</div>
-      <div class="stg-card-sub">Every Expert question is copied to the sheet every 10 minutes, about 20 minutes after it is asked (so the agent's rating is in).</div>
+      <div class="stg-card-sub">Every Expert question is copied to the "Expert log" tab every 10 minutes, about 20 minutes after it is asked (so the agent's rating is in). The "Desk drafts" tab lists every Expert draft for Zoho Desk and is refreshed at the same time.</div>
       <div class="aiu-sheet">
         <div><div class="aiu-kpi-l">Sheet</div><div>${url ? `<a href="${url}" target="_blank" rel="noopener">Adit Expert Search Log</a> (tab "${esc(s.tab)}")` : 'Not set'}</div></div>
         <div><div class="aiu-kpi-l">Last copied</div><div>${s.syncedAt ? esc(new Date(s.syncedAt).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })) + ' CT' : 'Not yet'}</div></div>
         <div><div class="aiu-kpi-l">Questions copied / waiting</div><div>${num(s.lastId)} / ${num(s.waiting)}</div></div>
+        <div><div class="aiu-kpi-l">Desk drafts tab updated</div><div>${s.draftsSyncedAt ? esc(new Date(s.draftsSyncedAt).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })) + ' CT' : 'Not yet'}</div></div>
         <button type="button" class="stg-btn stg-btn-ghost aiu-sync">Copy now</button>
       </div>
       ${s.error ? `<div class="aiu-alert" role="alert">${esc(s.error)}</div>` : ''}</div>`;

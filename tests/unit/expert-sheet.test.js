@@ -18,7 +18,7 @@ describe('expert log sheet', () => {
     process.env.EXPERT_LOG_SHEET_ID = 'S1'; process.env.GOOGLE_SERVICE_ACCOUNT_KEY = '{"client_email":"svc@x.iam"}';
     xs.setDeps({ sheets: { spreadsheets: {
       get: async () => ({ data: { sheets: [] } }), batchUpdate: async () => ({}),
-      values: { update: async (o) => { updates.push(o); }, append: async (o) => { appended.push(...o.requestBody.values); } } } } });
+      values: { clear: async () => ({}), update: async (o) => { updates.push(o); }, append: async (o) => { appended.push(...o.requestBody.values); } } } } });
   });
   afterAll(() => { process.env = { ...env }; });
   it('creates the tab, copies history once, merges quick and full answers, scrubs contacts', async () => {
@@ -34,5 +34,16 @@ describe('expert log sheet', () => {
     expect(r.addedTotal).toBe(3);
     expect((await xs.syncAll()).addedTotal).toBe(0);
     expect((await xs.status()).lastId).toBe(4);
+    // Desk drafts tab: rewritten with every draft
+    await run(`CREATE TABLE expert_desk_drafts (id INTEGER PRIMARY KEY, ticket_id TEXT, number TEXT, subject TEXT, owner TEXT, account TEXT, deal TEXT, source TEXT, mode TEXT, status TEXT, draft_state TEXT, ms INTEGER, error TEXT, reply TEXT, note TEXT, created_at TEXT)`);
+    await run(`INSERT INTO expert_desk_drafts VALUES (1,'1978','428848','Reminders','Lincy Tabita','','','webhook','save','skipped','not saved',90000,'an agent already replied','Hi Ronnie, call 555-123-4567','T1 handles this','2026-11-12 22:51:24')`);
+    updates.length = 0;
+    const r2 = await xs.syncAll();
+    expect(r2.drafts.drafts).toBe(1);
+    const v = updates.find((u) => /Desk drafts/.test(u.range)).requestBody.values;
+    expect(v[0]).toEqual(xs.DHEAD);
+    expect(v[1].slice(3, 13)).toEqual(['#428848', 'Reminders', 'Lincy Tabita', '', '', 'Desk webhook', 'Full review', 'Not needed', 'Agent replied first', 90]);
+    expect(v[1][14]).toMatch(/\[contact\]/);
+    updates.length = 0; expect((await xs.syncAll()).drafts.unchanged).toBe(true);
   });
 });
