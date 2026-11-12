@@ -806,6 +806,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kbRow: (t, o) => escalationWatch.kbHi(t, o) });
       { const ta = require('./lib/ticket-ask'); ta.setDB(db); await ta.initSchema(); ta.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
+      { const xs = require('./lib/expert-sheet'); xs.setDB(db); await xs.initSchema().catch((e) => console.warn('expert sheet schema:', e.message));
+        setTimeout(() => { const t = () => xs.syncAll().then((r) => { if (r && (r.addedTotal || r.error)) console.log('📒 Expert log sheet:', JSON.stringify(r)); }).catch((e) => console.warn('expert sheet:', e.message)); t(); setInterval(t, 10 * 60 * 1000); }, 2 * 60 * 1000); }
       { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert') }); }
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
@@ -2350,6 +2352,13 @@ app.get('/api/expert/desk-draft/:id', rateLimit(120, 60000), async (req, res) =>
   if (!draftKey(req, res)) return;
   try { res.json(Object.assign({ success: true }, await expertDraft().status(req.params.id))); }
   catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+// Batch 292: the Google Sheet that keeps every Expert question.
+app.get('/api/admin/expert-sheet', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-sheet').status())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/expert-sheet/sync', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-sheet').syncAll())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
   try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), jobs: await expertDraft().recent(req.query.limit) }); }
