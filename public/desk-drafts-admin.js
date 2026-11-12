@@ -47,6 +47,12 @@
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-primary ddm-save-who">Save</button></div>
       </div>
       <div class="stg-card">
+        <div class="stg-card-title">Tickets already waiting</div>
+        <div class="stg-card-sub">The webhook drafts when a client writes. Open T1 email tickets where the client wrote last before that (last 14 days, ${st.pilot.length ? 'pilot agents' : 'all T1 agents'}) can be drafted here, up to 15 at a time.</div>
+        <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-bl-check">Find waiting tickets</button><span class="ddm-run-msg ddm-bl-msg" role="status"></span></div>
+        <div class="ddm-bl-list"></div>
+      </div>
+      <div class="stg-card">
         <div class="stg-card-title">Draft one ticket now</div>
         <div class="stg-card-sub">Runs Expert on a ticket by hand (${st.canSave ? 'full review, saved in Desk' : 'quick answer, shown here only'}). Useful to test a ticket or redo a failed one.</div>
         <form class="ddm-row ddm-run"><label class="ddm-sr" for="ddm-num">Ticket number</label><input id="ddm-num" class="ddm-input" inputmode="numeric" placeholder="Ticket number, e.g. 428848" autocomplete="off">
@@ -71,6 +77,22 @@
       e.target.disabled = true;
       try { await api('/api/admin/desk-drafts/settings', { pilot: who === 'pilot' ? ids : [] }); toast('Saved', 'success'); } catch (x) { toast(x.message, 'error'); }
       renderDrafts(root);
+    });
+    const blMsg = root.querySelector('.ddm-bl-msg'), blList = root.querySelector('.ddm-bl-list');
+    root.querySelector('.ddm-bl-check').addEventListener('click', async (e) => {
+      e.target.disabled = true; blMsg.textContent = 'Looking in Desk...'; blList.innerHTML = '';
+      try {
+        const r = await api('/api/admin/desk-drafts/backlog', { dry: true });
+        if (!r.waiting) { blMsg.textContent = 'No waiting tickets without a draft.'; return; }
+        blMsg.textContent = r.waiting + ' waiting ' + (r.waiting === 1 ? 'ticket' : 'tickets') + ', oldest first:';
+        blList.innerHTML = `<div class="aiu-tbl-wrap"><table class="aiu-tbl"><thead><tr><th>Ticket</th><th>Owner</th><th>Client wrote (CT)</th></tr></thead><tbody>${r.tickets.map((t) => `<tr><td><a href="${deskUrl(t.id)}" target="_blank" rel="noopener">#${esc(t.number)}</a><div class="ddm-sub">${esc(t.subject)}</div></td><td>${esc(t.owner)}</td><td>${esc(ct(t.at))}</td></tr>`).join('')}</tbody></table></div>
+          <div class="ddm-row"><button type="button" class="stg-btn stg-btn-primary ddm-bl-go">Draft the oldest ${Math.min(15, r.waiting)}</button></div>`;
+        blList.querySelector('.ddm-bl-go').addEventListener('click', async (ev) => {
+          ev.target.disabled = true; blMsg.textContent = 'Starting...';
+          try { const g = await api('/api/admin/desk-drafts/backlog', { dry: false, max: 15 }); blMsg.textContent = g.started.length + ' started, ' + g.skipped.length + ' skipped. Drafts appear in Desk over the next minutes.'; toast(g.started.length + ' drafts started', 'success'); }
+          catch (x) { blMsg.textContent = x.message; ev.target.disabled = false; }
+        });
+      } catch (x) { blMsg.textContent = x.message; } finally { e.target.disabled = false; }
     });
     root.querySelector('.ddm-run').addEventListener('submit', async (e) => {
       e.preventDefault(); const n = root.querySelector('#ddm-num').value.replace(/\D/g, ''), msg = root.querySelector('.ddm-run-msg'), b = e.target.querySelector('button');
@@ -137,7 +159,7 @@
     if (!keep) root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading drafted tickets...</div>';
     const qs = new URLSearchParams(Object.assign({}, F, { offset: String(offset), limit: '50' })).toString();
     let d; try { d = await api('/api/admin/desk-drafts/list?' + qs); } catch (e) { root.innerHTML = `<div class="stg-error">Could not load drafted tickets: ${esc(e.message)}</div>`; return; }
-    const src = { webhook: 'Desk webhook', manual: 'By hand', automation: 'Desk function' };
+    const src = { webhook: 'Desk webhook', manual: 'By hand', automation: 'Desk function', backlog: 'Waiting tickets' };
     const rows = d.rows.map((j) => `
       <tr class="ddm-job" tabindex="0" aria-expanded="false"><td>${esc(ct(j.created_at))}</td>
         <td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a><div class="ddm-sub">${esc(j.subject || '')}</div></td>
@@ -158,7 +180,7 @@
           <label>Owner<select class="ddm-input" name="owner">${opt('', 'All owners', F.owner)}${d.owners.map((o) => opt(o.name, o.name + ' (' + o.n + ')', F.owner)).join('')}</select></label>
           <label>Account<input class="ddm-input" name="account" value="${esc(F.account)}" placeholder="Practice or account"></label>
           <label>Deal<input class="ddm-input" name="deal" value="${esc(F.deal)}" placeholder="Deal name"></label>
-          <label>From<select class="ddm-input" name="source">${opt('', 'Anywhere', F.source)}${opt('webhook', 'Desk webhook', F.source)}${opt('manual', 'By hand', F.source)}${opt('automation', 'Desk function', F.source)}</select></label>
+          <label>From<select class="ddm-input" name="source">${opt('', 'Anywhere', F.source)}${opt('webhook', 'Desk webhook', F.source)}${opt('manual', 'By hand', F.source)}${opt('automation', 'Desk function', F.source)}${opt('backlog', 'Waiting tickets', F.source)}</select></label>
           <label>When<select class="ddm-input" name="days">${opt('1', 'Last 24 hours', F.days)}${opt('7', 'Last 7 days', F.days)}${opt('30', 'Last 30 days', F.days)}${opt('0', 'All time', F.days)}</select></label>
           <div class="ddm-fbtns"><button type="submit" class="stg-btn stg-btn-primary">Apply</button><button type="button" class="stg-btn stg-btn-ghost ddm-clear">Clear</button></div>
         </form>

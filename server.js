@@ -2404,6 +2404,14 @@ app.get('/api/admin/desk-drafts/list', requireAdmin, async (req, res) => {
   try { const q = req.query || {}; res.json(Object.assign({ success: true }, await expertDraft().list({ status: String(q.status || ''), owner: String(q.owner || ''), q: String(q.q || '').slice(0, 100), account: String(q.account || '').slice(0, 100), deal: String(q.deal || '').slice(0, 100), source: String(q.source || ''), days: q.days, offset: q.offset, limit: q.limit }))); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+app.post('/api/admin/desk-drafts/backlog', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try {
+    const xd = expertDraft(), st = xd.settings(), b = req.body || {};
+    const pilot = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const owners = pilot.length ? pilot : (await deskT1Agents()).map((a) => a.id);
+    res.json(Object.assign({ success: true, owners: owners.length }, await xd.backlog({ ownerIds: owners, days: b.days, max: b.max, dry: b.dry !== false })));
+  } catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/desk-drafts/webhook', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await expertDraft().hookLog({ limit: req.query.limit, result: String(req.query.result || '') }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

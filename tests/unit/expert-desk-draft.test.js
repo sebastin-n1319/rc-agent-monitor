@@ -21,6 +21,8 @@ describe('expert desk drafts', () => {
     const t1 = 'Client: A\nReason for contact: Reminder steps\nWhat was checked: Help Center reminders article\nNext team should: nothing yet, T1 keeps it.';
     expect(xd.pick({ answer: { note: t1, brief } }).note).toBe('T1 handles this, no transfer.\nReason for contact: Reminder steps\nWhat was checked: Help Center reminders article');
     expect(xd.pick({ answer: { note: t1, owner: { who: 'CSM pod' }, brief } }).note).toBe(t1);
+    const later = 'Client: A\nReason for contact: Texts fail\nWhat was checked: Help Center\nNext team should: once the practice is known, verify the contact, then run the text checks. Carrier issues go to VoIP.';
+    expect(xd.pick({ answer: { note: later, brief } }).note).toMatch(/^T1 handles this, no transfer./);
     expect(xd.pick({ answer: { brief } }).reply).toMatch(/^Hi Dr. A/);
   });
   it('adds the Help Center link the email promises, or drops the promise', () => {
@@ -186,5 +188,16 @@ describe('replacing an older Expert draft', () => {
     threads = [{ id: 'zz', status: 'DRAFT', direction: 'out' }];
     expect((await xd.decide(ev, { assignWaitMs: 0 })).skip).toMatch(/agent has a draft/);
     await xd.saveSettings({ pilot: null });
+  });
+});
+
+describe('waiting tickets', () => {
+  it('finds open T1 email tickets where the client wrote last, oldest first, and skips recent ones', async () => {
+    const now = Date.now();
+    const tk = (id, n, dir, mins, team = '197800000052125116') => ({ id, ticketNumber: n, teamId: team, subject: 'S' + n, lastThread: { direction: dir }, customerResponseTime: new Date(now - mins * 60000).toISOString(), assignee: { firstName: 'Sabrina', lastName: 'Quinn' } });
+    xd.setDeps({ deskRead: async (p) => /search/.test(p) ? { data: [tk('a1', '427359', 'in', 600), tk('a2', '427400', 'out', 100), tk('a3', '427401', 'in', 30), tk('a4', '427402', 'in', 30, '9')] } : {} });
+    const r = await xd.backlog({ ownerIds: ['197800000295035103'], dry: true });
+    expect(r.tickets.map((t) => t.number)).toEqual(['427359', '427401']);
+    expect(r.tickets[0].owner).toBe('Sabrina Quinn');
   });
 });
