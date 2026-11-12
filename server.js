@@ -2396,8 +2396,12 @@ app.get('/api/admin/desk-drafts/jobs', requireAdmin, async (req, res) => {
   try { res.json({ success: true, jobs: await expertDraft().jobs({ limit: req.query.limit, status: String(req.query.status || '') }) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/desk-drafts/run', requireAdmin, rateLimit(10, 60000), async (req, res) => {
-  try { const xd = expertDraft(); const r = await xd.start({ ticketNumber: (req.body || {}).ticketNumber, mode: xd.canWrite() ? 'save' : 'text' }); res.json(Object.assign({ success: true }, r)); }
+  try { const xd = expertDraft(); const r = await xd.start({ ticketNumber: (req.body || {}).ticketNumber, mode: xd.canWrite() ? 'save' : 'text', source: 'manual' }); res.json(Object.assign({ success: true }, r)); }
   catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/desk-drafts/list', requireAdmin, async (req, res) => {
+  try { const q = req.query || {}; res.json(Object.assign({ success: true }, await expertDraft().list({ status: String(q.status || ''), owner: String(q.owner || ''), q: String(q.q || '').slice(0, 100), account: String(q.account || '').slice(0, 100), deal: String(q.deal || '').slice(0, 100), source: String(q.source || ''), days: q.days, offset: q.offset, limit: q.limit }))); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/desk-drafts/webhook', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await expertDraft().hookLog({ limit: req.query.limit, result: String(req.query.result || '') }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }

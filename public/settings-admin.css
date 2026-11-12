@@ -218,3 +218,12 @@ html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admi
 #settings-admin-root .ddm-chips { display:flex !important; flex-wrap:wrap !important; gap:6px !important; }
 #settings-admin-root .ddm-chip { font-size:11.5px !important; padding:3px 8px !important; border-radius:999px !important; background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; color:var(--stg-ink2) !important; }
 @media (max-width: 720px) { #settings-admin-root .ddm-cols, #settings-admin-root .ddm-dl > div { grid-template-columns:1fr !important; } #settings-admin-root .ddm-bar-row { grid-template-columns:1fr 60px 40px !important; } }
+
+/* ── Batch 303: Drafted tickets ─────────────────────────────── */
+#settings-admin-root .ddm-filters { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)) !important; gap:10px 12px !important; align-items:end !important; margin-bottom:12px !important; }
+#settings-admin-root .ddm-filters label { display:flex !important; flex-direction:column !important; gap:4px !important; font-size:11.5px !important; font-weight:600 !important; color:var(--stg-ink3) !important; min-width:0 !important; }
+#settings-admin-root .ddm-filters .ddm-input { width:100% !important; }
+#settings-admin-root .ddm-fbtns { display:flex !important; gap:8px !important; }
+#settings-admin-root .ddm-count { font-size:12.5px !important; color:var(--stg-ink2) !important; font-weight:600 !important; margin:4px 0 6px !important; }
+#settings-admin-root .ddm-sub { font-size:11.5px !important; color:var(--stg-ink3) !important; margin-top:2px !important; max-width:300px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+#settings-admin-root .ddm-link { border:0 !important; background:none !important; padding:0 !important; font:inherit !important; color:var(--stg-accent) !important; font-weight:600 !important; cursor:pointer !important; text-decoration:underline !important; }

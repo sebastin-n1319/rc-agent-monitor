@@ -19,7 +19,7 @@
   async function renderDrafts(root) {
     root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading Desk drafts...</div>';
     let st, jl; const filter = store.get('jobs', '');
-    try { [st, jl] = await Promise.all([api('/api/admin/desk-drafts/state'), api('/api/admin/desk-drafts/jobs?limit=100' + (filter ? '&status=' + filter : ''))]); }
+    try { [st, jl] = await Promise.all([api('/api/admin/desk-drafts/state'), api('/api/admin/desk-drafts/jobs?limit=10' + (filter ? '&status=' + filter : ''))]); }
     catch (e) { root.innerHTML = `<div class="stg-error">Could not load Desk drafts: ${esc(e.message)}</div>`; return; }
     const S = st.settings, w = st.stats.week || {}, done = (w.done || {}), failed = (w.failed || {});
     const pilotOn = st.pilot.length > 0, pilotSet = new Set(st.pilot.map((p) => p.id));
@@ -52,7 +52,7 @@
           <button type="submit" class="stg-btn stg-btn-primary">Draft it</button><span class="ddm-run-msg" role="status"></span></form>
       </div>
       <div class="stg-card">
-        <div class="aiu-head"><div><div class="stg-card-title">Drafts</div><div class="stg-card-sub">Latest 100. Click a row to read the draft and the private note.</div></div>
+        <div class="aiu-head"><div><div class="stg-card-title">Latest drafts</div><div class="stg-card-sub">The last 10. Search and filter every draft on the <button type="button" class="ddm-link ddm-go-tickets">Drafted tickets</button> page.</div></div>
           <div class="aiu-seg" role="radiogroup" aria-label="Filter drafts">${[['', 'All'], ['done', 'Done'], ['failed', 'Failed'], ['working', 'Writing']].map((x) => `<button type="button" role="radio" aria-checked="${filter === x[0]}" data-f="${x[0]}">${x[1]}</button>`).join('')}</div></div>
         ${jl.jobs.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl ddm-jobs"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Mode</th><th>Status</th><th class="r">Time</th><th>Problem</th></tr></thead><tbody>${jl.jobs.map((j) => `
           <tr class="ddm-job" tabindex="0" aria-expanded="false" data-id="${j.id}"><td>${esc(ct(j.created_at))}</td><td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a></td>
@@ -79,6 +79,7 @@
       catch (x) { msg.textContent = x.message; } finally { b.disabled = false; }
     });
     root.querySelectorAll('.aiu-seg button').forEach((b) => b.addEventListener('click', () => { store.set('jobs', b.dataset.f); renderDrafts(root); }));
+    root.querySelector('.ddm-go-tickets').addEventListener('click', () => window.openSettingsAdmin('tickets'));
     root.querySelectorAll('.ddm-job').forEach((tr) => {
       const toggle = (ev) => { if (ev.target.closest('a')) return; const d = tr.nextElementSibling, open = d.hidden; d.hidden = !open; tr.setAttribute('aria-expanded', String(open)); };
       tr.addEventListener('click', toggle); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(ev); } });
@@ -127,6 +128,62 @@
     });
     root.querySelectorAll('.aiu-seg button').forEach((b) => b.addEventListener('click', () => { store.set('hooks', b.dataset.f); renderWebhook(root); }));
   }
+
+  // ── Batch 303: Drafted tickets (every draft, with filters) ───────────
+  const F = { status: '', owner: '', q: '', account: '', deal: '', source: '', days: '30' };
+  try { Object.assign(F, JSON.parse(store.get('filters', '{}')) || {}); } catch (e) { /* defaults */ }
+  async function renderTickets(root, offset = 0, keep) {
+    if (!keep) root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading drafted tickets...</div>';
+    const qs = new URLSearchParams(Object.assign({}, F, { offset: String(offset), limit: '50' })).toString();
+    let d; try { d = await api('/api/admin/desk-drafts/list?' + qs); } catch (e) { root.innerHTML = `<div class="stg-error">Could not load drafted tickets: ${esc(e.message)}</div>`; return; }
+    const src = { webhook: 'Desk webhook', manual: 'By hand', automation: 'Desk function' };
+    const rows = d.rows.map((j) => `
+      <tr class="ddm-job" tabindex="0" aria-expanded="false"><td>${esc(ct(j.created_at))}</td>
+        <td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a><div class="ddm-sub">${esc(j.subject || '')}</div></td>
+        <td>${esc(j.owner || '-')}</td><td>${esc(j.account || '-')}${j.deal ? `<div class="ddm-sub">${esc(j.deal)}</div>` : ''}</td>
+        <td>${statusPill(j.status)}<div class="ddm-sub">${esc(src[j.source || 'automation'] || j.source)}</div></td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td></tr>
+      <tr class="ddm-detail" hidden><td colspan="6">${j.error ? `<div class="aiu-alert">${esc(j.error)}</div>` : ''}<div class="ddm-cols"><div><div class="aiu-sub-h">Draft reply</div><pre class="ddm-pre">${esc(j.reply || 'No reply text.')}</pre></div>
+        <div><div class="aiu-sub-h">Private note</div><pre class="ddm-pre">${esc(j.note || 'No note.')}</pre></div></div>
+        <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-redo" data-n="${esc(j.number)}">Draft this ticket again</button></div></td></tr>`).join('');
+    if (keep) { const tb = root.querySelector('.ddm-tickets tbody'); tb.insertAdjacentHTML('beforeend', rows); wire(root); moreBtn(root, d, offset); return; }
+    const opt = (v, l, cur) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(l)}</option>`;
+    root.innerHTML = `
+      <div class="stg-card">
+        <div class="stg-card-title">Drafted tickets</div>
+        <div class="stg-card-sub">Every ticket Adit Expert drafted a reply for. Click a row to read the draft and the private note.</div>
+        <form class="ddm-filters" role="search" aria-label="Filter drafted tickets">
+          <label>Search<input class="ddm-input" name="q" value="${esc(F.q)}" placeholder="Ticket number or words"></label>
+          <label>Status<select class="ddm-input" name="status">${opt('', 'All', F.status)}${opt('done', 'Done', F.status)}${opt('failed', 'Failed', F.status)}${opt('working', 'Writing', F.status)}${opt('queued', 'Waiting', F.status)}</select></label>
+          <label>Owner<select class="ddm-input" name="owner">${opt('', 'All owners', F.owner)}${d.owners.map((o) => opt(o.name, o.name + ' (' + o.n + ')', F.owner)).join('')}</select></label>
+          <label>Account<input class="ddm-input" name="account" value="${esc(F.account)}" placeholder="Practice or account"></label>
+          <label>Deal<input class="ddm-input" name="deal" value="${esc(F.deal)}" placeholder="Deal name"></label>
+          <label>From<select class="ddm-input" name="source">${opt('', 'Anywhere', F.source)}${opt('webhook', 'Desk webhook', F.source)}${opt('manual', 'By hand', F.source)}${opt('automation', 'Desk function', F.source)}</select></label>
+          <label>When<select class="ddm-input" name="days">${opt('1', 'Last 24 hours', F.days)}${opt('7', 'Last 7 days', F.days)}${opt('30', 'Last 30 days', F.days)}${opt('0', 'All time', F.days)}</select></label>
+          <div class="ddm-fbtns"><button type="submit" class="stg-btn stg-btn-primary">Apply</button><button type="button" class="stg-btn stg-btn-ghost ddm-clear">Clear</button></div>
+        </form>
+        <div class="ddm-count" role="status">${num(d.total)} ${d.total === 1 ? 'ticket' : 'tickets'}</div>
+        ${d.rows.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl ddm-jobs ddm-tickets"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Owner</th><th>Account / deal</th><th>Status</th><th class="r">Time</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ddm-row ddm-more-wrap"></div>` : '<p class="aiu-empty">No drafted tickets match these filters.</p>'}
+      </div>`;
+    const form = root.querySelector('.ddm-filters');
+    form.addEventListener('submit', (e) => { e.preventDefault(); new FormData(form).forEach((v, k) => { F[k] = String(v).trim(); }); store.set('filters', JSON.stringify(F)); renderTickets(root); });
+    form.querySelectorAll('select').forEach((sel) => sel.addEventListener('change', () => form.requestSubmit()));
+    root.querySelector('.ddm-clear').addEventListener('click', () => { Object.assign(F, { status: '', owner: '', q: '', account: '', deal: '', source: '', days: '30' }); store.set('filters', JSON.stringify(F)); renderTickets(root); });
+    wire(root); moreBtn(root, d, offset);
+  }
+  function moreBtn(root, d, offset) {
+    const w = root.querySelector('.ddm-more-wrap'); if (!w) return; w.innerHTML = '';
+    if (offset + d.rows.length < d.total) { const b = document.createElement('button'); b.type = 'button'; b.className = 'stg-btn stg-btn-ghost'; b.textContent = 'Show more'; b.addEventListener('click', () => { b.disabled = true; renderTickets(root, offset + 50, true); }); w.appendChild(b); }
+  }
+  function wire(root) {
+    root.querySelectorAll('.ddm-job:not([data-w])').forEach((tr) => {
+      tr.setAttribute('data-w', '1');
+      const toggle = (ev) => { if (ev.target.closest('a,button')) return; const d = tr.nextElementSibling, open = d.hidden; d.hidden = !open; tr.setAttribute('aria-expanded', String(open)); };
+      tr.addEventListener('click', toggle); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggle(ev); } });
+    });
+    root.querySelectorAll('.ddm-redo:not([data-w])').forEach((b) => { b.setAttribute('data-w', '1'); b.addEventListener('click', async () => {
+      b.disabled = true; try { const r = await api('/api/admin/desk-drafts/run', { ticketNumber: b.dataset.n }); toast(r.duplicate ? 'Already drafted in the last 10 minutes' : 'Drafting again (job ' + r.jobId + ')', 'success'); } catch (x) { toast(x.message, 'error'); b.disabled = false; } }); });
+  }
+  window.renderDeskTicketsAdmin = (root) => renderTickets(root);
   window.renderDeskDraftsAdmin = renderDrafts;
   window.renderDeskWebhookAdmin = renderWebhook;
 })();

@@ -356,7 +356,7 @@
   }
 
   // Batch 294: sub pages. General (pause controls, jobs, system) and AI usage (cost, Desk drafts, Expert log sheet).
-  const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['webhook', 'Desk webhook']];
+  const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook']];
   function subNow() { try { const v = localStorage.getItem('stg.sub'); return SUBS.some((x) => x[0] === v) ? v : 'general'; } catch (e) { return 'general'; } }
   function setSub(v) { try { localStorage.setItem('stg.sub', v); } catch (e) { /* private mode */ } }
   window.openSettingsAdmin = async function (sub) {
@@ -367,7 +367,7 @@
     root.innerHTML = `<div class="stg-wrap stg-shell"><div class="stg-subtabs" role="tablist" aria-label="Settings pages">${SUBS.map((x) => `<button type="button" role="tab" class="stg-subtab" aria-selected="${x[0] === cur}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div><div class="stg-sub-body" role="tabpanel"></div></div>`;
     root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
     const body = root.querySelector('.stg-sub-body');
-    const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', webhook: 'renderDeskWebhookAdmin' }[cur];
+    const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin' }[cur];
     if (R) {
       if (typeof window[R] === 'function') return window[R](body);
       body.innerHTML = '<div class="stg-error">This page did not load. Refresh the page.</div>';
