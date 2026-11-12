@@ -806,6 +806,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const th = require('./lib/ticket-hygiene'); th.setDB(db); await th.initSchema(); th.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kbRow: (t, o) => escalationWatch.kbHi(t, o) });
       { const ta = require('./lib/ticket-ask'); ta.setDB(db); await ta.initSchema(); ta.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
+      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert') }); }
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
         setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
@@ -2330,6 +2331,29 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
+});
+// Batch 291: Expert drafts for Zoho Desk automations. No sign-in: the automation sends the shared key in the
+// x-expert-key header. "save" answers at once and saves a draft reply plus a private note in the ticket; "text" returns
+// Expert's quick reply for the automation to save. Nothing is ever sent to the client.
+const expertDraft = () => require('./lib/expert-desk-draft');
+function draftKey(req, res) {
+  if (!expertDraft().enabled()) { res.status(503).json({ success: false, error: 'Expert drafts are off (EXPERT_DESK_KEY is not set)' }); return false; }
+  if (!expertDraft().keyOk(req.get('x-expert-key'))) { res.status(401).json({ success: false, error: 'Wrong or missing key' }); return false; }
+  return true;
+}
+app.post('/api/expert/desk-draft', rateLimit(60, 60000), async (req, res) => {
+  if (!draftKey(req, res)) return;
+  try { const b = req.body || {}; const r = await expertDraft().start({ ticketId: b.ticketId || b.ticket_id || b.id, ticketNumber: b.ticketNumber || b.ticket_number, mode: b.mode }); res.status(r.status === 'queued' ? 202 : 200).json(Object.assign({ success: true }, r)); }
+  catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/expert/desk-draft/:id', rateLimit(120, 60000), async (req, res) => {
+  if (!draftKey(req, res)) return;
+  try { res.json(Object.assign({ success: true }, await expertDraft().status(req.params.id))); }
+  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), jobs: await expertDraft().recent(req.query.limit) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 274: the ticket review is written when the agent opens Show full review.
 app.post('/api/guides/expert/review', requireAuth, rateLimit(10, 60000), async (req, res) => {
