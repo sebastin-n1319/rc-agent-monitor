@@ -13,12 +13,12 @@
   const deskUrl = (id) => 'https://help.adit.com/agent/aditadvertising/support/tickets/details/' + encodeURIComponent(id);
   const pill = (cls, t) => `<span class="aiu-pill ${cls}">${esc(t)}</span>`;
   const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : s === 'skipped' ? pill('warn', 'Not needed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
-  const STATE = { 'handed over': 'Taken over by another team', 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent' };
+  const STATE = { 'handed over': 'Taken over by another team', 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent', 'not needed': 'Removed: an agent had already replied', closed: 'Removed: agent closed the ticket' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
   // Batch 320: the Desk drafts dashboard. Plain-language insights first, then the numbers and charts (stg-charts.js).
   const SC = () => window.StgCharts;
-  const OCOL = { 'Sent as written': '#12A594', 'Edited and sent': '#3B6FE0', 'Agent wrote their own reply': '#D9467A', 'Agent replied while Expert wrote': '#E8A1B9', 'Waiting in Desk': '#8E59D9', 'Writing now': '#B9A3E8', 'Deleted in Desk': '#9AA3B2', 'Replaced by a newer draft': '#E5932A', 'Taken over by another team': '#6B7A90', Failed: '#E5484D' };
+  const OCOL = { 'Sent as written': '#12A594', 'Edited and sent': '#3B6FE0', 'Agent wrote their own reply': '#D9467A', 'Agent replied while Expert wrote': '#E8A1B9', 'Waiting in Desk': '#8E59D9', 'Writing now': '#B9A3E8', 'Deleted in Desk': '#9AA3B2', 'Replaced by a newer draft': '#E5932A', 'Taken over by another team': '#6B7A90', 'Not needed: agent had replied': '#C9A227', 'Ticket closed by the agent': '#4B5563', Failed: '#E5484D' };
   function insights(r) {
     const out = [], C = SC();
     if (r.draftable) out.push(`Expert drafted <b>${C.pct(r.drafted, r.draftable)}%</b> of the T1 tickets it could draft (${num(r.drafted)} of ${num(r.draftable)}).`);
@@ -66,7 +66,7 @@
   // Batch 317/320: what Expert keeps from agents, with the "% changed" trend (lower means drafts are closer to what agents send).
   function learnCard(L) {
     if (!L) return '';
-    const C = SC(), kind = (k) => k === 'own reply' ? 'Wrote their own reply' : 'Edited the draft';
+    const C = SC(), kind = (k) => k === 'own reply' ? 'Wrote their own reply' : k === 'closed with note' ? 'Closed with own note' : 'Edited the draft';
     const lr = L.learn, daily = L.daily || [];
     return `<div class="sc-grid sc-g2"><div class="stg-card"><div class="stg-card-title">How much agents change Expert drafts</div>
         <div class="stg-card-sub">Average share of each draft that agents rewrote, per day. Lower is better: drafts are closer to what agents send.</div>
@@ -256,7 +256,7 @@
         ${d.summary && d.total ? `<div class="sc-grid sc-g2 ddm-tsum"><div><div class="aiu-sub-h">What happened to these drafts</div>${SC().strip(Object.entries(d.summary.outcome).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: k, n, color: OCOL[k] || '#6B7A90' })))}</div>
           <div><div class="aiu-sub-h">Where they came from</div>${SC().strip(Object.entries(d.summary.source).sort((a, b) => b[1] - a[1]).map(([k, n], i) => ({ label: src[k] || k, n, color: SC().PAL[i % 6] })))}</div></div>` : ''}
         ${d.rows.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl ddm-jobs ddm-tickets"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Owner</th><th>Account / deal</th><th>Status</th><th class="r">Time</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ddm-row ddm-more-wrap"></div>` : '<p class="aiu-empty">No drafted tickets match these filters.</p>'}
-        <p class="ddm-hint">"Not needed": an agent replied or started a draft while Expert was writing, so no draft was added. Drafts left after an agent sends their own reply are removed within about 5 minutes. When an agent edits a draft before sending, or sends their own reply, Expert keeps the difference and learns from it; when an agent adds their own private note, Expert's note is removed.</p>
+        <p class="ddm-hint">"Not needed": an agent replied or started a draft while Expert was writing, so no draft was added. Drafts left after an agent sends their own reply are removed within about 5 minutes. When an agent edits a draft before sending, or sends their own reply, Expert keeps the difference and learns from it; when an agent adds their own private note, Expert's note is removed. A draft is also removed when the agent closes the ticket without sending it (their own note becomes a lesson), or when it turns out an agent had already replied.</p>
       </div>`;
     const form = root.querySelector('.ddm-filters');
     form.addEventListener('submit', (e) => { e.preventDefault(); new FormData(form).forEach((v, k) => { F[k] = String(v).trim(); }); store.set('filters', JSON.stringify(F)); renderTickets(root); });
