@@ -43,3 +43,13 @@ describe('ticket documentation notes (Batch 328)', () => {
     expect((await dn.touch('1')).skipped).toMatch(/T1/);
   });
 });
+
+describe('deal line as agents write it (Batch 333)', () => {
+  it('shows the owner pod and full name when the pod is known', () => {
+    const dn = require('../../lib/ticket-doc-note');
+    const h = dn.header({ ticketNumber: '1', contact: {} }, { header: {}, facts: { stage: 'CSM', csm: 'Kane Thompson' }, account: { name: 'X', number: '1' }, pods: { csm: 'Pod 21' } }, null);
+    expect(h['Deal Stage']).toBe('Pod 21 | Kane Thompson');
+    const h2 = dn.header({ ticketNumber: '1', contact: {} }, { header: {}, facts: { stage: 'CSM', csm: 'Kane Thompson' }, account: { name: 'X', number: '1' } }, null);
+    expect(h2['Deal Stage']).toBe('CSM | Kane');
+  });
+});
