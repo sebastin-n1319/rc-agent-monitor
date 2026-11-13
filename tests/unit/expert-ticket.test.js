@@ -44,3 +44,13 @@ describe('expert keeps the ticket for the conversation', () => {
     expect(pick('#420465 and earlier #417650', [], T)).toEqual({ tnum: '420465', relNums: ['417650'] });
   });
 });
+
+describe('email signatures', () => {
+  const t = require('../../lib/expert-ticket');
+  it('drops the signature block and flags a message that is only a signature', () => {
+    const only = t._bodyOf({ content: '<div><div class="x_1ydp5signature"><i>Please take a moment to write a short review about us on Yelp</i><p>Campbell Dental</p></div></div>' });
+    expect(only.sigOnly).toBe(true); expect(only.text).toMatch(/subject and the attachments/); expect(only.text).not.toMatch(/Yelp/);
+    expect(t._bodyOf({ content: '<div>Please add these forms.</div><div class="gmail_signature">Dr X</div>' }).text).toBe('Please add these forms.');
+    expect(t._bodyOf({ content: '<div>Hi</div>', plainText: 'Hi team\n-- \nDr X' }).text).toBe('Hi team');
+  });
+});
