@@ -48,7 +48,7 @@
       </div>
       <div class="stg-card">
         <div class="stg-card-title">Tickets already waiting</div>
-        <div class="stg-card-sub">The webhook drafts when a client writes. Open T1 email tickets where the client wrote last before that (last 14 days, ${st.pilot.length ? 'pilot agents' : 'all T1 agents'}) can be drafted here, up to 15 at a time.</div>
+        <div class="stg-card-sub">The webhook drafts when a client writes. Open T1 tickets (all channels but phone) where the client wrote last before that (last 14 days, ${st.pilot.length ? 'pilot agents' : 'all T1 agents'}) can be drafted here, up to 15 at a time.</div>
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-bl-check">Find waiting tickets</button><span class="ddm-run-msg ddm-bl-msg" role="status"></span></div>
         <div class="ddm-bl-list"></div>
       </div>

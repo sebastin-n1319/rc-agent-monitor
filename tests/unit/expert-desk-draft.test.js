@@ -107,6 +107,15 @@ describe('desk webhook', () => {
     expect(xd.hooks().some((h) => /second event/.test(h.skip || ''))).toBe(true);
     expect((await xd.decide({ eventType: 'Ticket_Add', payload: { id: '1978000888', channel: 'Email', email: 'dr@x.com' } })).tid).toBe('1978000888');
   });
+  it('drafts web and chat tickets, skips phone tickets', async () => {
+    const W = Object.assign({}, T, { channel: 'Web', lastThread: null, email: 'pat@gmail.com' });
+    let cur = W; xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : cur });
+    const add = (ch) => ({ eventType: 'Ticket_Add', payload: { id: '1978000901', channel: ch, email: 'pat@gmail.com' } });
+    expect((await xd.decide(add('Web'))).skip).toBeUndefined();
+    cur = Object.assign({}, W, { channel: 'Chat' }); expect((await xd.decide(add('Chat'))).skip).toBeUndefined();
+    cur = Object.assign({}, W, { channel: 'Phone' }); expect((await xd.decide(add('Phone'))).skip).toMatch(/phone/);
+    expect((await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000901', direction: 'in', channel: 'CHAT' } })).skip).toMatch(/phone/);
+  });
 });
 
 describe('desk drafts settings', () => {
