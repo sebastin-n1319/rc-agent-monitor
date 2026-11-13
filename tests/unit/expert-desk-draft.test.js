@@ -372,3 +372,25 @@ describe('same caller and bounced email (Batch 323)', () => {
     expect(xd.toneIssues('[name and role] will call you.')[0].kind).toMatch(/placeholder/);
   });
 });
+
+describe('one draft and one note per ticket (Batch 325)', () => {
+  it('a re-run updates the earlier note and draft instead of adding new ones', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    const db = new sqlite3.Database(':memory:'); xd.setDB(db); await xd.initSchema();
+    await new Promise((r) => db.run(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, draft_id, comment_id, draft_state, created_at, done_at) VALUES ('1978009900','429900','save','done','d1','c1','in desk', datetime('now','-30 minutes'), datetime('now','-28 minutes'))`, r));
+    const calls = [];
+    xd.setDeps({ ai: null, expert: { ask: async () => ({ logId: 1, answer: { brief: { reply: 'Hi A,\n\nOk.\n\nBest regards,', replies: [] } } }) },
+      deskRead: async (p) => /threads|comments|tickets\?|contacts\//.test(p) ? { data: [] } : { ticketNumber: '429900', email: 'a@b.com', createdTime: new Date().toISOString() },
+      fetch: async (url, o) => { calls.push(o.method + ' ' + url.replace(/^.*\/api\/v1/, '')); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) };
+        if (o.method === 'DELETE') return { ok: false, status: 403, text: async () => '{"errorCode":"SCOPE_MISMATCH"}' };
+        return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd1' : 'c1' }) }; } });
+    await xd.start({ ticketId: '1978009900', mode: 'save' });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(calls.some((c) => c === 'POST /tickets/1978009900/comments')).toBe(false);
+    expect(calls.some((c) => c === 'PATCH /tickets/1978009900/comments/c1')).toBe(true);
+    expect(calls.some((c) => c === 'POST /tickets/1978009900/draftReply')).toBe(false);
+    expect(calls.some((c) => c === 'PATCH /tickets/1978009900/draftReply/d1')).toBe(true);
+    process.env = env;
+  });
+});
