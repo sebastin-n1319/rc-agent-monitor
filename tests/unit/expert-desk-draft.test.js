@@ -300,9 +300,19 @@ describe('desk drafts report and restart recovery', () => {
     await q(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, owner, created_at) VALUES ('x4', '4', 'save', 'working', 'Lincy', datetime('now', '-5 hours'))`);
     const r = await xd.report({ days: 1 });
     expect(r.otherTeams).toBe(1);
-    expect(r.skipped).toEqual([{ reason: 'Owner not in the pilot', n: 1 }]);
+    expect(r.skipped).toEqual([{ reason: 'Owner not in the pilot', n: 1, byDesign: true, fixed: false }]); expect(r.series.length).toBe(14); expect(r.draftable).toBeGreaterThanOrEqual(r.drafted);
     expect(r.agents.find((a) => a.agent === 'Evan Cruz').edited).toBe(1);
     const rc = await xd.recover();
     expect(rc.closed).toBe(1);
+  });
+});
+
+describe('draft tone (Batch 321)', () => {
+  it('flags deadlines for our work and anything that puts Adit down, not product facts', () => {
+    expect(xd.toneIssues('Sorry for the delay, our team will fix this within 24 hours.').length).toBe(1);
+    expect(xd.toneIssues('We will update you by Friday.')[0].kind).toMatch(/time frame/);
+    expect(xd.toneIssues('This was a glitch on our end.')[0].kind).toMatch(/Adit down/);
+    expect(xd.toneIssues('The reset email should arrive within 5 minutes.')).toEqual([]);
+    expect(xd.toneIssues('Thank you for your patience. Our team is on it and you will hear back here.')).toEqual([]);
   });
 });

@@ -40,6 +40,18 @@
       return `<div class="aiu-bar-col" tabindex="0" aria-label="${esc(lab)}: ${money(v)}"><div class="aiu-tip">${esc(lab)}<b>${money(v)}</b></div><div class="aiu-bar" style="height:${h}%"></div><div class="aiu-bar-x">${(range - 1 - i) % Math.ceil(range / 7) === 0 ? esc(lab) : ''}</div></div>`; }).join('');
     return `<div class="aiu-chart" role="img" aria-label="Estimated AI cost per day, last ${range} days"><div class="aiu-chart-y"><span>${money(max)}</span><span>$0</span></div><div class="aiu-bars">${bars}</div></div>`;
   }
+  // Batch 320: where the money goes, as charts: share by feature (top 6, rest as Other) and by model.
+  function mixCards(u) {
+    const C = window.StgCharts; if (!C) return '';
+    const f = (u.features || []).filter((x) => x.cost > 0).sort((a, b) => b.cost - a.cost);
+    const top = f.slice(0, 6).map((x, i) => ({ label: label(x.feature), n: Math.round(x.cost * 100) / 100, color: C.PAL[i] }));
+    const rest = f.slice(6).reduce((s, x) => s + x.cost, 0); if (rest > 0) top.push({ label: 'Everything else', n: Math.round(rest * 100) / 100, color: '#C9CED8' });
+    const models = {}; f.forEach((x) => Object.keys(x.models || {}).forEach((m) => { const k = modelName(m); models[k] = (models[k] || 0) + x.cost * (x.models[m] / Object.values(x.models).reduce((a, b) => a + b, 0)); }));
+    const mrows = Object.entries(models).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({ label: k, n: Math.round(v * 100) / 100, color: C.PAL[(i + 2) % 6] }));
+    const usd = (v) => '$' + (Number(v) || 0).toFixed(2);
+    return `<div class="sc-grid sc-g2"><div class="stg-card"><div class="stg-card-title">Where the cost goes</div><div class="stg-card-sub">Share of the estimated cost by feature, last 31 days.</div>${C.donut(top, 'last 31 days', usd)}</div>
+      <div class="stg-card"><div class="stg-card-title">By model</div><div class="stg-card-sub">Estimated cost per model, last 31 days. Cheaper models run the background jobs that pass the quality check.</div>${C.hbars(mrows, { fmt: usd, empty: 'No cost recorded yet.' })}</div></div>`;
+  }
   function featureTable(u) {
     const rows = (u.features || []).filter((f) => f.calls);
     if (!rows.length) return '<p class="aiu-empty">No AI calls recorded in this period yet.</p>';
@@ -103,6 +115,7 @@
         ${kpis(u)}
         ${chart(u, range)}
       </div>
+      ${mixCards(u)}
       <div class="stg-card"><div class="stg-card-title">Cost by feature (last 31 days)</div>
         <div class="stg-card-sub">Most expensive first. "From cache" is the share of input read from the prompt cache, at a tenth of the price.</div>
         ${featureTable(u)}</div>
