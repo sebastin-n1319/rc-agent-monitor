@@ -344,3 +344,29 @@ describe('internal forwards (Batch 322)', () => {
     await xd.saveSettings({ pilot: null }); process.env = env;
   });
 });
+
+describe('same caller and bounced email (Batch 323)', () => {
+  it('finds the missed call and voicemail tickets of one call, not other requests', async () => {
+    const T = { id: '2', contactId: 'c1', subject: 'New Voice Message from WEISSICH JACOB - 1025 (559) 431-9104 on 11/11/2026 4:47 PM', createdTime: '2026-11-11T22:47:27Z' };
+    xd.setDeps({ deskRead: async () => ({ data: [
+      { id: '1', ticketNumber: '428238', subject: 'New Call from WEISSICH JACOB - 1025 (559) 431-9104', statusType: 'Open', createdTime: '2026-11-11T22:47:24Z', assignee: { firstName: 'Sky', lastName: 'Gibson' } },
+      { id: '3', ticketNumber: '428300', subject: 'Forms question', statusType: 'Open', createdTime: '2026-11-12T10:00:00Z' },
+      { id: '2', ticketNumber: '428239', subject: T.subject, statusType: 'Open', createdTime: T.createdTime }] }) });
+    const s = await xd.siblingsOf('2', T);
+    expect(s.map((x) => x.number)).toEqual(['428238']);
+    expect(s[0].owner).toBe('Sky Gibson');
+  });
+  it('sends a bounced client to another address of the practice, other domain first when the server refused', async () => {
+    const T = { id: '9', email: 'dralbright@albrightdental.com', contactId: 'c1', accountId: 'a1', contact: { email: 'dralbright@albrightdental.com' } };
+    xd.setDeps({ deskRead: async (p) => /threads\/b1/.test(p) ? { plainText: 'Delivery incomplete. dralbright@albrightdental.com 421 4.7.0 too many connections, will retry' }
+      : /threads/.test(p) ? { data: [{ id: 'b1', direction: 'in', fromEmailAddress: 'mailer-daemon@googlemail.com', summary: 'Delivery Status Notification', createdTime: '2026-11-13T10:00:00Z' }] }
+      : /contacts\/c1$/.test(p) ? { email: 'dralbright@albrightdental.com', secondaryEmail: 'contactus@albrightdental.com' }
+      : /accounts\/a1\/contacts/.test(p) ? { data: [{ email: 'frontdesk.albright@gmail.com' }] } : { data: [] } });
+    const b = await xd.bounceOf('9', T);
+    expect(b.bounced).toEqual(['dralbright@albrightdental.com']);
+    expect(b.serverWide).toBe(true);
+    expect(b.alt[0].email).toBe('frontdesk.albright@gmail.com');
+    expect(b.alt.map((a) => a.email)).toContain('contactus@albrightdental.com');
+    expect(xd.toneIssues('[name and role] will call you.')[0].kind).toMatch(/placeholder/);
+  });
+});
