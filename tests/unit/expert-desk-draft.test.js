@@ -115,6 +115,11 @@ describe('desk drafts settings', () => {
     expect(xd.settings().pilotFromEnv).toBe(true);
     await xd.saveSettings({ pilot: ['222', 'x'], extraSkip: ['@vendor.com', 'ab'] }, 'a@adit.com');
     expect(xd.settings()).toMatchObject({ pilot: ['222'], pilotFromEnv: false, extraSkip: ['@vendor.com'] });
+    const P = { ticketNumber: '428301', teamId: '197800000052125116', status: 'Pending Adit', statusType: 'Open', channel: 'Email', email: 'dr@y.com', subject: 'Hi', assigneeId: '222', lastThread: { direction: 'in' } };
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : P });
+    expect((await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000399', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'dr@y.com' } })).skip).toBeUndefined();
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : Object.assign({}, P, { status: 'Pending Customer', statusType: 'On Hold' }) });
+    expect((await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000399', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'dr@y.com' } })).skip).toMatch(/status is Pending Customer/);
     const T = { ticketNumber: '428300', teamId: '197800000052125116', status: 'Open', channel: 'Email', email: 'x@vendor.com', subject: 'Hi', assigneeId: '222', lastThread: { direction: 'in' } };
     xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : T });
     const ev = { eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000300', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'x@vendor.com' } };
@@ -194,7 +199,7 @@ describe('replacing an older Expert draft', () => {
 describe('waiting tickets', () => {
   it('finds open T1 email tickets where the client wrote last, oldest first, and skips recent ones', async () => {
     const now = Date.now();
-    const tk = (id, n, dir, mins, team = '197800000052125116') => ({ id, ticketNumber: n, teamId: team, subject: 'S' + n, lastThread: { direction: dir }, customerResponseTime: new Date(now - mins * 60000).toISOString(), assignee: { firstName: 'Sabrina', lastName: 'Quinn' } });
+    const tk = (id, n, dir, mins, team = '197800000052125116') => ({ id, ticketNumber: n, teamId: team, statusType: 'Open', subject: 'S' + n, lastThread: { direction: dir }, customerResponseTime: new Date(now - mins * 60000).toISOString(), assignee: { firstName: 'Sabrina', lastName: 'Quinn' } });
     xd.setDeps({ deskRead: async (p) => /search/.test(p) ? { data: [tk('a1', '427359', 'in', 600), tk('a2', '427400', 'out', 100), tk('a3', '427401', 'in', 30), tk('a4', '427402', 'in', 30, '9')] } : {} });
     const r = await xd.backlog({ ownerIds: ['197800000295035103'], dry: true });
     expect(r.tickets.map((t) => t.number)).toEqual(['427359', '427401']);
