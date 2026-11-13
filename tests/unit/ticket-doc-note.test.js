@@ -53,3 +53,13 @@ describe('deal line as agents write it (Batch 333)', () => {
     expect(h2['Deal Stage']).toBe('CSM | Kane');
   });
 });
+
+describe('pod names (Batch 333)', () => {
+  it('shortens a Desk team name to the pod', () => {
+    const dn = require('../../lib/ticket-doc-note');
+    const mk = (pod) => dn.header({ ticketNumber: '1', contact: {} }, { header: {}, facts: { stage: 'CSM', csm: 'Kane Thompson' }, account: { name: 'X', number: '1' }, pods: { csm: pod } }, null)['Deal Stage'];
+    expect(mk('Tech OB POD 21 - Kane')).toBe('Pod 21 | Kane Thompson');
+    expect(mk('MktgCSM Pod H')).toBe('Pod H | Kane Thompson');
+    expect(mk('Billing Team')).toBe('Billing Team | Kane Thompson');
+  });
+});
