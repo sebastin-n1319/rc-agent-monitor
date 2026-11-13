@@ -408,3 +408,22 @@ describe('manual and auto drafts are checked too (Batch 326)', () => {
     process.env = env;
   });
 });
+
+describe('takeovers (Batch 327)', () => {
+  it('rewrites the note for the new owner, keeps the draft and marks it handed over', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    const db = new sqlite3.Database(':memory:'); xd.setDB(db); await xd.initSchema();
+    await new Promise((r) => db.run(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, draft_id, comment_id, owner, draft_state, done_at) VALUES ('1978007700','429113','save','done','d1','c1','Sabrina Quinn','in desk', datetime('now','-10 minutes'))`, r));
+    const calls = [];
+    xd.setDeps({ t1Agents: async () => [{ id: '111' }],
+      deskRead: async (p) => /threads/.test(p) ? { data: [{ id: 'd1', status: 'DRAFT', direction: 'out' }] } : /comments|search/.test(p) ? { data: [] } : { ticketNumber: '429113', teamId: '197800000377955045', team: { name: 'Tech OB POD 27 - Steve' }, assigneeId: '999', assignee: { firstName: 'Logan', lastName: 'Pardini' } },
+      fetch: async (url, o) => { calls.push(o.method + ' ' + url.replace(/^.*\/api\/v1/, '') + ' ' + (o.body || '')); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => '{}' }; } });
+    const sw = await xd.sweep();
+    expect(sw.handedOver).toBe(1);
+    expect(calls.some((c) => /PATCH \/tickets\/1978007700\/comments\/c1/.test(c) && /Taken over by Logan Pardini/.test(c) && /Sabrina Quinn/.test(c))).toBe(true);
+    expect(calls.some((c) => /DELETE .*draftReply/.test(c))).toBe(false);
+    expect((await xd.list({ q: '429113' })).rows[0].draft_state).toBe('handed over');
+    process.env = env;
+  });
+});

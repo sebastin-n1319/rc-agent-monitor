@@ -13,12 +13,12 @@
   const deskUrl = (id) => 'https://help.adit.com/agent/aditadvertising/support/tickets/details/' + encodeURIComponent(id);
   const pill = (cls, t) => `<span class="aiu-pill ${cls}">${esc(t)}</span>`;
   const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : s === 'skipped' ? pill('warn', 'Not needed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
-  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent' };
+  const STATE = { 'handed over': 'Taken over by another team', 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
   // Batch 320: the Desk drafts dashboard. Plain-language insights first, then the numbers and charts (stg-charts.js).
   const SC = () => window.StgCharts;
-  const OCOL = { 'Sent as written': '#12A594', 'Edited and sent': '#3B6FE0', 'Agent wrote their own reply': '#D9467A', 'Agent replied while Expert wrote': '#E8A1B9', 'Waiting in Desk': '#8E59D9', 'Writing now': '#B9A3E8', 'Deleted in Desk': '#9AA3B2', 'Replaced by a newer draft': '#E5932A', Failed: '#E5484D' };
+  const OCOL = { 'Sent as written': '#12A594', 'Edited and sent': '#3B6FE0', 'Agent wrote their own reply': '#D9467A', 'Agent replied while Expert wrote': '#E8A1B9', 'Waiting in Desk': '#8E59D9', 'Writing now': '#B9A3E8', 'Deleted in Desk': '#9AA3B2', 'Replaced by a newer draft': '#E5932A', 'Taken over by another team': '#6B7A90', Failed: '#E5484D' };
   function insights(r) {
     const out = [], C = SC();
     if (r.draftable) out.push(`Expert drafted <b>${C.pct(r.drafted, r.draftable)}%</b> of the T1 tickets it could draft (${num(r.drafted)} of ${num(r.draftable)}).`);
