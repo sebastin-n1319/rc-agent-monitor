@@ -250,6 +250,24 @@ describe('learning from agents', () => {
     expect(sw2.notesRemoved).toBeGreaterThanOrEqual(1);
     expect(calls.some((c) => c.method === 'DELETE' && /comments\/c9/.test(c.url))).toBe(true);
   });
+  it('learns from a draft the agent opened with Edit and sent (the draft ID disappears), and closes stuck writing notes', async () => {
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    const calls = []; const brief = { bottom_line: 'x', reply: 'Hi Dr. B,\n\nOpen Engage and click Auto-Reminders, then edit the reminder text and save it.\n\nBest regards,', replies: [] };
+    let threads = [];
+    xd.setDeps({ ai: null, expert: { ask: async () => ({ logId: 4, answer: { brief } }) },
+      deskRead: async (p) => /search\?tag/.test(p) ? { data: [{ id: '1978000977' }] } : /1978000977\/comments/.test(p) ? { data: [{ id: 'w1', content: 'Adit Expert is writing a draft reply for this ticket.', commentedTime: new Date(Date.now() - 3600000).toISOString() }] }
+        : /comments/.test(p) ? { data: [] } : /threads\/n1/.test(p) ? { content: '<div>Hi Dr. B,<br><br>Please call us and we will set the reminders for you today.<br><br>Regards,<br>Greg</div>' } : /threads/.test(p) ? { data: threads } : { ticketNumber: '428960', email: 'dr@x.com' },
+      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd7' : 'c7' }) }; } });
+    await xd.start({ ticketId: '1978000960', mode: 'save' });
+    await new Promise((res) => setTimeout(res, 60));
+    threads = [{ id: 'n1', direction: 'out', status: 'SUCCESS', author: { name: 'Greg Dawson' }, createdTime: new Date(Date.now() + 5000).toISOString() }];
+    calls.length = 0;
+    const sw = await xd.sweep();
+    const j = (await xd.list({ q: '428960' })).rows[0]; expect(['edited', 'agent replied']).toContain(j.draft_state);
+    expect((await xd.learning()).lessons).toBeGreaterThanOrEqual(2);
+    expect(sw.stuckNotes).toBe(1);
+    expect(calls.some((c) => c.method === 'PATCH' && /comments\/w1/.test(c.url) && /stopped before/.test(c.body))).toBe(true);
+  });
 });
 
 describe('desk drafts report and restart recovery', () => {

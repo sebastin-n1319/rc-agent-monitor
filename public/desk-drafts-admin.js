@@ -34,6 +34,21 @@
       ${r.failed.length ? `<div class="aiu-sub-h">Failed</div><ul class="ddm-fails">${r.failed.map((f) => `<li>#${esc(f.number)}: ${esc(f.error)}</li>`).join('')}</ul>` : ''}
     </div>`;
   }
+  // Batch 317: what Expert keeps from agents. Every edited draft and every reply an agent wrote instead is saved; recent
+  // ones shape the voice of new drafts at once, and the learning run turns repeated patterns into Expert team rules.
+  function learnCard(L) {
+    if (!L) return '';
+    const kind = (k) => k === 'own reply' ? 'Wrote their own reply' : 'Edited the draft';
+    const lr = L.learn;
+    return `<div class="stg-card"><div class="stg-card-title">What Expert is learning from agents</div>
+      <div class="stg-card-sub">Every draft an agent edits, and every reply an agent writes instead, is saved. The latest ones guide the tone of new drafts straight away. The daily learning run (or weekly when there is little new) turns patterns seen 3 or more times into Expert team rules, which every Expert answer uses.</div>
+      <div class="aiu-kpis"><div class="aiu-kpi"><div class="aiu-kpi-l">Lessons saved</div><div class="aiu-kpi-v">${num(L.lessons)}</div><div class="ddm-sub">${num(L.week)} in the last 7 days</div></div>
+        <div class="aiu-kpi"><div class="aiu-kpi-l">Agent wrote their own</div><div class="aiu-kpi-v">${num(L.own)}</div></div>
+        <div class="aiu-kpi"><div class="aiu-kpi-l">Last learning run</div><div class="aiu-kpi-v ddm-kpi-sm">${lr && lr.at ? esc(ct(lr.at)) : 'Not yet'}</div><div class="ddm-sub">${lr && lr.added ? num(lr.added.length) + ' new rules' : ''}</div></div></div>
+      ${L.last.length ? `<div class="aiu-sub-h">Latest lessons</div><table class="aiu-tbl ddm-mini"><tbody>${L.last.map((x) => `<tr><td>${esc(ct(x.created_at))}</td><td>#${esc(x.number)}</td><td>${esc(x.agent || '')}</td><td>${kind(x.kind)}</td><td class="r">${Math.round(100 - 100 * (Number(x.similarity) || 0))}% changed</td></tr>`).join('')}</tbody></table>` : '<p class="aiu-empty">No lessons yet. They are saved when agents send or replace Expert drafts.</p>'}
+      ${lr && lr.added && lr.added.length ? `<div class="aiu-sub-h">Rules from the last run</div><ul class="ddm-fails">${lr.added.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+    </div>`;
+  }
 
   // ── Desk drafts ──────────────────────────────────────────────────────
   async function renderDrafts(root) {
@@ -56,6 +71,7 @@
           <div class="aiu-kpi"><div class="aiu-kpi-l">Average time</div><div class="aiu-kpi-v">${done.avgSec ? done.avgSec + 's' : '-'}</div></div></div>
       </div>
       ${reportCard(rp, rd)}
+      ${rp && !rp.error ? learnCard(rp.learning) : ''}
       <div class="stg-card">
         <div class="stg-card-title">Who gets drafts</div>
         <div class="stg-card-sub">${S.pilotFromEnv && pilotOn ? 'Now set by EXPERT_PILOT_OWNERS on Railway. Saving here takes over from it.' : 'A ticket gets a draft only when its owner is in this list, or every T1 ticket when "All T1 agents" is chosen.'}</div>
