@@ -230,3 +230,35 @@ describe('matching a ticket with no account (Batch 318)', () => {
     expect(none.none).toBe(true);
   });
 });
+
+describe('which account a ticket is about (Batch 332)', () => {
+  const ex = require('../../lib/expert');
+  const accts = { '14319': { id: 'a1', name: 'Southern Dental' }, '75658': { id: 'a2', name: 'Country Dental' }, '20001': { id: 'a3', name: 'Third Dental' } };
+  const setup = () => ex.setDeps({ client: {
+    search: async (q) => { const n = String(q).replace(/^acct:/, ''); if (accts[n]) return { results: [{ accountId: accts[n].id }] }; if (q === '#429258') return { results: [{ accountId: 'a2' }] }; return { results: [] }; },
+    profile: async (id) => { const e = Object.entries(accts).find(([, v]) => v.id === id); return { available: true, accountId: id, header: { account: e[1].name }, account: { name: e[1].name, number: e[0] }, detail: {} }; } } });
+  it('the account number the client gave beats a different Desk link, and the agent is asked to fix the ticket', async () => {
+    setup();
+    const r = await ex.resolveAccount('429258', { meta: { idents: { accts: ['14319'], noteAccts: [], emails: [], phones: [], names: [] } } });
+    expect(r.account.number).toBe('14319');
+    expect(r.mismatch).toMatchObject({ linkedNumber: '75658', number: '14319' });
+  });
+  it('an account an agent documented counts when the client gave none', async () => {
+    setup();
+    const r = await ex.resolveAccount('429258', { meta: { idents: { accts: [], noteAccts: [{ n: '14319', by: 'agent1', name: 'Evan Cruz' }], emails: [], phones: [], names: [] } } });
+    expect(r.account.number).toBe('14319');
+    expect(r.matchedBy).toMatch(/Evan Cruz/);
+  });
+  it('several numbers that do not settle it: nothing is guessed', async () => {
+    setup();
+    const r = await ex.resolveAccount('429258', { meta: { idents: { accts: ['14319', '20001'], noteAccts: [], emails: [], phones: [], names: [] } } });
+    expect(r.ambiguous.map((x) => x.number)).toEqual(['14319', '20001']);
+    const h = require('../../lib/ticket-doc-note').header({ ticketNumber: '429258', contact: {} }, r, null);
+    expect(h['Practice Name']).toMatch(/^Agent to confirm: Southern Dental \(14319\) or Third Dental \(20001\)/);
+    expect(h['Account Number']).toBe('Agent to confirm');
+  });
+  it('the escalation alert on the ticket wins over the CRM text', () => {
+    const h = require('../../lib/ticket-doc-note').header({ ticketNumber: '1', contact: {} }, { header: {}, facts: { escalation: 'Never escalated' }, account: { name: 'X', number: '1' }, escAlert: { tier: '1', id: 'ESC-6295' } }, null);
+    expect(h['Any Escalation Ticket Open']).toBe('Yes - Tier 1 (ESC-6295)');
+  });
+});
