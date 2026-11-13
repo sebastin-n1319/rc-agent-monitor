@@ -449,3 +449,30 @@ describe('the tool only removes what it created (Batch 329)', () => {
     process.env = env;
   });
 });
+
+describe('mail-server notices are not the client (Batch 331)', () => {
+  const xd = require('../../lib/expert-desk-draft');
+  const th = (o) => Object.assign({ status: 'SUCCESS', channel: 'EMAIL' }, o);
+  it('a delay warning after the agent reply does not make the client waiting', async () => {
+    const list = [
+      th({ id: 'c', direction: 'in', createdTime: '2026-11-13T03:18:00Z', fromEmailAddress: '"Mailer-daemon"<mailer-daemon@mail.zoho.com>', summary: 'THIS IS A WARNING MESSAGE ONLY. YOU DO NOT NEED TO RESEND YOUR MESSAGE.' }),
+      th({ id: 'b', direction: 'out', createdTime: '2026-11-13T01:59:00Z', author: { name: 'Anold Fernandes' }, readReceipts: [{ statusVsTime: [{ Status: 'Delivered' }] }] }),
+      th({ id: 'a', direction: 'in', createdTime: '2026-11-06T19:51:00Z', fromEmailAddress: 'office@sample.ca' }),
+    ];
+    const ws = await xd.waitingState(list);
+    expect(ws.waiting).toBe(false);
+    expect(ws.by).toBe('Anold Fernandes');
+  });
+  it('a client message is waiting, and a hard bounce on an undelivered reply counts as a bounce', async () => {
+    expect((await xd.waitingState([th({ id: 'a', direction: 'in', createdTime: '2026-11-13T01:00:00Z', fromEmailAddress: 'x@sample.com' })])).waiting).toBe(true);
+    const ws = await xd.waitingState([
+      th({ id: 'c', direction: 'in', createdTime: '2026-11-13T03:00:00Z', fromEmailAddress: 'mailer-daemon@mail.zoho.com', summary: 'Delivery has failed. 550 5.1.1 user unknown' }),
+      th({ id: 'b', direction: 'out', createdTime: '2026-11-13T02:00:00Z', author: { name: 'A' } }),
+    ]);
+    expect(ws).toMatchObject({ waiting: true, bounce: true });
+  });
+  it('drafts are ignored when deciding who wrote last', async () => {
+    const ws = await xd.waitingState([th({ id: 'd', direction: 'out', status: 'DRAFT', createdTime: '2026-11-13T05:00:00Z' }), th({ id: 'a', direction: 'in', createdTime: '2026-11-13T01:00:00Z' })]);
+    expect(ws.waiting).toBe(true);
+  });
+});
