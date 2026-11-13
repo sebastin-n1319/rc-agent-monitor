@@ -356,17 +356,19 @@ describe('same caller and bounced email (Batch 323)', () => {
     expect(s.map((x) => x.number)).toEqual(['428238']);
     expect(s[0].owner).toBe('Sky Gibson');
   });
-  it('sends a bounced client to another address of the practice, other domain first when the server refused', async () => {
+  it('uses only the practice own addresses after a bounce, never strangers on the account', async () => {
     const T = { id: '9', email: 'dralbright@albrightdental.com', contactId: 'c1', accountId: 'a1', contact: { email: 'dralbright@albrightdental.com' } };
     xd.setDeps({ deskRead: async (p) => /threads\/b1/.test(p) ? { plainText: 'Delivery incomplete. dralbright@albrightdental.com 421 4.7.0 too many connections, will retry' }
       : /threads/.test(p) ? { data: [{ id: 'b1', direction: 'in', fromEmailAddress: 'mailer-daemon@googlemail.com', summary: 'Delivery Status Notification', createdTime: '2026-11-13T10:00:00Z' }] }
       : /contacts\/c1$/.test(p) ? { email: 'dralbright@albrightdental.com', secondaryEmail: 'contactus@albrightdental.com' }
-      : /accounts\/a1\/contacts/.test(p) ? { data: [{ email: 'frontdesk.albright@gmail.com' }] } : { data: [] } });
+      : /accounts\/a1\/contacts/.test(p) ? { data: [{ email: 'amy.ho2002@gmail.com' }, { email: 'office@albrightdental.com' }] }
+      : /accounts\/a1\/tickets/.test(p) ? { data: [{ email: 'testingqa@aditqa.com' }, { email: 'kymeshatinsley@gmail.com' }] } : { data: [] } });
     const b = await xd.bounceOf('9', T);
     expect(b.bounced).toEqual(['dralbright@albrightdental.com']);
     expect(b.serverWide).toBe(true);
-    expect(b.alt[0].email).toBe('frontdesk.albright@gmail.com');
-    expect(b.alt.map((a) => a.email)).toContain('contactus@albrightdental.com');
+    const got = b.alt.map((a) => a.email);
+    expect(got).toEqual(['contactus@albrightdental.com', 'office@albrightdental.com']);
+    expect(b.allSame).toBe(true);
     expect(xd.toneIssues('[name and role] will call you.')[0].kind).toMatch(/placeholder/);
   });
 });
