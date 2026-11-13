@@ -394,3 +394,17 @@ describe('one draft and one note per ticket (Batch 325)', () => {
     process.env = env;
   });
 });
+
+describe('manual and auto drafts are checked too (Batch 326)', () => {
+  it('refuses when an agent already replied or the ticket left T1', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    let T = { ticketNumber: '429113', teamId: '197800000052125116', email: 'a@b.com' };
+    let TH = [{ id: '1', direction: 'in', status: 'SUCCESS', createdTime: '2026-11-13T17:00:00Z' }, { id: '2', direction: 'out', status: 'SUCCESS', channel: 'EMAIL', author: { name: 'Logan Pardini' }, createdTime: '2026-11-13T18:38:00Z' }];
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: TH } : T });
+    await expect(xd.start({ ticketId: '1978001113', mode: 'save', source: 'manual' })).rejects.toThrow(/already replied.*Logan/);
+    T = Object.assign({}, T, { teamId: '999', team: { name: 'Tech OB POD 27' } });
+    await expect(xd.start({ ticketId: '1978001114', mode: 'save', source: 'manual' })).rejects.toThrow(/Tech OB POD 27/);
+    process.env = env;
+  });
+});
