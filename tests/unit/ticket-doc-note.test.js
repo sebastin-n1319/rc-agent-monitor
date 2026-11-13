@@ -34,6 +34,10 @@ describe('ticket documentation notes (Batch 328)', () => {
     expect(writes[2].cm).toBe(writes[1].cm || 'c2');
     expect(writes.length).toBe(3);
   });
+  it('reads the deal stage and owner from the CRM text when the header fields are empty', () => {
+    const h = dn.header({ ticketNumber: '1', contact: {} }, { text: 'Account: X.\nDeal: Y Dental, stage CSM, CSM Philip Rivera, onboarding Ann Lee. Escalation: none.', header: {}, account: {}, facts: {} });
+    expect(h['Deal Stage']).toBe('CSM | Philip');
+  });
   it('skips tickets outside T1', async () => {
     dn.setDeps({ deskRead: async () => ({ id: '1', ticketNumber: '1', teamId: '999', statusType: 'Open' }) });
     expect((await dn.touch('1')).skipped).toMatch(/T1/);
