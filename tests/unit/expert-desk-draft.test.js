@@ -248,7 +248,7 @@ describe('learning from agents', () => {
       deskRead: async (p) => /comments/.test(p) ? { data: comments } : /threads\/d9/.test(p) ? { content: '<div>Hi Dr. A,<br><br>Please call us and we will set the reminders for you today.<br><br>Regards,<br>Lincy</div>' } : /threads/.test(p) ? { data: threads } : { ticketNumber: '428950', email: 'dr@x.com' },
       fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd9' : 'c9' }) }; } });
     const r = await xd.start({ ticketId: '1978000950', mode: 'save' });
-    await new Promise((res) => setTimeout(res, 60));
+    for (let i = 0; i < 40 && (await xd.status(r.jobId)).status !== 'done'; i++) await new Promise((res) => setTimeout(res, 25));
     threads = [{ id: 'd9', direction: 'out', status: 'SUCCESS', author: { name: 'Lincy Tabita' }, createdTime: new Date().toISOString() }];
     const t0 = new Date(Date.now() - 60000).toISOString();
     comments = [{ id: 'c9', commenterId: 'expert', commentedTime: t0 }];
