@@ -16,11 +16,30 @@
   const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
+  // Batch 316: one plain report. Tickets that came in from Desk, how many got a draft, why the rest did not, what the
+  // agents did with each draft, and the same per agent.
+  function reportCard(r, rd) {
+    const seg = `<div class="aiu-seg ddm-rdays" role="radiogroup" aria-label="Report period">${[['1', 'Today'], ['7', 'Last 7 days']].map((x) => `<button type="button" role="radio" aria-checked="${rd === x[0]}" data-d="${x[0]}">${x[1]}</button>`).join('')}</div>`;
+    const head = `<div class="aiu-head"><div><div class="stg-card-title">Report</div><div class="stg-card-sub">${rd === '7' ? 'The last 7 days' : 'Today'}, Central time. Counts tickets, not messages.</div></div>${seg}</div>`;
+    if (!r || r.error) return `<div class="stg-card">${head}<div class="aiu-alert" role="alert">Could not load the report${r && r.error ? ': ' + esc(r.error) : ''}.</div></div>`;
+    const sk = r.skipped.reduce((s, x) => s + x.n, 0);
+    const kpi = (l, v, sub) => `<div class="aiu-kpi"><div class="aiu-kpi-l">${l}</div><div class="aiu-kpi-v">${num(v)}</div>${sub ? `<div class="ddm-sub">${sub}</div>` : ''}</div>`;
+    const list = (rows, k, v) => rows.length ? `<table class="aiu-tbl ddm-mini"><tbody>${rows.map((x) => `<tr><td>${esc(x[k])}</td><td class="r">${num(x[v])}</td></tr>`).join('')}</tbody></table>` : '<p class="aiu-empty">None.</p>';
+    return `<div class="stg-card">${head}
+      <div class="aiu-kpis">${kpi('T1 tickets from Desk', r.t1Tickets, num(r.otherTeams) + ' other teams\' tickets ignored')}${kpi('Got a draft', r.drafted, (r.status.working ? num(r.status.working) + ' writing now' : '') + (r.status.failed ? (r.status.working ? ', ' : '') + num(r.status.failed) + ' failed' : ''))}${kpi('No draft', sk, 'reasons below')}</div>
+      <div class="ddm-cols"><div><div class="aiu-sub-h">Why T1 tickets got no draft</div>${list(r.skipped, 'reason', 'n')}</div>
+        <div><div class="aiu-sub-h">What agents did with the drafts</div>${list(r.outcome, 'what', 'n')}</div></div>
+      <div class="aiu-sub-h">By agent</div>
+      ${r.agents.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl"><thead><tr><th>Agent</th><th class="r">Drafts</th><th class="r">Sent as written</th><th class="r">Edited and sent</th><th class="r">Wrote their own</th><th class="r">Waiting</th><th class="r">Failed</th></tr></thead><tbody>${r.agents.map((a) => `<tr><td>${esc(a.agent)}</td><td class="r">${num(a.drafts)}</td><td class="r">${num(a.sent)}</td><td class="r">${num(a.edited)}</td><td class="r">${num(a.own)}</td><td class="r">${num(a.waiting)}</td><td class="r">${num(a.failed)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="aiu-empty">No drafts in this period.</p>'}
+      ${r.failed.length ? `<div class="aiu-sub-h">Failed</div><ul class="ddm-fails">${r.failed.map((f) => `<li>#${esc(f.number)}: ${esc(f.error)}</li>`).join('')}</ul>` : ''}
+    </div>`;
+  }
+
   // ── Desk drafts ──────────────────────────────────────────────────────
   async function renderDrafts(root) {
     root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading Desk drafts...</div>';
-    let st, jl; const filter = store.get('jobs', '');
-    try { [st, jl] = await Promise.all([api('/api/admin/desk-drafts/state'), api('/api/admin/desk-drafts/jobs?limit=10' + (filter ? '&status=' + filter : ''))]); }
+    let st, jl, rp; const filter = store.get('jobs', ''), rd = store.get('rdays', '1') === '7' ? '7' : '1';
+    try { [st, jl, rp] = await Promise.all([api('/api/admin/desk-drafts/state'), api('/api/admin/desk-drafts/jobs?limit=10' + (filter ? '&status=' + filter : '')), api('/api/admin/desk-drafts/report?days=' + rd).catch((e) => ({ error: e.message }))]); }
     catch (e) { root.innerHTML = `<div class="stg-error">Could not load Desk drafts: ${esc(e.message)}</div>`; return; }
     const S = st.settings, w = st.stats.week || {}, done = (w.done || {}), failed = (w.failed || {});
     const pilotOn = st.pilot.length > 0, pilotSet = new Set(st.pilot.map((p) => p.id));
@@ -36,6 +55,7 @@
           <div class="aiu-kpi"><div class="aiu-kpi-l">Failed (7 days)</div><div class="aiu-kpi-v">${num(failed.n)}</div></div>
           <div class="aiu-kpi"><div class="aiu-kpi-l">Average time</div><div class="aiu-kpi-v">${done.avgSec ? done.avgSec + 's' : '-'}</div></div></div>
       </div>
+      ${reportCard(rp, rd)}
       <div class="stg-card">
         <div class="stg-card-title">Who gets drafts</div>
         <div class="stg-card-sub">${S.pilotFromEnv && pilotOn ? 'Now set by EXPERT_PILOT_OWNERS on Railway. Saving here takes over from it.' : 'A ticket gets a draft only when its owner is in this list, or every T1 ticket when "All T1 agents" is chosen.'}</div>
@@ -67,6 +87,7 @@
           <tr class="ddm-detail" hidden><td colspan="6"><div class="ddm-cols"><div><div class="aiu-sub-h">Draft reply</div><pre class="ddm-pre">${esc(j.reply || 'No reply text.')}</pre></div>
             <div><div class="aiu-sub-h">Private note</div><pre class="ddm-pre">${esc(j.note || 'No note.')}</pre></div></div></td></tr>`).join('')}</tbody></table></div>` : '<p class="aiu-empty">No drafts here yet.</p>'}
       </div>`;
+    root.querySelectorAll('.ddm-rdays button').forEach((b) => b.addEventListener('click', () => { store.set('rdays', b.dataset.d); renderDrafts(root); }));
     root.querySelector('.ddm-pause').addEventListener('click', async (e) => { e.target.disabled = true; try { await api('/api/admin/desk-drafts/settings', { paused: !S.paused }); toast(S.paused ? 'Drafts resumed' : 'Drafts paused', 'success'); } catch (x) { toast(x.message, 'error'); } renderDrafts(root); });
     const agentsBox = root.querySelector('.ddm-agents');
     root.querySelectorAll('input[name="ddm-who"]').forEach((r) => r.addEventListener('change', () => { agentsBox.hidden = (root.querySelector('input[name="ddm-who"]:checked') || {}).value !== 'pilot'; }));

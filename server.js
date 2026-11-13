@@ -808,7 +808,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
       { const xs = require('./lib/expert-sheet'); xs.setDB(db); await xs.initSchema().catch((e) => console.warn('expert sheet schema:', e.message));
         setTimeout(() => { const t = () => xs.syncAll().then((r) => { if (r && (r.addedTotal || r.error)) console.log('📒 Expert log sheet:', JSON.stringify(r)); }).catch((e) => console.warn('expert sheet:', e.message)); t(); setInterval(t, 10 * 60 * 1000); }, 2 * 60 * 1000); }
-      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai') });
+      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai'), t1Agents: () => cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()) });
+        setTimeout(() => xd.recover().then((r) => { if (r.requeued || r.closed) console.log('♻️ Expert drafts after restart:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft recover:', e.message)), 30 * 1000);
         setTimeout(() => { const sw = () => xd.sweep().then((r) => { if (r && (r.removed || r.failed)) console.log('🧹 Expert drafts:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft sweep:', e.message)); sw(); setInterval(sw, 5 * 60 * 1000); }, 2 * 60 * 1000); }
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
@@ -2395,6 +2396,10 @@ app.post('/api/admin/desk-drafts/settings', requireAdmin, async (req, res) => {
 });
 app.get('/api/admin/desk-drafts/jobs', requireAdmin, async (req, res) => {
   try { res.json({ success: true, jobs: await expertDraft().jobs({ limit: req.query.limit, status: String(req.query.status || '') }) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/desk-drafts/report', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await expertDraft().report({ days: Math.min(30, Number((req.query || {}).days) || 1) }))); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/desk-drafts/run', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { const xd = expertDraft(); const r = await xd.start({ ticketNumber: (req.body || {}).ticketNumber, mode: xd.canWrite() ? 'save' : 'text', source: 'manual' }); res.json(Object.assign({ success: true }, r)); }

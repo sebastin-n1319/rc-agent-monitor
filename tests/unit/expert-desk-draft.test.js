@@ -251,3 +251,26 @@ describe('learning from agents', () => {
     expect(calls.some((c) => c.method === 'DELETE' && /comments\/c9/.test(c.url))).toBe(true);
   });
 });
+
+describe('desk drafts report and restart recovery', () => {
+  it('names skip reasons plainly', () => {
+    expect(xd.reasonOf('not a T1 ticket').kind).toBe('other');
+    expect(xd.reasonOf('owner not in the pilot').label).toMatch(/pilot/);
+    expect(xd.reasonOf('phone ticket (channel Phone)').label).toBe('Phone ticket');
+    expect(xd.reasonOf('already being checked (second event for the same email)').kind).toBe('dup');
+  });
+  it('reports tickets, drafts, reasons and agents, and closes jobs left by a restart', async () => {
+    const db = new sqlite3.Database(':memory:'); xd.setDB(db); await xd.initSchema();
+    const q = (sql, p = []) => new Promise((res, rej) => db.run(sql, p, (e) => e ? rej(e) : res()));
+    await q(`INSERT INTO expert_desk_hooks (ticket, skip) VALUES ('1', 'not a T1 ticket'), ('2', 'owner not in the pilot'), ('3', NULL), ('2', 'already being checked (second event)')`);
+    await q(`UPDATE expert_desk_hooks SET started = 9 WHERE ticket = '3'`);
+    await q(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, draft_state, owner) VALUES ('x3', '3', 'save', 'done', 'edited', 'Evan Cruz')`);
+    await q(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, owner, created_at) VALUES ('x4', '4', 'save', 'working', 'Lincy', datetime('now', '-5 hours'))`);
+    const r = await xd.report({ days: 1 });
+    expect(r.otherTeams).toBe(1);
+    expect(r.skipped).toEqual([{ reason: 'Owner not in the pilot', n: 1 }]);
+    expect(r.agents.find((a) => a.agent === 'Evan Cruz').edited).toBe(1);
+    const rc = await xd.recover();
+    expect(rc.closed).toBe(1);
+  });
+});
