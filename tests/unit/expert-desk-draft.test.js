@@ -269,9 +269,9 @@ describe('learning from agents', () => {
     const calls = []; const brief = { bottom_line: 'x', reply: 'Hi Dr. B,\n\nOpen Engage and click Auto-Reminders, then edit the reminder text and save it.\n\nBest regards,', replies: [] };
     let threads = [];
     xd.setDeps({ ai: null, expert: { ask: async () => ({ logId: 4, answer: { brief } }) },
-      deskRead: async (p) => /search\?tag/.test(p) ? { data: [{ id: '1978000977' }] } : /1978000977\/comments/.test(p) ? { data: [{ id: 'w1', content: 'Adit Expert is writing a draft reply for this ticket.', commentedTime: new Date(Date.now() - 3600000).toISOString() }] }
+      deskRead: async (p) => /search\?tag/.test(p) ? { data: [{ id: '1978000977' }] } : /1978000977\/comments/.test(p) ? { data: [{ id: 'w1', commenterId: 'u1', content: 'Adit Expert is writing a draft reply for this ticket.', commentedTime: new Date(Date.now() - 3600000).toISOString() }] }
         : /comments/.test(p) ? { data: [] } : /threads\/n1/.test(p) ? { content: '<div>Hi Dr. B,<br><br>Please call us and we will set the reminders for you today.<br><br>Regards,<br>Greg</div>' } : /threads/.test(p) ? { data: threads } : { ticketNumber: '428960', email: 'dr@x.com' },
-      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd7' : 'c7' }) }; } });
+      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify(/draftReply/.test(url) ? { id: 'd7' } : { id: 'c7', commenterId: 'u1' }) }; } });
     await xd.start({ ticketId: '1978000960', mode: 'save' });
     await new Promise((res) => setTimeout(res, 60));
     threads = [{ id: 'n1', direction: 'out', status: 'SUCCESS', author: { name: 'Greg Dawson' }, createdTime: new Date(Date.now() + 5000).toISOString() }];
@@ -418,12 +418,34 @@ describe('takeovers (Batch 327)', () => {
     const calls = [];
     xd.setDeps({ t1Agents: async () => [{ id: '111' }],
       deskRead: async (p) => /threads/.test(p) ? { data: [{ id: 'd1', status: 'DRAFT', direction: 'out' }] } : /comments|search/.test(p) ? { data: [] } : { ticketNumber: '429113', teamId: '197800000377955045', team: { name: 'Tech OB POD 27 - Steve' }, assigneeId: '999', assignee: { firstName: 'Logan', lastName: 'Pardini' } },
-      fetch: async (url, o) => { calls.push(o.method + ' ' + url.replace(/^.*\/api\/v1/, '') + ' ' + (o.body || '')); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => '{}' }; } });
+      fetch: async (url, o) => { calls.push(o.method + ' ' + url.replace(/^.*\/api\/v1/, '') + ' ' + (o.body || '')); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; if (o.method === 'DELETE') return { ok: false, status: 403, text: async () => '{"errorCode":"SCOPE_MISMATCH"}' }; return { ok: true, status: 200, text: async () => '{}' }; } });
     const sw = await xd.sweep();
     expect(sw.handedOver).toBe(1);
     expect(calls.some((c) => /PATCH \/tickets\/1978007700\/comments\/c1/.test(c) && /Taken over by Logan Pardini/.test(c) && /Sabrina Quinn/.test(c))).toBe(true);
-    expect(calls.some((c) => /DELETE .*draftReply/.test(c))).toBe(false);
     expect((await xd.list({ q: '429113' })).rows[0].draft_state).toBe('handed over');
+    process.env = env;
+  });
+});
+
+describe('the tool only removes what it created (Batch 329)', () => {
+  it('removes its own draft and note on a takeover once deletes are allowed, never anything else', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    const db = new sqlite3.Database(':memory:'); xd.setDB(db); await xd.initSchema();
+    await new Promise((r) => db.run(`INSERT INTO expert_desk_drafts (ticket_id, number, mode, status, draft_id, comment_id, owner, draft_state, done_at) VALUES ('1978007701','429114','save','done','d1','c1','Sabrina Quinn','in desk', datetime('now','-10 minutes'))`, r));
+    const calls = [];
+    xd.setDeps({ t1Agents: async () => [{ id: '111' }],
+      deskRead: async (p) => /threads/.test(p) ? { data: [{ id: 'd1', status: 'DRAFT', direction: 'out' }, { id: 'dX', status: 'DRAFT', direction: 'out' }] } : /comments/.test(p) ? { data: [{ id: 'c1', commenterId: 'u1', content: 'Expert draft ready in the reply box.' }, { id: 'cAgent', commenterId: 'u9', content: 'Expert draft ready in the reply box. (agent copy)' }, { id: 'cOld', commenterId: 'u2', content: 'Called the client.' }] } : /search/.test(p) ? { data: [] } : { ticketNumber: '429114', teamId: '197800000377955045', team: { name: 'Tech OB POD 27' }, assigneeId: '999', assignee: { firstName: 'Logan', lastName: 'Pardini' } },
+      fetch: async (url, o) => { calls.push(o.method + ' ' + url.replace(/^.*\/api\/v1/, '')); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => '{}' }; } });
+    const sw = await xd.sweep();
+    expect(sw.cleaned).toBe(1);
+    const dels = calls.filter((c) => c.startsWith('DELETE'));
+    expect(dels).toEqual(['DELETE /tickets/1978007701/draftReply/d1', 'DELETE /tickets/1978007701/comments/c1']);
+    // a draft or note the tool did not create can never be removed or edited
+    await expect(xd._desk('DELETE', '/tickets/1978007701/draftReply/dX')).rejects.toThrow(/NOT_OURS/);
+    await expect(xd._desk('DELETE', '/tickets/1978007701/comments/cOld')).rejects.toThrow(/NOT_OURS/);
+    await expect(xd._desk('PATCH', '/tickets/1978007701/comments/cOld', {})).rejects.toThrow(/NOT_OURS/);
+    await expect(xd._desk('DELETE', '/tickets/1978007701')).rejects.toThrow(/NOT_OURS/);
     process.env = env;
   });
 });
