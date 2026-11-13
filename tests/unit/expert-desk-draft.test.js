@@ -316,3 +316,29 @@ describe('draft tone (Batch 321)', () => {
     expect(xd.toneIssues('Thank you for your patience. Our team is on it and you will hear back here.')).toEqual([]);
   });
 });
+
+describe('internal forwards (Batch 322)', () => {
+  it('drafts a colleague-forwarded client email to the client, with the forward in the note', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    await xd.saveSettings({ pilot: [], paused: false });
+    const T = { id: '1978000777', ticketNumber: '429113', teamId: '197800000052125116', status: 'Open', statusType: 'Open', channel: 'Email', subject: 'Fwd: Follow up ASAP', email: 'jeffrey@adit.com', assigneeId: '111', lastThread: { direction: 'in' } };
+    const TH = { id: 'th1', direction: 'in', fromEmailAddress: '"Jeffrey Kamienski"<jeffrey@adit.com>', createdTime: new Date().toISOString(), summary: '' };
+    const calls = []; let asked = '';
+    xd.setDeps({ ai: null, expert: { ask: async (o) => { asked = o.question; return { logId: 9, answer: { brief: { reply: 'Hi Karina,\n\nThank you for reaching out.\n\nBest regards,', replies: [] } } }; } },
+      deskRead: async (p) => /threads\/th1/.test(p) ? { content: '<div>---------- Forwarded message ---------<br>From: Karina Del Moral &lt;kdm@portofinodental.org&gt;<br>Please call me</div>' } : /threads/.test(p) ? { data: [TH] } : /comments/.test(p) ? { data: [] } : T,
+      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd5' : 'c5' }) }; } });
+    const d = await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000777', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'jeffrey@adit.com' } }, { assignWaitMs: 0 });
+    expect(d.skip).toBeUndefined();
+    await xd.start({ ticketId: '1978000777', mode: 'save' });
+    await new Promise((res) => setTimeout(res, 80));
+    expect(asked).toMatch(/forwarded internally by Jeffrey Kamienski/);
+    const dr = calls.find((c) => /draftReply/.test(c.url) && c.method === 'POST');
+    expect(JSON.parse(dr.body).to).toBe('kdm@portofinodental.org');
+    expect(calls.some((c) => /comments/.test(c.url) && /keep Jeffrey posted/.test(c.body || ''))).toBe(true);
+    // an internal email that is not a forward is still skipped
+    xd.setDeps({ deskRead: async (p) => /threads\/th1/.test(p) ? { content: 'Hi team, can someone check this account?' } : /threads/.test(p) ? { data: [TH] } : Object.assign({}, T, { subject: 'Question' }) });
+    expect((await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000777', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'jeffrey@adit.com' } }, { assignWaitMs: 0 })).skip).toMatch(/internal/);
+    await xd.saveSettings({ pilot: null }); process.env = env;
+  });
+});
