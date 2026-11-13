@@ -84,7 +84,7 @@
       </div>
       <div class="stg-card">
         <div class="stg-card-title">Tickets already waiting</div>
-        <div class="stg-card-sub">The webhook drafts when a client writes. Open T1 tickets (all channels but phone) where the client wrote last before that (last 14 days, ${st.pilot.length ? 'pilot agents' : 'all T1 agents'}) can be drafted here, up to 15 at a time.</div>
+        <div class="stg-card-sub">The webhook drafts when a client writes, and every 10 minutes in work hours Expert also drafts open tickets where the client is waiting (new, reassigned, web or chat) from the last 3 days. Open T1 tickets (all channels but phone) where the client wrote last (last 14 days, ${st.pilot.length ? 'pilot agents' : 'all T1 agents'}) can be drafted here, up to 15 at a time.</div>
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-bl-check">Find waiting tickets</button><span class="ddm-run-msg ddm-bl-msg" role="status"></span></div>
         <div class="ddm-bl-list"></div>
       </div>
@@ -196,7 +196,7 @@
     if (!keep) root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading drafted tickets...</div>';
     const qs = new URLSearchParams(Object.assign({}, F, { offset: String(offset), limit: '50' })).toString();
     let d; try { d = await api('/api/admin/desk-drafts/list?' + qs); } catch (e) { root.innerHTML = `<div class="stg-error">Could not load drafted tickets: ${esc(e.message)}</div>`; return; }
-    const src = { webhook: 'Desk webhook', manual: 'By hand', automation: 'Desk function', backlog: 'Waiting tickets' };
+    const src = { webhook: 'Desk webhook', manual: 'By hand', automation: 'Desk function', backlog: 'Waiting tickets', auto: 'Client waiting (auto)' };
     const rows = d.rows.map((j) => `
       <tr class="ddm-job" tabindex="0" aria-expanded="false"><td>${esc(ct(j.created_at))}</td>
         <td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a><div class="ddm-sub">${esc(j.subject || '')}</div></td>

@@ -219,6 +219,20 @@ describe('waiting tickets', () => {
     expect(r.tickets.map((t) => t.number)).toEqual(['427359', '427401']);
     expect(r.tickets[0].owner).toBe('Sabrina Quinn');
   });
+  it('auto drafts a new web ticket where the client is waiting, once per client message', async () => {
+    const env = { ...process.env };
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    await xd.saveSettings({ pilot: [], paused: false });
+    const at = new Date(Date.now() - 20 * 60000).toISOString();
+    const W = { id: '1978000555', ticketNumber: '429500', teamId: '197800000052125116', statusType: 'Open', status: 'Open', channel: 'Web', subject: 'locked out', email: 'pat@gmail.com', assigneeId: '111', lastThread: null, customerResponseTime: at, assignee: { firstName: 'Sabrina', lastName: 'Quinn' } };
+    xd.setDeps({ ai: null, expert: { ask: async () => { throw new Error('test') } }, deskRead: async (p) => /search/.test(p) ? { data: [W] } : /threads|comments/.test(p) ? { data: [] } : W,
+      fetch: async (url) => /oauth/.test(url) ? { json: async () => ({ access_token: 't', expires_in: 3600 }) } : { ok: true, status: 200, text: async () => '{"id":"c1"}' } });
+    const r = await xd.autoWaiting({ ownerIds: ['111'] });
+    expect(r.started.map((x) => x.number)).toEqual(['429500']);
+    const r2 = await xd.backlog({ ownerIds: ['111'], days: 3, dry: true });
+    expect(r2.waiting).toBe(0);
+    await xd.saveSettings({ pilot: null }); process.env = env;
+  });
 });
 
 describe('learning from agents', () => {
