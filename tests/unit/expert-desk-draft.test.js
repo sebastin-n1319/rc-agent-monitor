@@ -239,7 +239,7 @@ describe('learning from agents', () => {
   const env = { ...process.env };
   afterEach(() => { process.env = { ...env }; });
   it('keeps an edited draft as a lesson, updates the note, and removes Expert note when an agent adds one', async () => {
-    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    Object.assign(process.env, { TICKET_DOC_NOTES: 'off', ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
     expect(xd.similarity('the quick brown fox jumps', 'the quick brown fox jumps')).toBe(1);
     expect(xd.similarity('hello there my friend', 'totally different words here')).toBe(0);
     const calls = []; const brief = { bottom_line: 'x', reply: 'Hi Dr. A,\n\nOpen Engage and click Auto-Reminders, then edit the reminder text and save it.\n\nBest regards,', replies: [] };
