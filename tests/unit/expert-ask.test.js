@@ -52,7 +52,7 @@ describe.skipIf(!sqlite3)('analyst-style ticket review (Batch 240)', () => {
   it('runs the pattern check for a ticket and returns findings, cluster and ranked actions', async () => {
     const goals = [];
     const inv2 = { isConfigured: () => true, needsLookup: () => false, investigate: async (o) => { goals.push(o.goal || ''); return { summary: 'CLUSTER:\n#423436 | Align Dental Care | Pending Adit | DST\nPATTERN: one platform issue', steps: [{ what: 'Looked up desk_tickets', ok: true }], ms: 1000 }; } };
-    const tk = { meta: { number: '423761', subject: 'Time incorrect on Reminder Text', channel: 'Chat', account: 'Sage Dental' }, text: 'Client: messages go out for the wrong time', lastClient: 'wrong time', prior: [], timeline: [] };
+    const tk = { meta: { number: '423761', subject: 'Time incorrect on Reminder Text', channel: 'Chat', account: 'Sage Dental', asanaLinks: ['https://app.asana.com/0/123/1209876543210'] }, text: 'Client: messages go out for the wrong time', lastClient: 'wrong time', prior: [], timeline: [] };
     let seenUser = '';
     const ai2 = { anyConfigured: () => true, isAnthropicConfigured: () => true, chatJSON: async () => ({ json: { verdict: 'ok' } }),
       bestJSON: async (o) => { if (/route questions/.test(o.system)) return { json: { search: 'reminder time', alt: [], intent: 'troubleshoot' } };
@@ -62,8 +62,12 @@ describe.skipIf(!sqlite3)('analyst-style ticket review (Batch 240)', () => {
           findings: [{ title: 'Part of a cluster', evidence: '#423436 also', driver: 'DST', impact: 'wrong texts', recommendation: 'one engineering report', confidence: 'high' }],
           cluster: [{ number: '#423436', account: 'Align Dental Care', status: 'Pending Adit', note: 'DST' }], fix_check: 'Settings link is the wrong fix', classification: 'Technical Issues and Bugs',
           actions: [{ kind: 'immediate', text: 'Restore reminders' }, { kind: 'bogus', text: 'x' }], limits: ['root cause not confirmed'] } } }; } };
-    ex.setDeps({ ai: ai2, investigate: inv2, ticket: { detect: (q) => (/\d{6}/.exec(q) || [null])[0], load: async () => tk } });
+    const TT = require('../../lib/ticket-triage');
+    const triage = { _asanaGid: TT._asanaGid, _asanaText: TT._asanaText, _asanaTask: async (l) => ({ gid: TT._asanaGid(l), read: true, name: 'Fix reminder time', completed: false, doneColumn: false, due: '2026-11-20', assignee: 'Dev Team', modified: '', sections: ['Bugs > In progress'], fields: [], notes: '', updates: ['2026-11-12 Dev commented: fix in QA'] }) };
+    ex.setDeps({ ai: ai2, investigate: inv2, triage, ticket: { detect: (q) => (/\d{6}/.exec(q) || [null])[0], load: async () => tk } });
     const r = await ex.ask({ question: '#423761 - how to handle this ticket?', email: 'a@adit.com' });
+    expect(seenUser).toMatch(/Asana task 1209876543210: Fix reminder time[\s\S]*due 2026-11-20[\s\S]*fix in QA/);
+    ex.setDeps({ triage: null });
     expect(goals).toContain('pattern');
     expect(seenUser).toMatch(/same problem across Adit/i);
     expect(r.pattern.summary).toMatch(/423436/);
