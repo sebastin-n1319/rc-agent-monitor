@@ -359,6 +359,25 @@
   const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook']];
   function subNow() { try { const v = localStorage.getItem('stg.sub'); return SUBS.some((x) => x[0] === v) ? v : 'general'; } catch (e) { return 'general'; } }
   function setSub(v) { try { localStorage.setItem('stg.sub', v); } catch (e) { /* private mode */ } }
+  // Batch 315: the AI usage and Desk drafts pages refresh themselves every 30 seconds while they are open, drawn off
+  // screen and swapped in, so there is no spinner flash. Skipped while someone is typing, has a row open, has the
+  // waiting-tickets list out or a button busy, or has loaded more rows.
+  let _auto = null;
+  async function autoRefresh(root, sub, R) {
+    const body = root.querySelector('.stg-sub-body');
+    if (!body || !root.isConnected || subNow() !== sub || document.hidden || !body.offsetParent) return;
+    const a = document.activeElement;
+    if (a && body.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+    if (body.querySelector('[aria-expanded="true"], .stg-loading, button:disabled') || (body.querySelector('.ddm-bl-list') && body.querySelector('.ddm-bl-list').children.length)) return;
+    if (body.querySelectorAll('.ddm-tickets tbody tr.ddm-job').length > 50) return;
+    const fresh = document.createElement('div'); fresh.className = 'stg-sub-body'; fresh.setAttribute('role', 'tabpanel');
+    try { await window[R](fresh); } catch (e) { return; }
+    if (subNow() !== sub || !body.isConnected || fresh.querySelector('.stg-error')) return;
+    const a2 = document.activeElement;
+    if (a2 && body.contains(a2) && /^(INPUT|SELECT|TEXTAREA)$/.test(a2.tagName)) return;
+    if (body.querySelector('[aria-expanded="true"], button:disabled')) return;
+    body.replaceWith(fresh);
+  }
   window.openSettingsAdmin = async function (sub) {
     const root = document.getElementById('settings-admin-root');
     if (!root) return;
@@ -368,8 +387,9 @@
     root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
     const body = root.querySelector('.stg-sub-body');
     const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin' }[cur];
+    clearInterval(_auto);
     if (R) {
-      if (typeof window[R] === 'function') return window[R](body);
+      if (typeof window[R] === 'function') { _auto = setInterval(() => autoRefresh(root, cur, R), 30000); return window[R](body); }
       body.innerHTML = '<div class="stg-error">This page did not load. Refresh the page.</div>';
       return;
     }

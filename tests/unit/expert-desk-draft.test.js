@@ -115,6 +115,11 @@ describe('desk webhook', () => {
     cur = Object.assign({}, W, { channel: 'Chat' }); expect((await xd.decide(add('Chat'))).skip).toBeUndefined();
     cur = Object.assign({}, W, { channel: 'Phone' }); expect((await xd.decide(add('Phone'))).skip).toMatch(/phone/);
     expect((await xd.decide({ eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000901', direction: 'in', channel: 'CHAT' } })).skip).toMatch(/phone/);
+    // claimed by a pilot agent with no team: still T1
+    process.env.EXPERT_PILOT_OWNERS = '111';
+    cur = Object.assign({}, W, { teamId: '' }); expect((await xd.decide(add('Web'), { assignWaitMs: 0 })).skip).toBeUndefined();
+    cur = Object.assign({}, W, { teamId: '', assigneeId: '999' }); expect((await xd.decide(add('Web'), { assignWaitMs: 0 })).skip).toMatch(/team|pilot/);
+    expect((await xd.decide(add('Web'), { assignWaitMs: 0, ownerIsT1: true })).skip).toMatch(/pilot/);
   });
 });
 
