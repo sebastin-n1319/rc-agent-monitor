@@ -13,7 +13,7 @@
   const deskUrl = (id) => 'https://help.adit.com/agent/aditadvertising/support/tickets/details/' + encodeURIComponent(id);
   const pill = (cls, t) => `<span class="aiu-pill ${cls}">${esc(t)}</span>`;
   const statusPill = (s) => s === 'done' ? pill('ok', 'Done') : s === 'failed' ? pill('bad', 'Failed') : s === 'skipped' ? pill('warn', 'Not needed') : pill('', s === 'working' ? 'Writing' : 'Waiting');
-  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft' };
+  const STATE = { 'in desk': 'Draft waiting in Desk', sent: 'Sent by the agent', removed: 'Removed: agent sent their own reply', 'agent replied': 'Agent sent their own reply', gone: 'Draft deleted in Desk', 'not saved': 'Agent replied first', replaced: 'Replaced by a newer draft', edited: 'Edited by the agent and sent' };
   const toast = (m, t) => { if (typeof window.showToast === 'function') window.showToast(m, t || 'info', 3000); };
 
   // ── Desk drafts ──────────────────────────────────────────────────────
@@ -164,7 +164,7 @@
       <tr class="ddm-job" tabindex="0" aria-expanded="false"><td>${esc(ct(j.created_at))}</td>
         <td><a href="${deskUrl(j.ticket_id)}" target="_blank" rel="noopener">#${esc(j.number)}</a><div class="ddm-sub">${esc(j.subject || '')}</div></td>
         <td>${esc(j.owner || '-')}</td><td>${esc(j.account || '-')}${j.deal ? `<div class="ddm-sub">${esc(j.deal)}</div>` : ''}</td>
-        <td>${statusPill(j.status)}<div class="ddm-sub">${esc(STATE[j.draft_state] || src[j.source || 'automation'] || j.source)}</div></td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td></tr>
+        <td>${statusPill(j.status)}<div class="ddm-sub">${esc(STATE[j.draft_state] || src[j.source || 'automation'] || j.source)}</div>${j.note_state === 'removed' ? '<div class="ddm-sub">Note removed: agent added their own</div>' : ''}</td><td class="r">${j.ms ? Math.round(j.ms / 1000) + 's' : '-'}</td></tr>
       <tr class="ddm-detail" hidden><td colspan="6">${j.error ? `<div class="aiu-alert">${esc(j.error)}</div>` : ''}<div class="ddm-cols"><div><div class="aiu-sub-h">Draft reply</div><pre class="ddm-pre">${esc(j.reply || 'No reply text.')}</pre></div>
         <div><div class="aiu-sub-h">Private note</div><pre class="ddm-pre">${esc(j.note || 'No note.')}</pre></div></div>
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-ghost ddm-redo" data-n="${esc(j.number)}">Draft this ticket again</button></div></td></tr>`).join('');
@@ -186,7 +186,7 @@
         </form>
         <div class="ddm-count" role="status">${num(d.total)} ${d.total === 1 ? 'ticket' : 'tickets'}</div>
         ${d.rows.length ? `<div class="aiu-tbl-wrap"><table class="aiu-tbl ddm-jobs ddm-tickets"><thead><tr><th>When (CT)</th><th>Ticket</th><th>Owner</th><th>Account / deal</th><th>Status</th><th class="r">Time</th></tr></thead><tbody>${rows}</tbody></table></div><div class="ddm-row ddm-more-wrap"></div>` : '<p class="aiu-empty">No drafted tickets match these filters.</p>'}
-        <p class="ddm-hint">"Not needed": an agent replied or started a draft while Expert was writing, so no draft was added. Drafts left after an agent sends their own reply are removed within about 5 minutes.</p>
+        <p class="ddm-hint">"Not needed": an agent replied or started a draft while Expert was writing, so no draft was added. Drafts left after an agent sends their own reply are removed within about 5 minutes. When an agent edits a draft before sending, or sends their own reply, Expert keeps the difference and learns from it; when an agent adds their own private note, Expert's note is removed.</p>
       </div>`;
     const form = root.querySelector('.ddm-filters');
     form.addEventListener('submit', (e) => { e.preventDefault(); new FormData(form).forEach((v, k) => { F[k] = String(v).trim(); }); store.set('filters', JSON.stringify(F)); renderTickets(root); });

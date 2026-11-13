@@ -201,3 +201,34 @@ describe('waiting tickets', () => {
     expect(r.tickets[0].owner).toBe('Sabrina Quinn');
   });
 });
+
+describe('learning from agents', () => {
+  const env = { ...process.env };
+  afterEach(() => { process.env = { ...env }; });
+  it('keeps an edited draft as a lesson, updates the note, and removes Expert note when an agent adds one', async () => {
+    Object.assign(process.env, { ZOHO_CLIENT_ID: 'c', ZOHO_CLIENT_SECRET: 's', ZOHO_DESK_WRITE_REFRESH_TOKEN: 'r', ZOHO_DESK_ORG_ID: '1', DESK_DRAFT_FROM: 'support@adit.com' });
+    expect(xd.similarity('the quick brown fox jumps', 'the quick brown fox jumps')).toBe(1);
+    expect(xd.similarity('hello there my friend', 'totally different words here')).toBe(0);
+    const calls = []; const brief = { bottom_line: 'x', reply: 'Hi Dr. A,\n\nOpen Engage and click Auto-Reminders, then edit the reminder text and save it.\n\nBest regards,', replies: [] };
+    let threads = [], comments = [];
+    xd.setDeps({ ai: null, expert: { ask: async () => ({ logId: 3, answer: { brief } }) },
+      deskRead: async (p) => /comments/.test(p) ? { data: comments } : /threads\/d9/.test(p) ? { content: '<div>Hi Dr. A,<br><br>Please call us and we will set the reminders for you today.<br><br>Regards,<br>Lincy</div>' } : /threads/.test(p) ? { data: threads } : { ticketNumber: '428950', email: 'dr@x.com' },
+      fetch: async (url, o) => { calls.push({ url, method: o.method, body: o.body }); if (/oauth/.test(url)) return { json: async () => ({ access_token: 't', expires_in: 3600 }) }; return { ok: true, status: 200, text: async () => JSON.stringify({ id: /draftReply/.test(url) ? 'd9' : 'c9' }) }; } });
+    const r = await xd.start({ ticketId: '1978000950', mode: 'save' });
+    await new Promise((res) => setTimeout(res, 60));
+    threads = [{ id: 'd9', direction: 'out', status: 'SUCCESS', author: { name: 'Lincy Tabita' }, createdTime: new Date().toISOString() }];
+    const t0 = new Date(Date.now() - 60000).toISOString();
+    comments = [{ id: 'c9', commenterId: 'expert', commentedTime: t0 }];
+    calls.length = 0;
+    const sw = await xd.sweep();
+    expect(sw.edited).toBe(1);
+    expect(calls.some((c) => c.method === 'PATCH' && /comments\/c9/.test(c.url) && /Lincy Tabita edited/.test(c.body))).toBe(true);
+    const j = (await xd.list({ q: '428950' })).rows[0]; expect(j.draft_state).toBe('edited');
+    // the agent adds their own private note: Expert's note goes
+    comments = [{ id: 'c9', commenterId: 'expert', commentedTime: t0 }, { id: 'c10', commenterId: 'lincy', commentedTime: new Date().toISOString() }];
+    calls.length = 0;
+    const sw2 = await xd.sweep();
+    expect(sw2.notesRemoved).toBeGreaterThanOrEqual(1);
+    expect(calls.some((c) => c.method === 'DELETE' && /comments\/c9/.test(c.url))).toBe(true);
+  });
+});
