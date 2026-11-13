@@ -467,6 +467,8 @@ Internal forwards (v1.19.521): when an Adit colleague (sales, a CSM) forwards a 
 
 Forward drafts greet the client (v1.19.522): a draft for an internal forward is written to the client by name and never greets, thanks or mentions the colleague who forwarded it; the final check rewrites any such sentence. Drafting a ticket again by hand replaces Expert's own unsent draft instead of adding a second one.
 
+Older drafts cleaned up (v1.19.523): every 5 minutes, an older Expert draft still in Desk on a ticket that has a newer Expert draft is removed. If Desk refuses, the reason is shown on that draft's row on the Drafted tickets page.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.
