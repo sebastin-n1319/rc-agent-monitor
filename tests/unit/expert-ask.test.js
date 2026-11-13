@@ -214,3 +214,19 @@ describe('client questions mapped to sources (Batch 283)', () => {
     expect(src).toMatch(/starts "What we can answer now"/);
   });
 });
+
+describe('matching a ticket with no account (Batch 318)', () => {
+  it('uses the first clue that points to exactly one account, and says how', async () => {
+    const ex = require('../../lib/expert');
+    const searches = [];
+    ex.setDeps({ client: {
+      search: async (q) => { searches.push(q); if (q === 'pat@gmail.com') return { results: [{ accountId: 'a1' }, { accountId: 'a2' }] }; if (q === 'goakey1971@hotmail.com') return { results: [{ accountId: 'a9' }] }; return { results: [] }; },
+      profile: async (id) => ({ available: true, accountId: id, header: { account: 'Oakey Dental' }, account: { name: 'Oakey Dental' }, detail: {} }) } });
+    const m = await ex._matchAccount({ emails: ['pat@gmail.com', 'goakey1971@hotmail.com'], phones: [], names: ['Gigi Oakey'], accts: [] });
+    expect(m.accountId).toBe('a9');
+    expect(m.text).toMatch(/not linked to a CRM account/);
+    expect(m.text).toMatch(/an email address written in the ticket/);
+    const none = await ex._matchAccount({ emails: [], phones: [], names: ['Nobody Here'], accts: [] });
+    expect(none.none).toBe(true);
+  });
+});
