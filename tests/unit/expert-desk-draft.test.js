@@ -314,6 +314,8 @@ describe('draft tone (Batch 321)', () => {
     expect(xd.toneIssues('This was a glitch on our end.')[0].kind).toMatch(/Adit down/);
     expect(xd.toneIssues('The reset email should arrive within 5 minutes.')).toEqual([]);
     expect(xd.toneIssues('Thank you for your patience. Our team is on it and you will hear back here.')).toEqual([]);
+    expect(xd.toneIssues('Hi Jeffrey,\n\nThank you for passing along the note.', { by: 'Jeffrey Kamienski' }).length).toBe(2);
+    expect(xd.toneIssues('Hi Karina,\n\nThank you for your patience.', { by: 'Jeffrey Kamienski' })).toEqual([]);
   });
 });
 
