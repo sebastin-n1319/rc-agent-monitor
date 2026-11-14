@@ -2471,6 +2471,19 @@ app.post('/api/admin/storage/run', requireAdmin, rateLimit(4, 3600000), async (r
 app.post('/api/admin/storage/backup', requireAdmin, rateLimit(3, 3600000), async (req, res) => {
   try { const out = await require('./lib/storage-guard').backupToDrive({ volumeUsage }); insertAuditLog(req.session?.email || 'system', 'storage_backup', 'drive', JSON.stringify(out)).catch(() => {}); res.json({ success: true, backup: out }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 345.1: one-time 15-minute link to the gzipped backup (to save it to Drive), and confirming the saved Drive link
+app.post('/api/admin/storage/backup-link', requireAdmin, rateLimit(5, 3600000), async (req, res) => {
+  try { const l = await require('./lib/storage-guard').backupLink({ volumeUsage }); insertAuditLog(req.session?.email || 'system', 'storage_backup_link', 'made', JSON.stringify({ mb: l.mb })).catch(() => {}); res.json({ success: true, url: '/api/storage/backup-file/' + l.token, mb: l.mb, expiresMin: l.expiresMin }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/storage/backup-file/:token', rateLimit(5, 3600000), (req, res) => {
+  const file = require('./lib/storage-guard').takeLink(req.params.token);
+  if (!file) return res.status(404).json({ success: false, error: 'Link expired or already used' });
+  res.setHeader('Content-Type', 'application/gzip'); res.setHeader('Content-Disposition', 'attachment; filename="rc-monitor-backup.db.gz"');
+  require('fs').createReadStream(file).pipe(res);
+});
+app.post('/api/admin/storage/backup-confirm', requireAdmin, rateLimit(10, 3600000), (req, res) => {
+  try { const b = req.body || {}; const info = require('./lib/storage-guard').confirmDrive(b.link, b.mb); insertAuditLog(req.session?.email || 'system', 'storage_backup_confirm', 'drive', JSON.stringify(info)).catch(() => {}); res.json({ success: true, backup: info }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
 app.post('/api/admin/storage/backup-settings', requireAdmin, rateLimit(10, 3600000), async (req, res) => {
   try { const A = require('./archive-service'), b = req.body || {}; const folder = String(b.folder || '').trim().replace(/^.*\/folders\/([A-Za-z0-9_-]+).*$/, '$1'); if (folder && !/^[A-Za-z0-9_-]{10,}$/.test(folder)) throw new Error('That does not look like a Drive folder link or ID'); await A.setSetting('backup_folder_id', folder); if (b.as != null) await A.setSetting('backup_as', String(b.as || '').trim()); res.json({ success: true, folder }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
