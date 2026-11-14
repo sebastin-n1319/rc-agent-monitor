@@ -33,3 +33,21 @@ describe('Expert before and after test (Batch 336)', () => {
     expect(g.better).toBe('new'); expect(g.new.accuracy).toBe(5); expect(g.old.accuracy).toBe(3);
   });
 });
+describe('Knowledge gaps (Batch 339)', () => {
+  it('lists questions both ways answered poorly, and a lead answer becomes a team note and the new reference', async () => {
+    const db = new sqlite3.Database(':memory:'); ev.setDB(db); await ev.initSchema();
+    await new Promise((r) => db.run(`INSERT INTO expert_eval_runs (status, n) VALUES ('done', 2)`, r));
+    const g = (o, n) => JSON.stringify({ old: { accuracy: o }, new: { accuracy: n }, better: 'tie', why: 'both miss the port-out rule' });
+    await new Promise((r) => db.run(`INSERT INTO expert_eval_items (run_id, log_id, question, reference, grade_json) VALUES (1, 7, 'Can T1 port out a number?', 'old ref', ?), (1, 8, 'Edit reminder text?', 'ref', ?)`, [g(2, 3), g(5, 4)], r));
+    expect(await ev.findGaps(1)).toBe(1);
+    const list = await ev.gaps();
+    expect(list.map((x) => x.log_id)).toEqual([7]);
+    let saved = null;
+    ev.setDeps({ expert: { saveNote: async (id, b, by) => { saved = { b, by }; return 99; } } });
+    await expect(ev.resolveGap({ logId: 7, answer: 'short' })).rejects.toThrow('confirmed answer');
+    const r = await ev.resolveGap({ logId: 7, answer: 'Port-outs go to the account CSM, T1 does not process them.', by: 'lead@adit.com' });
+    expect(r.noteId).toBe(99);
+    expect(saved.b).toMatchObject({ kind: 'note', source: 'gap' });
+    expect((await ev.gaps())[0].status).toBe('answered');
+  });
+});

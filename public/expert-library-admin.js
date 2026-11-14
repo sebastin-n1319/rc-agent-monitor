@@ -31,6 +31,28 @@
         ${d.items.map((x) => { const g = x.grade || {}, q = (o) => o ? ((o.accuracy + o.completeness + o.actionable) / 3).toFixed(1) : '?'; return x.error ? `<tr><td>${esc(x.question)}</td><td colspan="4" class="stg-card-sub">Not tested: ${esc(x.error)}</td></tr>` : `<tr class="elib-eval-row" tabindex="0" style="cursor:pointer"><td>${esc(x.question)}${g.why ? `<div class="stg-card-sub">${esc(g.why)}</div>` : ''}</td><td>${usd(x.old_cost)} → ${usd(x.new_cost)}</td><td>${q(g.old)} → ${q(g.new)}</td><td>${esc(g.better || '')}</td><td>${esc(x.page || '')}${x.routine ? ' (routine)' : ''}</td></tr>
           <tr class="elib-eval-more" hidden><td colspan="5"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;padding:6px 0">${[['Confirmed answer', x.reference], ['Old way', x.old_answer], ['New way', x.new_answer]].map(([t, v]) => `<div><b>${t}</b><pre style="white-space:pre-wrap;font-family:inherit;margin:4px 0 0">${esc(v || '')}</pre></div>`).join('')}</div></td></tr>`; }).join('')}
       </tbody></table>` : ''}`;
+    // Batch 339: knowledge gaps, answered once by a lead
+    const G = (d.gaps || []), open = G.filter((g) => g.status === 'open');
+    if (G.length) {
+      const gd = document.createElement('div'); gd.style.marginTop = '16px';
+      gd.innerHTML = `<div class="stg-card-title">Knowledge gaps (${open.length} open)</div>
+        <div class="stg-card-sub">Questions both ways answered poorly in the test: the knowledge is missing, so no prompt fixes it. Write the confirmed answer once. It is saved as an Expert team note that every later answer uses, and it becomes the test's reference for that question.</div>
+        ${G.map((g) => `<div class="elib-gap" data-id="${g.log_id}" style="border-top:1px solid var(--stg-line,#eee);padding:10px 0">
+          <b>${esc(g.question)}</b>${g.why ? `<div class="stg-card-sub">${esc(g.why)}</div>` : ''}
+          ${g.status === 'open' ? `<details style="margin:6px 0"><summary class="stg-card-sub" style="cursor:pointer">The answer in the test</summary><pre style="white-space:pre-wrap;font-family:inherit;margin:4px 0">${esc(g.reference || '')}</pre></details>
+            <label class="stg-card-sub" for="gap-${g.log_id}">Confirmed answer</label>
+            <textarea id="gap-${g.log_id}" rows="4" style="width:100%;box-sizing:border-box;margin-top:4px" placeholder="What the agent should do or say, who owns it, any rule"></textarea>
+            <div style="display:flex;gap:8px;margin-top:6px"><button type="button" class="stg-btn elib-gap-save">Save as team note</button><button type="button" class="stg-btn stg-btn-ghost elib-gap-dismiss">Not a gap</button><span class="stg-card-sub elib-gap-msg" role="status"></span></div>`
+          : `<div class="stg-card-sub">${g.status === 'answered' ? 'Answered' : 'Dismissed'}${g.by_email ? ' by ' + esc(g.by_email) : ''}${g.resolved_at ? ', ' + esc(day(g.resolved_at)) : ''}</div>`}
+        </div>`).join('')}`;
+      box.appendChild(gd);
+      gd.querySelectorAll('.elib-gap').forEach((el) => {
+        const id = Number(el.dataset.id), msg = el.querySelector('.elib-gap-msg');
+        const send = async (body, b) => { b.disabled = true; try { await api('/api/admin/expert-eval/gap', { method: 'POST', body: JSON.stringify(Object.assign({ logId: id }, body)) }); paintEval(box); } catch (er) { b.disabled = false; if (msg) msg.textContent = er.message; } };
+        const sv = el.querySelector('.elib-gap-save'); if (sv) sv.addEventListener('click', () => send({ answer: el.querySelector('textarea').value }, sv));
+        const dm = el.querySelector('.elib-gap-dismiss'); if (dm) dm.addEventListener('click', () => send({ dismiss: true }, dm));
+      });
+    }
     box.querySelectorAll('.elib-eval-row').forEach((tr) => { const t = () => { tr.nextElementSibling.hidden = !tr.nextElementSibling.hidden; }; tr.addEventListener('click', t); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); t(); } }); });
     const b = box.querySelector('.elib-eval-run');
     if (b) b.addEventListener('click', async () => { b.disabled = true; b.textContent = 'Starting…'; try { await api('/api/admin/expert-eval/run', { method: 'POST', body: JSON.stringify({ n: 40 }) }); setTimeout(() => paintEval(box), 1500); } catch (er) { b.textContent = er.message; } });
