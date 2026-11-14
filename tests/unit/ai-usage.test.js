@@ -4,9 +4,9 @@ const ai = require('../../lib/ai');
 
 describe('ai usage meter', () => {
   beforeEach(() => usage._reset());
-  it('prices Claude with cache reads at a tenth and OpenAI mini cheaply', () => {
-    expect(usage.costOf('claude-sonnet-5-5', { input: 1e6 })).toBe(3);
-    expect(usage.costOf('claude-sonnet-5-5', { cache_read: 1e6 })).toBeCloseTo(0.3);
+  it('prices Sonnet 5.5 at current rates (cache reads 0.05x) and OpenAI mini cheaply', () => {
+    expect(usage.costOf('claude-sonnet-5-5', { input: 1e6 })).toBe(2);
+    expect(usage.costOf('claude-sonnet-5-5', { cache_read: 1e6 })).toBeCloseTo(0.1);
     expect(usage.costOf('claude-haiku-4-5', { output: 1e6 })).toBe(5);
     expect(usage.costOf('gpt-4.1-mini', { input: 1e6, output: 1e6 })).toBeCloseTo(2);
   });
@@ -20,7 +20,7 @@ describe('ai usage meter', () => {
     await usage.record({ feature: 'voip-project', model: 'gpt-4.1-mini', usage: { input_tokens: 1e6, output_tokens: 0 } });
     const r = await usage.report({ days: 1 });
     expect(r.features[0].feature).toBe('call-qa');
-    expect(r.byProvider).toEqual({ claude: 3, openai: 0.4 });
+    expect(r.byProvider).toEqual({ claude: 2, openai: 0.4 });
   });
   it('compares short fields only, and turns a drifting light feature back to the main model', async () => {
     expect(usage.agreement({ voip: true, category: 'Phones', summary: 'a long text '.repeat(10) }, { voip: true, category: 'phones', summary: 'other' })).toBe(1);

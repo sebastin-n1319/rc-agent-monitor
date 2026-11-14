@@ -27,8 +27,8 @@ describe('Storage guard and AI budget (Batch 342)', () => {
     process.env.AI_BACKGROUND_BUDGET_USD = '1';
     process.env.AI_BUDGET_MODE = 'pause';
     expect(await usage.overBudget('ticket-triage')).toBe(false);
-    await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 400000, output_tokens: 0 } });
-    usage._reset(); await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 400000, output_tokens: 0 } });
+    await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 600000, output_tokens: 0 } });
+    usage._reset(); await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 600000, output_tokens: 0 } });
     expect(await usage.overBudget('ticket-triage')).toBe(true); // $1.20 spent of $1, pause mode on purpose
     delete process.env.AI_BUDGET_MODE;
     expect(await usage.overBudget('ticket-triage')).toBe(false); // default: warning only, the job keeps running
