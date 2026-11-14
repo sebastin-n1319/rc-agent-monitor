@@ -213,6 +213,9 @@ async function setSheetId(id) {
   await dbRun(db, `INSERT INTO archive_settings (k, v) VALUES ('sheet_id', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`, [v]); db.close();
   SHEET_ID = v; return v;
 }
+// Batch 345: small settings (Drive backup folder and owner)
+async function getSetting(k) { try { const db = await openDb(); await dbRun(db, `CREATE TABLE IF NOT EXISTS archive_settings (k TEXT PRIMARY KEY, v TEXT)`); const r = await dbAll(db, `SELECT v FROM archive_settings WHERE k = ?`, [k]); db.close(); return (r[0] && r[0].v) || ''; } catch (e) { return ''; } }
+async function setSetting(k, v) { const db = await openDb(); await dbRun(db, `CREATE TABLE IF NOT EXISTS archive_settings (k TEXT PRIMARY KEY, v TEXT)`); await dbRun(db, `INSERT INTO archive_settings (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`, [k, String(v || '')]); db.close(); }
 function serviceEmail() { try { return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}').client_email || null; } catch (e) { return null; } }
 
 // ── Main archive function ────────────────────────────────────────────────────
@@ -262,4 +265,4 @@ async function runArchive(force = false) {
   return results;
 }
 
-module.exports = { runArchive, isAboveThreshold, getDbSizeMB, sheetId, setSheetId, serviceEmail };
+module.exports = { runArchive, isAboveThreshold, getDbSizeMB, sheetId, setSheetId, serviceEmail, getSetting, setSetting };

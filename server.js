@@ -2467,6 +2467,13 @@ app.get('/api/admin/storage', requireAdmin, async (req, res) => {
 app.post('/api/admin/storage/run', requireAdmin, rateLimit(4, 3600000), async (req, res) => {
   try { const sg = require('./lib/storage-guard'), b = req.body || {}; const out = b.compact ? await sg.compact({ volumeUsage, force: true }) : await sg.guard({ volumeUsage, archive: runArchive, forceArchive: !!b.archive }); insertAuditLog(req.session?.email || 'system', b.compact ? 'storage_compact' : 'storage_guard', 'manual', JSON.stringify(out)).catch(() => {}); res.json({ success: true, result: out }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 345: a checked backup copy, gzipped to the Google Drive backup folder; needed before a low-disk compaction
+app.post('/api/admin/storage/backup', requireAdmin, rateLimit(3, 3600000), async (req, res) => {
+  try { const out = await require('./lib/storage-guard').backupToDrive({ volumeUsage }); insertAuditLog(req.session?.email || 'system', 'storage_backup', 'drive', JSON.stringify(out)).catch(() => {}); res.json({ success: true, backup: out }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/storage/backup-settings', requireAdmin, rateLimit(10, 3600000), async (req, res) => {
+  try { const A = require('./archive-service'), b = req.body || {}; const folder = String(b.folder || '').trim().replace(/^.*\/folders\/([A-Za-z0-9_-]+).*$/, '$1'); if (folder && !/^[A-Za-z0-9_-]{10,}$/.test(folder)) throw new Error('That does not look like a Drive folder link or ID'); await A.setSetting('backup_folder_id', folder); if (b.as != null) await A.setSetting('backup_as', String(b.as || '').trim()); res.json({ success: true, folder }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
 app.post('/api/admin/storage/sheet', requireAdmin, rateLimit(10, 3600000), async (req, res) => {
   try { const id = await require('./archive-service').setSheetId((req.body || {}).sheet); insertAuditLog(req.session?.email || 'system', 'archive_sheet_set', 'settings', id).catch(() => {}); res.json({ success: true, sheetId: id }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
