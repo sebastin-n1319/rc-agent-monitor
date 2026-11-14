@@ -22,13 +22,17 @@ describe('Storage guard and AI budget (Batch 342)', () => {
     delete process.env.EXPERT_HYBRID;
     expect(await sg.clearVectors()).toBe(1);
   });
-  it('pauses only background AI jobs once their daily budget is used', async () => {
+  it('only warns about the daily background budget; pauses nothing unless pause mode is set on purpose', async () => {
     usage._reset();
     process.env.AI_BACKGROUND_BUDGET_USD = '1';
+    process.env.AI_BUDGET_MODE = 'pause';
     expect(await usage.overBudget('ticket-triage')).toBe(false);
     await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 400000, output_tokens: 0 } });
     usage._reset(); await usage.record({ feature: 'ticket-triage', model: 'claude-sonnet-5-5', usage: { input_tokens: 400000, output_tokens: 0 } });
-    expect(await usage.overBudget('ticket-triage')).toBe(true); // $1.20 spent of $1
+    expect(await usage.overBudget('ticket-triage')).toBe(true); // $1.20 spent of $1, pause mode on purpose
+    delete process.env.AI_BUDGET_MODE;
+    expect(await usage.overBudget('ticket-triage')).toBe(false); // default: warning only, the job keeps running
+    expect((await usage.budgetStatus()).mode).toBe('alert');
     expect((await usage.budgetStatus()).spentUSD).toBe(1.2);
     delete process.env.AI_BACKGROUND_BUDGET_USD;
     expect(await usage.overBudget('expert')).toBe(false); // a person is waiting on Expert: never paused

@@ -33,8 +33,8 @@
         ${sheetUrl ? `<div class="stg-card-sub" style="margin-top:6px"><a href="${sheetUrl}" target="_blank" rel="noopener">Open the archive sheet</a> · <button type="button" class="stg-btn stg-btn-ghost sto-archive">Copy logs to the sheet now</button></div>` : ''}
       </div>
       <div class="stg-card"><div class="stg-card-title">AI budget for background jobs</div>
-        <div class="stg-card-sub">Open ticket review, library upkeep, escalation watch, call QA and the light sorting jobs pause for the rest of the day (CT) once they spend this much. Anything a person waits on (Expert answers, drafts, live chat) never pauses. Set AI_BACKGROUND_BUDGET_USD on Railway to change it (0 turns it off).</div>
-        <div style="margin-top:8px"><b>$${(B.spentUSD || 0).toFixed(2)} of $${B.budgetUSD || 0}</b> spent today</div>
+        <div class="stg-card-sub">A daily spend line for background AI jobs (open ticket review, library upkeep, escalation watch, call QA, light sorting jobs). Passing it only raises a warning here and in the server log; nothing stops, and Expert answers, drafts and live chat are not counted. Set AI_BACKGROUND_BUDGET_USD on Railway to change the line.</div>
+        <div style="margin-top:8px"><b>$${(B.spentUSD || 0).toFixed(2)} of $${B.budgetUSD || 0}</b> spent today${(B.spentUSD || 0) >= (B.budgetUSD || Infinity) ? ' · <span style="color:#B42318;font-weight:600">over the line (warning only)</span>' : ''}</div>
         ${B.budgetUSD ? bar(Math.round((B.spentUSD || 0) / B.budgetUSD * 100), (B.spentUSD || 0) >= B.budgetUSD ? '#B42318' : '#1F7A4D') : ''}
       </div>`;
     const msg = root.querySelector('.sto-msg');
