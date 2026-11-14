@@ -821,6 +821,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         let libLast = 0;
         const libRun = async (first) => { if (!lib.enabled() || (!first && inWorkHours()) || Date.now() - libLast < 20 * 3600 * 1000) return; libLast = Date.now(); try { const r = await lib.maintain(); console.log('📚 Expert library:', JSON.stringify(r)); } catch (e) { console.warn('expert library:', e.message); } };
         setTimeout(async () => { const ov = await lib.overview().catch(() => null); if (ov && !ov.totals.ready) libRun(true); setInterval(() => libRun(false), 60 * 60 * 1000); }, 10 * 60 * 1000); }
+      // Batch 342: storage guard (keeps the volume in the 50 to 60% band): first pass 3 minutes after start.
+      { const sg = require('./lib/storage-guard'); sg.setDB(db); setTimeout(() => sg.guard({ volumeUsage: require('./database').volumeUsage, archive: require('./archive-service').runArchive }).then((r) => console.log('🗄️ Storage guard (start):', JSON.stringify(r))).catch((e) => console.warn('storage guard:', e.message)), 3 * 60 * 1000); }
       // Batch 328: documentation notes on every T1 ticket (first note, then one case update note kept current).
       { const dn = require('./lib/ticket-doc-note'); dn.setDB(db); await dn.initSchema().catch((e) => console.warn('doc notes schema:', e.message)); dn.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
         setTimeout(() => { const t = async () => { if (!inWorkHours() || !require('./lib/expert-desk-draft').canWrite()) return; try { const owners = (await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents())).map((a) => a.id); const r = await dn.sweep({ ownerIds: owners }); if (r && (r.created || r.updated || r.errors)) console.log('🗒️ Ticket notes:', JSON.stringify(r)); } catch (e) { console.warn('doc notes sweep:', e.message); } }; t(); setInterval(t, 5 * 60 * 1000); }, 4 * 60 * 1000); }
@@ -2457,6 +2459,16 @@ app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async 
 // Batch 339: a lead answers a knowledge gap once (saved as an Expert team note), or dismisses it
 app.post('/api/admin/expert-eval/gap', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/expert-eval').resolveGap({ logId: b.logId, answer: b.answer, dismiss: !!b.dismiss, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
+// Batch 342: Settings > Storage (volume band, biggest tables, archive sheet, AI background budget)
+app.get('/api/admin/storage', requireAdmin, async (req, res) => {
+  try { const A = require('./archive-service'); res.json({ success: true, ...(await require('./lib/storage-guard').status({ volumeUsage, tableSizes })), archive: { sheetId: await A.sheetId(), serviceEmail: A.serviceEmail() }, budget: await require('./lib/ai-usage').budgetStatus() }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/storage/run', requireAdmin, rateLimit(4, 3600000), async (req, res) => {
+  try { const sg = require('./lib/storage-guard'), b = req.body || {}; const out = b.compact ? await sg.compact({ volumeUsage, force: true }) : await sg.guard({ volumeUsage, archive: runArchive, forceArchive: !!b.archive }); insertAuditLog(req.session?.email || 'system', b.compact ? 'storage_compact' : 'storage_guard', 'manual', JSON.stringify(out)).catch(() => {}); res.json({ success: true, result: out }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/storage/sheet', requireAdmin, rateLimit(10, 3600000), async (req, res) => {
+  try { const id = await require('./archive-service').setSheetId((req.body || {}).sheet); insertAuditLog(req.session?.email || 'system', 'archive_sheet_set', 'settings', id).catch(() => {}); res.json({ success: true, sheetId: id }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
   try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), pilot: String(process.env.EXPERT_PILOT_OWNERS || '').split(',').filter(Boolean).length, jobs: await expertDraft().recent(req.query.limit), webhook: expertDraft().hooks() }); }
@@ -5820,6 +5832,7 @@ async function startScheduler() {
       }
       // 2. Always prune + VACUUM regardless
       try { console.log('🧹 Heavy-data trim:', JSON.stringify(await pruneHeavyData())); } catch(e) { console.error('❌ heavy trim:', e.message); }
+      try { const sg = require('./lib/storage-guard'); console.log('🗄️ Storage guard:', JSON.stringify(await sg.guard({ volumeUsage, archive: runArchive }))); const c = await sg.compact({ volumeUsage }); if (c.compacted || c.note) console.log('🗜️ Compaction:', JSON.stringify(c)); } catch(e) { console.error('❌ storage guard:', e.message); } // Batch 342
       const r = await pruneOldData();
       console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
     } catch(e) { console.error('❌ scheduled prune/archive:', e.message); }

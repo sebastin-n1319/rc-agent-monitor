@@ -14,9 +14,10 @@ const path = require('path');
 const fs   = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 
-const SHEET_ID      = process.env.ARCHIVE_SHEET_ID || '';
+// Batch 342: the archive sheet can also be set from the app (Settings > Storage), kept in archive_settings.
+let SHEET_ID        = process.env.ARCHIVE_SHEET_ID || '';
 const VOLUME_SIZE   = parseInt(process.env.VOLUME_SIZE_MB || '500', 10);
-const THRESHOLD_PCT = 0.90; // archive when usage > 90%
+const THRESHOLD_PCT = Number(process.env.ARCHIVE_AT_PCT || 60) / 100; // Batch 342: archive above 60% (was 90%), to stay in the 50 to 60% band
 const DB_PATH       = process.env.DB_PATH || path.join(__dirname, 'productivity.db');
 
 // ── Sheets auth ─────────────────────────────────────────────────────────────
@@ -82,6 +83,8 @@ const TABS = [
   { name: 'Break Events',     headers: ['ID','Username','Email','Role','Action','Action Label','Note','Created At','Notified','Notify Status'] },
   { name: 'Call Logs',        headers: ['Agent ID','Agent Name','Call ID','Direction','Result','Duration (s)','Ring Duration (s)','Hold Duration (s)','From Number','To Number','Queue Name','Start Time'] },
   { name: 'Login Logs',       headers: ['ID','Username','Email','Role','IP','Location','System Info','Logged In At'] },
+  { name: 'Expert Log',       headers: ['ID','Asked At (UTC)','Agent','Mode','Module','Question','Confidence','Found','Verified','Vote','Time (ms)'] },
+  { name: 'AI Usage',         headers: ['Day (CT)','Feature','Model','Calls','Input tokens','Output tokens','Cache read','Cache write','Cost (USD)'] },
 ];
 
 async function ensureTabs(sheets) {
@@ -178,8 +181,43 @@ async function archiveLoginLogs(db, sheets, cutoffDays = 30) {
   return count;
 }
 
+// Batch 342: Expert questions older than 90 days that nobody marked helpful (helpful ones stay: Expert learns from them)
+async function archiveExpertLog(db, sheets, cutoffDays = 90) {
+  const rows = await dbAll(db, `SELECT id, created_at, email, mode, module, question, confidence, found, verified, vote, ms FROM expert_log
+     WHERE created_at < datetime('now',?) AND COALESCE(vote, 0) != 1 ORDER BY id ASC LIMIT 5000`, [`-${cutoffDays} days`]).catch(() => []);
+  if (!rows.length) return 0;
+  const data = rows.map(r => [r.id, r.created_at || '', r.email || '', r.mode || '', r.module || '', String(r.question || '').slice(0, 1000), r.confidence || '', r.found || 0, r.verified || 0, r.vote == null ? '' : r.vote, r.ms || 0]);
+  const count = await appendRows(sheets, 'Expert Log', data);
+  await dbRun(db, `DELETE FROM expert_log WHERE id IN (${rows.map(() => '?').join(',')})`, rows.map(r => r.id));
+  return count;
+}
+// Batch 342: a daily copy of the AI cost per feature, so the cost history lives in the sheet too (nothing is deleted)
+async function exportAiUsage(db, sheets) {
+  await dbRun(db, `CREATE TABLE IF NOT EXISTS archive_settings (k TEXT PRIMARY KEY, v TEXT)`).catch(() => {});
+  const last = ((await dbAll(db, `SELECT v FROM archive_settings WHERE k = 'ai_usage_day'`).catch(() => []))[0] || {}).v || '';
+  const rows = await dbAll(db, `SELECT day, feature, model, calls, input, output, cache_read, cache_write FROM ai_usage WHERE day > ? AND day < date('now') ORDER BY day, feature`, [last]).catch(() => []);
+  if (!rows.length) return 0;
+  const cost = (r) => { try { return +require('./lib/ai-usage').costOf(r.model, r).toFixed(4); } catch (e) { return ''; } };
+  const count = await appendRows(sheets, 'AI Usage', rows.map(r => [r.day, r.feature, r.model, r.calls, r.input, r.output, r.cache_read, r.cache_write, cost(r)]));
+  await dbRun(db, `INSERT INTO archive_settings (k, v) VALUES ('ai_usage_day', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`, [rows[rows.length - 1].day]);
+  return count;
+}
+async function sheetId() {
+  if (process.env.ARCHIVE_SHEET_ID) return process.env.ARCHIVE_SHEET_ID;
+  try { const db = await openDb(); await dbRun(db, `CREATE TABLE IF NOT EXISTS archive_settings (k TEXT PRIMARY KEY, v TEXT)`); const r = await dbAll(db, `SELECT v FROM archive_settings WHERE k = 'sheet_id'`); db.close(); return (r[0] && r[0].v) || ''; } catch (e) { return ''; }
+}
+async function setSheetId(id) {
+  const v = String(id || '').trim().replace(/^.*\/d\/([A-Za-z0-9_-]+).*$/, '$1');
+  if (v && !/^[A-Za-z0-9_-]{20,}$/.test(v)) throw new Error('That does not look like a Google Sheet link or ID');
+  const db = await openDb(); await dbRun(db, `CREATE TABLE IF NOT EXISTS archive_settings (k TEXT PRIMARY KEY, v TEXT)`);
+  await dbRun(db, `INSERT INTO archive_settings (k, v) VALUES ('sheet_id', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v`, [v]); db.close();
+  SHEET_ID = v; return v;
+}
+function serviceEmail() { try { return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}').client_email || null; } catch (e) { return null; } }
+
 // ── Main archive function ────────────────────────────────────────────────────
 async function runArchive(force = false) {
+  SHEET_ID = await sheetId();
   if (!SHEET_ID) {
     console.log('⚠️  ARCHIVE_SHEET_ID not set, skipping archive');
     return null;
@@ -191,11 +229,11 @@ async function runArchive(force = false) {
 
   const above = force || await isAboveThreshold();
   if (!above) {
-    console.log('✅ Volume below 90%, no archive needed');
+    console.log(`✅ Volume below ${Math.round(THRESHOLD_PCT * 100)}%, no archive needed`);
     return null;
   }
 
-  console.log('📤 Volume above 90%, starting archive to Google Sheets...');
+  console.log(`📤 Volume above ${Math.round(THRESHOLD_PCT * 100)}% (or asked), starting archive to Google Sheets...`);
 
   const sheets = getSheetsClient();
   await ensureTabs(sheets);
@@ -205,12 +243,13 @@ async function runArchive(force = false) {
   try {
     results.presence_events = await archivePresenceEvents(db, sheets, 7);   // matches pruneOldData
     results.break_events    = await archiveBreakEvents(db, sheets, 60);
-    results.call_logs       = await archiveCallLogs(db, sheets, 7);
+    results.call_logs       = await archiveCallLogs(db, sheets, 45); // Batch 342: same as CALL_LOGS_RETENTION_DAYS, so archiving never removes call logs reports still read
     results.login_logs      = await archiveLoginLogs(db, sheets, 30);
+    results.expert_log      = await archiveExpertLog(db, sheets, 90);
+    results.ai_usage        = await exportAiUsage(db, sheets);
 
-    // VACUUM after mass delete
-    await dbRun(db, 'VACUUM');
-    results.vacuumed = true;
+    // Batch 342: no VACUUM here. On a nearly full volume a VACUUM needs about the database's size in free disk and fails
+    // (or blocks the app); freed pages are reused, and storage-guard compacts when there is room.
 
     const total = Object.values(results).filter(v => typeof v === 'number').reduce((s,v) => s+v, 0);
     console.log(`✅ Archive complete: ${total} rows archived to Google Sheets:`, results);
@@ -223,4 +262,4 @@ async function runArchive(force = false) {
   return results;
 }
 
-module.exports = { runArchive, isAboveThreshold, getDbSizeMB };
+module.exports = { runArchive, isAboveThreshold, getDbSizeMB, sheetId, setSheetId, serviceEmail };
