@@ -15,11 +15,15 @@ describe('Expert library (Batch 335)', () => {
       },
       ai: {
         chatJSON: async (o) => { calls.push('chat'); return /TOPICS/.test(o.messages[0].content) ? { json: { topics: [{ title: 'Customize appointment reminders', module: 'Engage', keywords: 'appointment reminder customize edit message auto-reminders', count: 3 }] } } : { json: { issues: ['The page does not say reminders need the EHR connected.'] } }; },
-        bestJSON: async (o) => { calls.push('best'); return { json: { summary: 'How to change appointment reminders', keywords: 'appointment reminders customize edit engage auto-reminders', body: 'WHAT IT IS: Automatic texts before appointments.\nT1 OR HAND OVER: T1 handles it.\nSTEPS:\n1. Engage > Auto-Reminders > Appointment Reminders.\n2. Click the pencil icon and edit the message.\nCHECK FIRST: which reminder.\nGOTCHAS: needs the EHR connected. Call 555-123-4567.\nSAY TO THE CLIENT: Happy to help.\nCONFLICTS: None', conflicts: ['None'], sources: [1] } }; },
+        bestJSON: async (o) => { calls.push('best'); if (/TOPICS/.test(o.system)) return { json: { topics: [{ title: 'Customize appointment reminders', module: 'Engage', keywords: 'appointment reminder customize edit message auto-reminders', examples: ['How do I change the reminder text?'], count: 3 }, { title: 'Adit Pay feature questions and support', module: 'Adit Pay', keywords: 'pay', count: 9 }] } }; return { json: { summary: 'How to change appointment reminders', keywords: 'appointment reminders customize edit engage auto-reminders', body: 'WHAT IT IS: Automatic texts before appointments.\nT1 OR HAND OVER: T1 handles it.\nSTEPS:\n1. Engage > Auto-Reminders > Appointment Reminders.\n2. Click the pencil icon and edit the message.\nCHECK FIRST: which reminder.\nGOTCHAS: needs the EHR connected. Call 555-123-4567.\nSAY TO THE CLIENT: Happy to help.\nCONFLICTS: None', conflicts: ['None'], sources: [1] } }; },
       },
     });
     const found = await lib.discover();
     expect(found.map((t) => t.slug)).toEqual(['customize-appointment-reminders']);
+    // a module-wide title is dropped (Batch 336)
+    expect(lib._tooBroad('Adit Pay feature questions and support')).toBe(true);
+    expect(lib._tooBroad('Account, billing and user compliance inquiries')).toBe(true);
+    expect(lib._tooBroad('Request a phone number port-out')).toBe(false);
     const b = await lib.build('customize-appointment-reminders');
     expect(b.built).toBe('customize-appointment-reminders');
     const p = await lib.page('customize-appointment-reminders');

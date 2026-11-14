@@ -816,6 +816,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 335: the Expert library (maintained topic pages). Built and refreshed once a day outside work hours (a first
       // build runs 10 minutes after the first start), with a weekly health check.
       { const lib = require('./lib/expert-library'); lib.setDB(db); await lib.initSchema().catch((e) => console.warn('expert library schema:', e.message)); lib.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
+        { const ev = require('./lib/expert-eval'); ev.setDB(db); await ev.initSchema().catch((e) => console.warn('expert eval schema:', e.message)); ev.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') }); }
         let libLast = 0;
         const libRun = async (first) => { if (!lib.enabled() || (!first && inWorkHours()) || Date.now() - libLast < 20 * 3600 * 1000) return; libLast = Date.now(); try { const r = await lib.maintain(); console.log('📚 Expert library:', JSON.stringify(r)); } catch (e) { console.warn('expert library:', e.message); } };
         setTimeout(async () => { const ov = await lib.overview().catch(() => null); if (ov && !ov.totals.ready) libRun(true); setInterval(() => libRun(false), 60 * 60 * 1000); }, 10 * 60 * 1000); }
@@ -2444,6 +2445,13 @@ app.post('/api/admin/expert-library/run', requireAdmin, rateLimit(4, 60000), asy
     lib.maintain({ lintAll: !!b.lint }).then((r) => console.log('📚 Expert library (by hand):', JSON.stringify(r))).catch((e) => console.warn('expert library:', e.message));
     res.json({ success: true, started: true });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 336: the before and after test (past questions with a confirmed answer, old way vs new way, cost and graded quality)
+app.get('/api/admin/expert-eval', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').latest())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
   try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), pilot: String(process.env.EXPERT_PILOT_OWNERS || '').split(',').filter(Boolean).length, jobs: await expertDraft().recent(req.query.limit), webhook: expertDraft().hooks() }); }

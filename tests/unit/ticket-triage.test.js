@@ -23,7 +23,7 @@ const ticket = { load: async (n) => ({ meta: { number: n, subject: 'Texts not se
   timeline: [{ at: ago(20), kind: 'client' }, { at: ago(19), kind: 'agent' }, { at: ago(12), kind: 'agent' }, { at: ago(9), kind: 'agent' }] }) };
 let seenUser = '', seenFb = '';
 const ai = { anyConfigured: () => true, isAnthropicConfigured: () => true,
-  claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', failure: { level: 'high', who: 'Sky', what: 'Note only, no reply' }, client_message: 'Hi there,', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
+  claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = system + '\n' + user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', failure: { level: 'high', who: 'Sky', what: 'Note only, no reply' }, client_message: 'Hi there,', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
 const expert = { updatesFor: async () => '- 2026-10-20: Texting fix released (Engage)', crmContext: async () => ({ text: 'Account: Smile Dental', facts: { csm: 'Ana' } }), searchLocal: async () => [], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }] };
 
 beforeAll(async () => {
@@ -140,5 +140,18 @@ describe.skipIf(!sqlite3)('open T1 ticket review', () => {
   });
   it('treats an unknown verdict as act', () => {
     expect(tt._shape({ verdict: 'maybe' }).verdict).toBe('act');
+  });
+});
+describe.skipIf(!sqlite3)('Batch 336: cheap check before an automatic re-review', () => {
+  it('keeps the last review with no AI call when nothing material changed, and a person asking always gets the full review', async () => {
+    await tt.analyse('1');
+    seenUser = '';
+    const kept = await tt.analyse('1', { gate: true });
+    expect(kept.kept && kept.kept.why).toMatch(/no change|minor/);
+    expect(kept.verdict).toBe('close');
+    expect(seenUser).toBe('');
+    const full = await tt.analyse('1');
+    expect(full.kept).toBeUndefined();
+    expect(seenUser).toContain('Team rules');
   });
 });
