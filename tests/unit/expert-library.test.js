@@ -51,4 +51,11 @@ describe('Expert library (Batch 335)', () => {
     expect(ov.totals).toMatchObject({ pages: 1, ready: 1, confirmed: 1, issues: 1 });
     expect(ov.log.map((l) => l.kind)).toEqual(expect.arrayContaining(['discover', 'ingest', 'fileback', 'lint']));
   });
+  it('a light-model check picks the page, or none, so shared words alone never pick a page (Batch 336)', async () => {
+    lib.setDeps({ ai: { chatJSON: async (o) => /PAGES/.test(o.messages[1].content) ? { json: /reminder message/.test(o.messages[1].content) ? { pick: 1, covers: 'full' } : { pick: 0 } } : { json: {} } } });
+    expect(await lib.match('appointment reminder engage edit, our patient forms are stuck importing')).toBe(null);
+    const m = await lib.match('how to edit the appointment reminder message in engage');
+    expect(m.slug).toBe('customize-appointment-reminders');
+    expect(m.strong).toBe(true);
+  });
 });

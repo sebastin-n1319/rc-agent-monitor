@@ -13,7 +13,8 @@ describe('Expert before and after test (Batch 336)', () => {
     await ins('Why is ticket #429346 still open for this client?', 1);
     await ins('How do I edit the appointment reminder text?', null);
     const picked = await ev.pick(5);
-    expect(picked.map((p) => p.question)).toEqual(['How do I edit the appointment reminder text?']);
+    expect(picked.map((p) => p.question)).toEqual(['Why is ticket #429346 still open for this client?', 'How do I edit the appointment reminder text?']);
+    expect(picked.map((p) => p.ticket)).toEqual([true, false]);
     let graded = '';
     ev.setDeps({
       expert: { ask: async ({ noLibrary }) => { await usage.record({ feature: 'expert', model: 'claude-sonnet-5-5', usage: { input_tokens: noLibrary ? 100000 : 40000, output_tokens: 1000 } }); return { answer: { answer: noLibrary ? 'old way answer' : 'new way answer', steps: [] } }; } },
@@ -24,7 +25,7 @@ describe('Expert before and after test (Batch 336)', () => {
     for (let i = 0; i < 50 && ev.status(); i++) await new Promise((r) => setTimeout(r, 20));
     const l = await ev.latest();
     expect(l.run.status).toBe('done');
-    expect(l.run.summary.n).toBe(1);
+    expect(l.run.summary.n).toBe(2);
     expect(l.run.summary.cost.old).toBeGreaterThan(l.run.summary.cost.new);
     expect(graded).toContain('REFERENCE (confirmed)');
     // X was the better one; the grade is mapped back to the right side whichever way it was shown
