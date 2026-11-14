@@ -17,8 +17,8 @@
     const r = d.run, S = r && r.summary, running = d.running;
     const pct = (a, b) => a ? Math.round((1 - b / a) * 100) : 0;
     box.innerHTML = `<div class="aiu-head"><div><div class="stg-card-title">Before and after test</div>
-        <div class="stg-card-sub">Takes past questions that already have a confirmed answer (marked helpful or verified), asks Expert again the old way and the new way, and measures the AI cost of each. A grader that does not know which is which scores both against the confirmed answer. Each question costs about 30 cents to test.</div></div>
-        <button type="button" class="stg-btn elib-eval-run" ${running ? 'disabled' : ''}>${running ? `Testing ${running.done} of ${running.n}…` : 'Run test (12 questions)'}</button></div>
+        <div class="stg-card-sub">Takes past questions that already have a confirmed answer (marked helpful or verified), asks Expert again the old way and the new way, and measures the AI cost of each. A grader that does not know which is which scores both against the confirmed answer. Each question costs about 30 cents to test; a full run takes about an hour.</div></div>
+        <button type="button" class="stg-btn elib-eval-run" ${running ? 'disabled' : ''}>${running ? `Testing ${running.done} of ${running.n}…` : 'Run test (40 questions)'}</button></div>
       ${S && S.n ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:12px 0">
         <div><div class="stg-card-sub">Cost per answer</div><b>${usd(S.cost.old)} → ${usd(S.cost.new)}</b><div class="stg-card-sub">${pct(S.cost.old, S.cost.new) >= 0 ? pct(S.cost.old, S.cost.new) + '% cheaper' : -pct(S.cost.old, S.cost.new) + '% dearer'}</div></div>
         <div><div class="stg-card-sub">Quality (1 to 5)</div><b>${S.quality.old} → ${S.quality.new}</b><div class="stg-card-sub">accuracy ${S.accuracy.old} → ${S.accuracy.new}</div></div>
@@ -33,7 +33,7 @@
       </tbody></table>` : ''}`;
     box.querySelectorAll('.elib-eval-row').forEach((tr) => { const t = () => { tr.nextElementSibling.hidden = !tr.nextElementSibling.hidden; }; tr.addEventListener('click', t); tr.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); t(); } }); });
     const b = box.querySelector('.elib-eval-run');
-    if (b) b.addEventListener('click', async () => { b.disabled = true; b.textContent = 'Starting…'; try { await api('/api/admin/expert-eval/run', { method: 'POST', body: JSON.stringify({ n: 12 }) }); setTimeout(() => paintEval(box), 1500); } catch (er) { b.textContent = er.message; } });
+    if (b) b.addEventListener('click', async () => { b.disabled = true; b.textContent = 'Starting…'; try { await api('/api/admin/expert-eval/run', { method: 'POST', body: JSON.stringify({ n: 40 }) }); setTimeout(() => paintEval(box), 1500); } catch (er) { b.textContent = er.message; } });
     if (running && document.body.contains(box)) setTimeout(() => { if (document.body.contains(box)) paintEval(box); }, 20000);
   }
 
