@@ -817,6 +817,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // build runs 10 minutes after the first start), with a weekly health check.
       { const lib = require('./lib/expert-library'); lib.setDB(db); await lib.initSchema().catch((e) => console.warn('expert library schema:', e.message)); lib.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
         { const ev = require('./lib/expert-eval'); ev.setDB(db); await ev.initSchema().catch((e) => console.warn('expert eval schema:', e.message)); ev.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') }); }
+        setInterval(() => lib.refreshForUpdates().then((r) => { if (r && r.rebuilt) console.log('📚 Expert library, new updates:', JSON.stringify(r)); }).catch((e) => console.warn('expert library updates:', e.message)), 30 * 60 * 1000); // Batch 340
         let libLast = 0;
         const libRun = async (first) => { if (!lib.enabled() || (!first && inWorkHours()) || Date.now() - libLast < 20 * 3600 * 1000) return; libLast = Date.now(); try { const r = await lib.maintain(); console.log('📚 Expert library:', JSON.stringify(r)); } catch (e) { console.warn('expert library:', e.message); } };
         setTimeout(async () => { const ov = await lib.overview().catch(() => null); if (ov && !ov.totals.ready) libRun(true); setInterval(() => libRun(false), 60 * 60 * 1000); }, 10 * 60 * 1000); }

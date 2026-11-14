@@ -58,4 +58,15 @@ describe('Expert library (Batch 335)', () => {
     expect(m.slug).toBe('customize-appointment-reminders');
     expect(m.strong).toBe(true);
   });
+  it('a new Adit Update rebuilds the pages it touches, with the update as a source (Batch 340)', async () => {
+    let items = [{ id: 1, title: 'Old change', summary: 'old', postedAt: '2026-11-01' }];
+    let seenUser = '';
+    lib.setDeps({ updates: { archive: async () => ({ items }) }, ai: { chatJSON: async () => ({ json: {} }), bestJSON: async (o) => { seenUser = o.user; return { json: { summary: 'How to change appointment reminders', keywords: 'appointment reminders customize edit engage', body: 'WHAT IT IS: Automatic texts.\nSTEPS:\n1. Engage > Auto-Reminders > Appointment Reminders, now under the new Reminders tab.\n2. Edit.\nCONFLICTS: None, plenty of text to pass the length check here.', conflicts: [], sources: [1] } }; } } });
+    expect((await lib.refreshForUpdates()).first).toBe(true);
+    items = items.concat([{ id: 2, title: 'Appointment reminders moved to a new Reminders tab in Engage', summary: 'Edit appointment reminder message text from the Reminders tab.', postedAt: '2026-11-14' }]);
+    const r = await lib.refreshForUpdates();
+    expect(r).toMatchObject({ fresh: 1, rebuilt: 1 });
+    expect(seenUser).toContain('[UPDATE] Appointment reminders moved');
+    expect((await lib.refreshForUpdates()).fresh).toBe(0);
+  });
 });
