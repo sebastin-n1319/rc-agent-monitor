@@ -813,6 +813,12 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         setTimeout(() => { const aw = async () => { if (!inWorkHours()) return; try { const st = xd.settings(); const pilot = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean); const owners = pilot.length ? pilot : (await deskT1Agents()).map((a) => a.id); const r = await xd.autoWaiting({ ownerIds: owners }); if (r && r.started && r.started.length) console.log('📝 Expert drafts for waiting tickets:', r.started.map((x) => x.number).join(', ')); } catch (e) { console.warn('expert auto waiting:', e.message); } }; setInterval(aw, 10 * 60 * 1000); setTimeout(aw, 60 * 1000); }, 3 * 60 * 1000);
         setTimeout(() => xd.recover().then((r) => { if (r.requeued || r.closed) console.log('♻️ Expert drafts after restart:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft recover:', e.message)), 30 * 1000);
         setTimeout(() => { const sw = () => xd.sweep().then((r) => { if (r && (r.removed || r.failed)) console.log('🧹 Expert drafts:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft sweep:', e.message)); sw(); setInterval(sw, 5 * 60 * 1000); }, 2 * 60 * 1000); }
+      // Batch 335: the Expert library (maintained topic pages). Built and refreshed once a day outside work hours (a first
+      // build runs 10 minutes after the first start), with a weekly health check.
+      { const lib = require('./lib/expert-library'); lib.setDB(db); await lib.initSchema().catch((e) => console.warn('expert library schema:', e.message)); lib.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
+        let libLast = 0;
+        const libRun = async (first) => { if (!lib.enabled() || (!first && inWorkHours()) || Date.now() - libLast < 20 * 3600 * 1000) return; libLast = Date.now(); try { const r = await lib.maintain(); console.log('📚 Expert library:', JSON.stringify(r)); } catch (e) { console.warn('expert library:', e.message); } };
+        setTimeout(async () => { const ov = await lib.overview().catch(() => null); if (ov && !ov.totals.ready) libRun(true); setInterval(() => libRun(false), 60 * 60 * 1000); }, 10 * 60 * 1000); }
       // Batch 328: documentation notes on every T1 ticket (first note, then one case update note kept current).
       { const dn = require('./lib/ticket-doc-note'); dn.setDB(db); await dn.initSchema().catch((e) => console.warn('doc notes schema:', e.message)); dn.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
         setTimeout(() => { const t = async () => { if (!inWorkHours() || !require('./lib/expert-desk-draft').canWrite()) return; try { const owners = (await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents())).map((a) => a.id); const r = await dn.sweep({ ownerIds: owners }); if (r && (r.created || r.updated || r.errors)) console.log('🗒️ Ticket notes:', JSON.stringify(r)); } catch (e) { console.warn('doc notes sweep:', e.message); } }; t(); setInterval(t, 5 * 60 * 1000); }, 4 * 60 * 1000); }
@@ -2424,6 +2430,20 @@ app.post('/api/admin/desk-drafts/backlog', requireAdmin, rateLimit(6, 60000), as
 });
 app.get('/api/admin/desk-drafts/webhook', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await expertDraft().hookLog({ limit: req.query.limit, result: String(req.query.result || '') }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 335: the Expert library
+app.get('/api/admin/expert-library', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-library').overview())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/admin/expert-library/page/:slug', requireAdmin, async (req, res) => {
+  try { const p = await require('./lib/expert-library').page(String(req.params.slug || '')); if (!p) return res.status(404).json({ success: false, error: 'Not found' }); res.json({ success: true, page: p }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/expert-library/run', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try { const lib = require('./lib/expert-library'), b = req.body || {};
+    if (b.slug) { const r = b.lint ? { issues: await lib.lint(String(b.slug)) } : await lib.build(String(b.slug), { force: true }); return res.json(Object.assign({ success: true }, r)); }
+    lib.maintain({ lintAll: !!b.lint }).then((r) => console.log('📚 Expert library (by hand):', JSON.stringify(r))).catch((e) => console.warn('expert library:', e.message));
+    res.json({ success: true, started: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/expert-drafts', requireAdmin, async (req, res) => {
   try { res.json({ success: true, enabled: expertDraft().enabled(), canSave: expertDraft().canWrite(), pilot: String(process.env.EXPERT_PILOT_OWNERS || '').split(',').filter(Boolean).length, jobs: await expertDraft().recent(req.query.limit), webhook: expertDraft().hooks() }); }

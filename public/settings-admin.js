@@ -356,7 +356,7 @@
   }
 
   // Batch 294: sub pages. General (pause controls, jobs, system) and AI usage (cost, Desk drafts, Expert log sheet).
-  const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook']];
+  const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook'], ['library', 'Expert library']];
   function subNow() { try { const v = localStorage.getItem('stg.sub'); return SUBS.some((x) => x[0] === v) ? v : 'general'; } catch (e) { return 'general'; } }
   function setSub(v) { try { localStorage.setItem('stg.sub', v); } catch (e) { /* private mode */ } }
   // Batch 315: the AI usage and Desk drafts pages refresh themselves every 30 seconds while they are open, drawn off
@@ -386,7 +386,7 @@
     root.innerHTML = `<div class="stg-wrap stg-shell"><div class="stg-subtabs" role="tablist" aria-label="Settings pages">${SUBS.map((x) => `<button type="button" role="tab" class="stg-subtab" aria-selected="${x[0] === cur}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div><div class="stg-sub-body" role="tabpanel"></div></div>`;
     root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
     const body = root.querySelector('.stg-sub-body');
-    const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin' }[cur];
+    const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin', library: 'renderExpertLibraryAdmin' }[cur];
     clearInterval(_auto);
     if (R) {
       if (typeof window[R] === 'function') { _auto = setInterval(() => autoRefresh(root, cur, R), 30000); return window[R](body); }
