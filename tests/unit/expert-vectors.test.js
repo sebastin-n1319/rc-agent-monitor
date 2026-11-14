@@ -3,7 +3,7 @@ const V = require('../../lib/expert-vectors.js');
 
 describe('Expert meaning search (Batch 337)', () => {
   it('embeds chunks once, finds the chunk closest in meaning, and re-embeds only what changed', async () => {
-    process.env.OPENAI_API_KEY = 'test'; V._reset(); V.setDB(null);
+    process.env.OPENAI_API_KEY = 'test'; process.env.EXPERT_HYBRID = 'on'; V._reset(); V.setDB(null);
     let sent = 0;
     // a tiny fake embedding: [texting failures, phones, forms]
     const vec = (t) => [/(undeliver|fail|not deliver|bounce)/i.test(t) ? 1 : 0, /(phone|handset|ring)/i.test(t) ? 1 : 0, /form/i.test(t) ? 1 : 0.01];
@@ -22,7 +22,8 @@ describe('Expert meaning search (Batch 337)', () => {
     docs[2].text = 'Send a patient form by text.';
     await V.sync(docs);
     expect(sent).toBe(5);
+    delete process.env.EXPERT_HYBRID;
+    expect(V.enabled()).toBe(false); // off unless turned on
     delete process.env.OPENAI_API_KEY;
-    expect(V.enabled()).toBe(false);
   });
 });
