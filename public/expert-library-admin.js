@@ -42,7 +42,7 @@
           ${g.status === 'open' ? `<details style="margin:6px 0"><summary class="stg-card-sub" style="cursor:pointer">The answer in the test</summary><pre style="white-space:pre-wrap;font-family:inherit;margin:4px 0">${esc(g.reference || '')}</pre></details>
             <label class="stg-card-sub" for="gap-${g.log_id}">Confirmed answer</label>
             <textarea id="gap-${g.log_id}" rows="4" style="width:100%;box-sizing:border-box;margin-top:4px" placeholder="What the agent should do or say, who owns it, any rule"></textarea>
-            <div style="display:flex;gap:8px;margin-top:6px"><button type="button" class="stg-btn elib-gap-save">Save as team note</button><button type="button" class="stg-btn stg-btn-ghost elib-gap-dismiss">Not a gap</button><span class="stg-card-sub elib-gap-msg" role="status"></span></div>`
+            <div style="display:flex;gap:8px;margin-top:6px"><button type="button" class="stg-btn elib-gap-save">Save as team note</button><button type="button" class="stg-btn stg-btn-ghost elib-gap-dismiss" title="Not a real gap, for example a follow-up line that only made sense inside its conversation. It leaves the test.">Not a gap (drop from test)</button><span class="stg-card-sub elib-gap-msg" role="status"></span></div>`
           : `<div class="stg-card-sub">${g.status === 'answered' ? 'Answered' : 'Dismissed'}${g.by_email ? ' by ' + esc(g.by_email) : ''}${g.resolved_at ? ', ' + esc(day(g.resolved_at)) : ''}</div>`}
         </div>`).join('')}`;
       box.appendChild(gd);
