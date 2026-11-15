@@ -12,7 +12,7 @@
 
   // A big number tile. tone: '', 'good', 'warn', 'bad'.
   function kpi(label, value, sub, tone) {
-    return `<div class="sc-kpi ${tone ? 'sc-' + tone : ''}"><div class="sc-kpi-l">${esc(label)}</div><div class="sc-kpi-v">${value}</div>${sub ? `<div class="sc-kpi-s">${sub}</div>` : ''}</div>`;
+    return `<div class="sc-kpi ${tone ? 'sc-' + tone : ''}"><div class="sc-kpi-l">${tone ? '<i class="sc-kpi-dot" aria-hidden="true"></i>' : ''}${esc(label)}</div><div class="sc-kpi-v">${value}</div>${sub ? `<div class="sc-kpi-s">${sub}</div>` : ''}</div>`;
   }
   // A ring with the share in the middle (for one rate: coverage, adoption).
   function ring(value, total, label, color) {
@@ -29,8 +29,8 @@
     const max = Math.max(1e-9, ...rows.map((r) => r.n)), total = rows.reduce((s, r) => s + r.n, 0) || 1, f = opts.fmt || num;
     return `<div class="sc-hbars" role="list">${rows.map((r, i) => `<div class="sc-hbar" role="listitem" tabindex="0" title="${esc(r.label)}: ${f(r.n)} (${pct(r.n, total)}%)">
       <div class="sc-hbar-l">${esc(r.label)}${r.note ? `<span class="sc-tag">${esc(r.note)}</span>` : ''}</div>
-      <div class="sc-hbar-t"><span style="width:${Math.max(2, Math.round(100 * r.n / max))}%;background:${r.color || opts.color || PAL[i % PAL.length]}"></span></div>
-      <div class="sc-hbar-n">${f(r.n)}<small>${pct(r.n, total)}%</small></div></div>`).join('')}</div>`;
+      <div class="sc-hbar-n">${f(r.n)}<small>${pct(r.n, total)}%</small></div>
+      <div class="sc-hbar-t"><span style="width:${Math.max(2, Math.round(100 * r.n / max))}%;background:${r.color || opts.color || PAL[i % PAL.length]}"></span></div></div>`).join('')}</div>`;
   }
   // A donut with a legend: [{label, n, color}]
   function donut(rows, centerLabel, fmt) {
@@ -57,14 +57,16 @@
       return `<div class="sc-col" tabindex="0" aria-label="${esc(p.tip || p.x)}: ${series.map((k) => k.label + ' ' + (p.values[k.key] || 0)).join(', ')}"><div class="sc-tip">${tip}</div><div class="sc-col-bar">${segs}</div><div class="sc-col-x">${(points.length - 1 - i) % every === 0 ? esc(p.x) : ''}</div>${t && opts.totals ? `<div class="sc-col-t" style="bottom:calc(${(100 * t / max).toFixed(1)}% + 20px)">${num(t)}</div>` : ''}</div>`;
     }).join('');
     return `<div class="sc-cols-wrap"><ul class="sc-legend sc-legend-row">${series.map((k) => `<li><i style="background:${k.color}"></i><span>${esc(k.label)}</span></li>`).join('')}</ul>
-      <div class="sc-cols" role="img" aria-label="${esc(opts.label || 'Chart')}"><div class="sc-cols-y"><span>${num(max)}</span><span>0</span></div><div class="sc-cols-in">${cols}</div></div></div>`;
+      <div class="sc-cols" role="img" aria-label="${esc(opts.label || 'Chart')}"><div class="sc-cols-y"><span>${num(max)}</span><span>${max >= 2 ? num(Math.round(max / 2)) : ''}</span><span>0</span></div><div class="sc-cols-in">${cols}</div></div></div>`;
   }
   // A funnel: [{label, n, color}] each bar as wide as its share of the first.
+  // A funnel: [{label, n, color}]. Batch 350: each step is a label, a track filled to its share of the first step, and the count.
   function funnel(steps) {
     const top = Math.max(1, steps[0] ? steps[0].n : 1);
     return `<div class="sc-funnel">${steps.map((s, i) => `<div class="sc-fstep" tabindex="0" title="${esc(s.label)}: ${num(s.n)}">
-      <div class="sc-fbar" style="width:${Math.max(6, Math.round(100 * s.n / top))}%;background:${s.color}"><b>${num(s.n)}</b></div>
-      <div class="sc-flab">${esc(s.label)}${i ? `<small>${pct(s.n, steps[i - 1].n)}% of the step above</small>` : ''}</div></div>`).join('')}</div>`;
+      <div class="sc-flab">${esc(s.label)}${i ? `<small>${pct(s.n, steps[i - 1].n)}% of the step above</small>` : ''}</div>
+      <div class="sc-fnum">${num(s.n)}</div>
+      <div class="sc-ftrack"><span style="width:${s.n ? Math.max(2, Math.round(100 * s.n / top)) : 0}%;background:${s.color}"></span></div></div>`).join('')}</div>`;
   }
   // A line with dots (one value per point), for trends like "% changed by agents".
   function line(points, opts) {

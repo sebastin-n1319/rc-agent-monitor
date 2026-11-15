@@ -435,3 +435,92 @@ html.dark-mode #settings-admin-root .stg-btn-outline-danger { color:#FCA5A5 !imp
 html.dark-mode #settings-admin-root .stg-btn-outline-warn:hover { background:rgba(242,193,78,.10) !important; }
 html.dark-mode #settings-admin-root .stg-btn-outline-danger:hover { background:rgba(248,113,113,.10) !important; }
 html.dark-mode #settings-admin-root .stg-chip.stg-job-paused .stg-chip-state { color:#FCA5A5 !important; }
+
+/* ═══ Batch 350: Settings component refresh. Header fix, controls, tables, KPI tiles and charts ═══ */
+#settings-admin-root .stg-page-head { position:static !important; display:block !important; width:auto !important; background:none !important; backdrop-filter:none !important; box-shadow:none !important; border:0 !important; padding:2px 0 0 !important; z-index:auto !important; height:auto !important; }
+#settings-admin-root .stg-side { top:76px !important; }
+#settings-admin-root .stg-card-title.stg-dup { display:none !important; }
+#settings-admin-root .stg-card-title.stg-dup + .stg-card-sub { margin-top:0 !important; }
+
+/* Buttons: primary (orange), secondary (white), quiet outline for risky actions */
+#settings-admin-root .stg-btn:not([class*="stg-btn-"]) { background:var(--stg-surface) !important; color:var(--stg-ink) !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-btn:not([class*="stg-btn-"]):hover { background:var(--stg-surface2) !important; filter:none !important; }
+#settings-admin-root .stg-btn-primary { background:var(--stg-accent) !important; color:#fff !important; border:1px solid transparent !important; box-shadow:0 1px 2px rgba(249,115,22,.25) !important; }
+#settings-admin-root .stg-btn-primary:hover { background:#EA670C !important; filter:none !important; }
+#settings-admin-root .stg-btn-warning { background:var(--stg-surface) !important; color:#B45309 !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-btn-warning:hover { background:#FFFBEB !important; border-color:#F59E0B !important; filter:none !important; }
+#settings-admin-root .stg-btn-danger { background:var(--stg-surface) !important; color:#B91C1C !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-btn-danger:hover { background:#FEF2F2 !important; border-color:#EF4444 !important; filter:none !important; }
+#settings-admin-root .stg-btn:disabled { opacity:.5 !important; box-shadow:none !important; }
+
+/* Text fields and selects */
+#settings-admin-root input[type="text"], #settings-admin-root input[type="search"], #settings-admin-root input[type="number"], #settings-admin-root input[type="url"], #settings-admin-root input[type="email"], #settings-admin-root input:not([type]), #settings-admin-root select, #settings-admin-root textarea {
+  font:inherit !important; font-size:13px !important; color:var(--stg-ink) !important; background-color:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; border-radius:9px !important; min-height:38px !important; padding:8px 12px !important; box-shadow:0 1px 1px rgba(15,24,36,.03) !important; transition:border-color .15s, box-shadow .15s !important; }
+#settings-admin-root textarea { min-height:80px !important; line-height:1.5 !important; }
+#settings-admin-root select { -webkit-appearance:none !important; appearance:none !important; padding-right:34px !important; cursor:pointer !important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important; background-repeat:no-repeat !important; background-position:right 12px center !important; }
+#settings-admin-root input:hover:not(:disabled), #settings-admin-root select:hover:not(:disabled), #settings-admin-root textarea:hover:not(:disabled) { border-color:#D0D5DD !important; }
+#settings-admin-root input:focus, #settings-admin-root select:focus, #settings-admin-root textarea:focus { outline:none !important; border-color:var(--stg-accent) !important; box-shadow:0 0 0 3px rgba(249,115,22,.16) !important; }
+#settings-admin-root ::placeholder { color:var(--stg-ink3) !important; opacity:1 !important; }
+
+/* Checkboxes and radios that are shown (picker, switch and segmented inputs stay hidden) */
+#settings-admin-root input[type="checkbox"], #settings-admin-root input[type="radio"] { -webkit-appearance:none !important; appearance:none !important; width:18px !important; height:18px !important; min-height:0 !important; margin:0 !important; padding:0 !important; flex:none !important; border:1.5px solid #C4CAD4 !important; border-radius:5px !important; background:var(--stg-surface) center/12px no-repeat !important; cursor:pointer !important; box-shadow:none !important; vertical-align:middle !important; transition:background-color .12s, border-color .12s !important; }
+#settings-admin-root input[type="radio"] { border-radius:50% !important; }
+#settings-admin-root input[type="checkbox"]:checked { background-color:var(--stg-accent) !important; border-color:var(--stg-accent) !important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") !important; }
+#settings-admin-root input[type="radio"]:checked { border:5px solid var(--stg-accent) !important; }
+#settings-admin-root input[type="checkbox"]:focus-visible, #settings-admin-root input[type="radio"]:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; box-shadow:none !important; }
+
+/* Tables: sentence-case headers, quiet header band, row hover, edge shadow when it scrolls sideways */
+#settings-admin-root .aiu-tbl th { text-transform:none !important; letter-spacing:0 !important; font-size:12px !important; font-weight:500 !important; color:var(--stg-ink3) !important; background:var(--stg-surface2) !important; padding:9px 10px !important; border-bottom:1px solid var(--stg-border) !important; white-space:nowrap !important; }
+#settings-admin-root .aiu-tbl th:first-child { border-top-left-radius:8px !important; } #settings-admin-root .aiu-tbl th:last-child { border-top-right-radius:8px !important; }
+#settings-admin-root .aiu-tbl td { padding:10px !important; }
+#settings-admin-root .aiu-tbl tbody tr:hover td { background:var(--stg-surface2) !important; }
+#settings-admin-root .aiu-tbl tbody tr:last-child td { border-bottom:0 !important; }
+#settings-admin-root .aiu-tbl-wrap { background:linear-gradient(90deg, var(--stg-surface) 30%, transparent) left/40px 100% no-repeat local, linear-gradient(270deg, var(--stg-surface) 30%, transparent) right/40px 100% no-repeat local, linear-gradient(90deg, rgba(15,24,36,.10), transparent) left/14px 100% no-repeat scroll, linear-gradient(270deg, rgba(15,24,36,.10), transparent) right/14px 100% no-repeat scroll !important; }
+
+/* KPI tiles: no coloured top bars; tone is a labelled dot */
+#settings-admin-root .sc-kpi { border-top:1px solid var(--stg-border) !important; box-shadow:0 1px 2px rgba(15,24,36,.04) !important; padding:16px 18px !important; }
+#settings-admin-root .sc-kpi.sc-good, #settings-admin-root .sc-kpi.sc-warn, #settings-admin-root .sc-kpi.sc-bad { border-top-color:var(--stg-border) !important; }
+#settings-admin-root .sc-kpi-l { display:flex !important; align-items:center !important; gap:7px !important; font-weight:500 !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .sc-kpi-dot { width:7px !important; height:7px !important; border-radius:50% !important; flex:none !important; background:var(--stg-ink3) !important; }
+#settings-admin-root .sc-kpi.sc-good .sc-kpi-dot { background:#12A594 !important; } #settings-admin-root .sc-kpi.sc-warn .sc-kpi-dot { background:#E5932A !important; } #settings-admin-root .sc-kpi.sc-bad .sc-kpi-dot { background:#E5484D !important; }
+#settings-admin-root .sc-kpi-v { font-size:26px !important; font-weight:600 !important; letter-spacing:-.02em !important; margin-top:6px !important; }
+#settings-admin-root .sc-kpi-s { color:var(--stg-ink3) !important; }
+
+/* Column charts: three light gridlines behind the bars */
+#settings-admin-root .sc-cols-in { border-bottom:0 !important; gap:4px !important; background:linear-gradient(var(--stg-border), var(--stg-border)) 0 0/100% 1px no-repeat, linear-gradient(var(--stg-border), var(--stg-border)) 0 calc((100% - 20px) / 2)/100% 1px no-repeat, linear-gradient(#D9DDE4, #D9DDE4) 0 calc(100% - 20px)/100% 1px no-repeat !important; }
+#settings-admin-root .sc-cols-y { font-variant-numeric:tabular-nums !important; }
+#settings-admin-root .sc-col-bar { gap:1px !important; }
+#settings-admin-root .sc-col-bar span { border-radius:3px !important; min-height:2px !important; }
+#settings-admin-root .sc-tip { border-radius:8px !important; box-shadow:0 8px 24px rgba(15,24,36,.18) !important; }
+
+/* Horizontal bars: label and number on one line, thin bar underneath (fits narrow cards) */
+#settings-admin-root .sc-hbars { gap:12px !important; }
+#settings-admin-root .sc-hbar { grid-template-columns:minmax(0,1fr) auto !important; grid-template-areas:"l n" "t t" !important; gap:5px 12px !important; align-items:end !important; }
+#settings-admin-root .sc-hbar-l { grid-area:l !important; font-size:13px !important; line-height:1.35 !important; }
+#settings-admin-root .sc-hbar-n { grid-area:n !important; display:flex !important; align-items:baseline !important; gap:6px !important; font-weight:600 !important; }
+#settings-admin-root .sc-hbar-n small { display:inline !important; }
+#settings-admin-root .sc-hbar-t { grid-area:t !important; height:6px !important; }
+
+/* Funnel: label and count, track below */
+#settings-admin-root .sc-funnel { gap:14px !important; }
+#settings-admin-root .sc-fstep { grid-template-columns:minmax(0,1fr) auto !important; grid-template-areas:"l n" "t t" !important; gap:6px 12px !important; align-items:end !important; border-radius:6px !important; }
+#settings-admin-root .sc-fstep:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:3px !important; }
+#settings-admin-root .sc-flab { grid-area:l !important; font-weight:500 !important; }
+#settings-admin-root .sc-fnum { grid-area:n !important; font-size:18px !important; font-weight:600 !important; color:var(--stg-ink) !important; font-variant-numeric:tabular-nums !important; }
+#settings-admin-root .sc-ftrack { grid-area:t !important; height:8px !important; border-radius:999px !important; background:var(--sc-track) !important; overflow:hidden !important; }
+#settings-admin-root .sc-ftrack span { display:block !important; height:100% !important; border-radius:999px !important; }
+
+/* Desk drafts: the agent picker card gets the wider column */
+#settings-admin-root .sc-g3:has(.ddm-pick) { grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) !important; }
+#settings-admin-root .ddm-agents { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important; }
+#settings-admin-root .ddm-seg-opt span { white-space:nowrap !important; }
+@media (max-width: 1100px) { #settings-admin-root .sc-g3:has(.ddm-pick) { grid-template-columns:minmax(0,1fr) !important; } }
+
+/* Dark mode for the refreshed controls */
+html.dark-mode #settings-admin-root .stg-btn-warning { color:#FCD34D !important; } html.dark-mode #settings-admin-root .stg-btn-danger { color:#FCA5A5 !important; }
+html.dark-mode #settings-admin-root .stg-btn-warning:hover, html.dark-mode #settings-admin-root .stg-btn-danger:hover { background:rgba(255,255,255,.04) !important; }
+html.dark-mode #settings-admin-root input[type="checkbox"], html.dark-mode #settings-admin-root input[type="radio"] { border-color:#4A5B6C !important; }
+html.dark-mode #settings-admin-root select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236F8496' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important; }
+/* Batch 350: Drafted tickets table fits the card (shorter subject and account lines, status note wraps) */
+#settings-admin-root .ddm-tickets .ddm-sub { max-width:220px !important; }
+#settings-admin-root .ddm-tickets td:nth-child(5) .ddm-sub { white-space:normal !important; max-width:170px !important; }

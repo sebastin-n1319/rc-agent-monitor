@@ -346,7 +346,16 @@
     const a2 = document.activeElement;
     if (a2 && body.contains(a2) && /^(INPUT|SELECT|TEXTAREA)$/.test(a2.tagName)) return;
     if (body.querySelector('[aria-expanded="true"], button:disabled')) return;
+    dedupe(fresh);
     body.replaceWith(fresh);
+  }
+  // Batch 350: a page's first card often repeats the page title (Storage, Expert library); hide that repeat.
+  function dedupe(body) {
+    try {
+      const t = (document.querySelector('#settings-admin-root .stg-page-title') || {}).textContent;
+      const first = body.querySelector('.stg-card-title');
+      if (t && first && first.textContent.trim().toLowerCase() === t.trim().toLowerCase()) first.classList.add('stg-dup');
+    } catch (e) { /* cosmetic only */ }
   }
   window.openSettingsAdmin = async function (sub) {
     const root = document.getElementById('settings-admin-root');
@@ -358,14 +367,14 @@
       <nav class="stg-side" aria-label="Settings pages"><div class="stg-side-title">Settings</div>
         ${GROUPS.map((g) => `<div class="stg-side-group"><div class="stg-side-label">${g[0]}</div>${g[1].map((k) => `<button type="button" class="stg-subtab stg-nav" data-sub="${k}" aria-selected="${k === cur}" ${k === cur ? 'aria-current="page"' : ''}>${ico(k)}<span>${name[k]}</span></button>`).join('')}</div>`).join('')}
       </nav>
-      <div class="stg-main"><header class="stg-page-head"><h2 class="stg-page-title">${name[cur]}</h2><p class="stg-page-sub">${DESC[cur]}</p></header>
+      <div class="stg-main"><div class="stg-page-head"><h2 class="stg-page-title">${name[cur]}</h2><p class="stg-page-sub">${DESC[cur]}</p></div>
         <div class="stg-sub-body" role="region" aria-label="${name[cur]}"></div></div></div>`;
     root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
     const body = root.querySelector('.stg-sub-body');
     const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin', library: 'renderExpertLibraryAdmin', storage: 'renderStorageAdmin' }[cur];
     clearInterval(_auto);
     if (R) {
-      if (typeof window[R] === 'function') { _auto = setInterval(() => autoRefresh(root, cur, R), 30000); return window[R](body); }
+      if (typeof window[R] === 'function') { _auto = setInterval(() => autoRefresh(root, cur, R), 30000); const out = await window[R](body); dedupe(body); return out; }
       body.innerHTML = '<div class="stg-error">This page did not load. Refresh the page.</div>';
       return;
     }
