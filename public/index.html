@@ -7053,7 +7053,7 @@ async function loadSession(){
             if(s.success && s.role){
               if(s.role === 'assessment'){ try{ localStorage.removeItem('rcSession'); }catch(_){} window.location.replace('/assess'); return; }
               if(s.role === 'guides'){ try{ localStorage.removeItem('rcSession'); }catch(_){} window.location.replace('/guides'); return; }
-              if(s.role !== cached.role) sessionStorage.setItem('rcRole', s.role);
+              if(s.role !== cached.role){ sessionStorage.setItem('rcRole', s.role); try{ localStorage.setItem('rcSession', JSON.stringify(Object.assign({}, cached, { role:s.role, savedAt:Date.now() }))); }catch(_){} if(!sessionStorage.getItem('rcRoleFix')){ sessionStorage.setItem('rcRoleFix','1'); setTimeout(()=>location.reload(), 50); return; } } // Batch 347: a changed role reloads once so the right menus show
               try{ localStorage.setItem('rcSession', JSON.stringify({
                 name:s.name||cached.name, role:s.role, email:s.email||cached.email,
                 picture:s.picture||cached.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()

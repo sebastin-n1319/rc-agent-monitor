@@ -1692,9 +1692,23 @@ function setBreakbotEnabled(e,enabled,by){
 
 function removeRole(e){return run(`DELETE FROM app_roles WHERE email=?`,[e]);}
 async function getRoleForEmail(e){const row=await get(`SELECT role FROM app_roles WHERE email=?`,[e]);return row?row.role:null;}
+// Batch 347: a busy database (for example during a compaction) must never turn an admin into an agent. The lookup is
+// tried again a few times, and if it still fails the last role read for that email is used; only a missing row means
+// "no role set".
+const _roleSeen = new Map();
 async function getRoleSettingsForEmail(e){
-  const row=await get(`SELECT role,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles WHERE email=?`,[e]);
-  return row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
+  let lastErr = null;
+  for (let i = 0; i < 4; i++) {
+    try {
+      const row=await get(`SELECT role,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles WHERE email=?`,[e]);
+      const out = row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
+      _roleSeen.set(String(e||'').toLowerCase(), out);
+      return out;
+    } catch (err) { lastErr = err; await new Promise(r => setTimeout(r, 1500)); }
+  }
+  const k = String(e||'').toLowerCase();
+  if (_roleSeen.has(k)) return _roleSeen.get(k);
+  throw lastErr;
 }
 
 async function getCallVolume(dateIso, timeZone='Asia/Kolkata') {
