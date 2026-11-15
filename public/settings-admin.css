@@ -326,3 +326,112 @@ html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admi
 #settings-admin-root .ddm-agent:has(input:checked) { border-color:var(--stg-accent) !important; background:color-mix(in srgb, var(--stg-accent) 7%, var(--stg-surface)) !important; }
 #settings-admin-root .ddm-agent:has(input:checked) .ddm-av { background:var(--stg-accent) !important; color:#fff !important; }
 #settings-admin-root .ddm-agent:has(input:focus-visible) { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+
+/* ═══ Batch 349: Settings redesign. Side navigation, page header, status panel, quieter controls ═══ */
+#settings-admin-root .stg-wrap.stg-shell2 { display:grid !important; grid-template-columns:220px minmax(0,1fr) !important; gap:28px !important; max-width:1240px !important; padding:20px 24px 48px !important; align-items:start !important; }
+#settings-admin-root .stg-side { position:sticky !important; top:12px !important; display:flex !important; flex-direction:column !important; gap:18px !important; }
+#settings-admin-root .stg-side-title { font-size:20px !important; font-weight:600 !important; letter-spacing:-.015em !important; color:var(--stg-ink) !important; padding:2px 10px 0 !important; }
+#settings-admin-root .stg-side-group { display:flex !important; flex-direction:column !important; gap:2px !important; }
+#settings-admin-root .stg-side-label { font-size:12px !important; font-weight:500 !important; color:var(--stg-ink3) !important; padding:0 10px 4px !important; }
+#settings-admin-root .stg-nav { position:relative !important; display:flex !important; align-items:center !important; gap:10px !important; width:100% !important; min-height:38px !important; padding:8px 10px !important; border:0 !important; border-radius:9px !important; background:transparent !important; box-shadow:none !important; color:var(--stg-ink2) !important; font:inherit !important; font-size:13.5px !important; font-weight:500 !important; text-align:left !important; cursor:pointer !important; transition:background .15s var(--stg-ease), color .15s var(--stg-ease) !important; }
+#settings-admin-root .stg-nav:hover { background:rgba(15,24,36,.045) !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-nav[aria-selected="true"] { background:var(--stg-surface) !important; color:var(--stg-ink) !important; font-weight:600 !important; box-shadow:0 1px 2px rgba(15,24,36,.07), inset 0 0 0 1px var(--stg-border) !important; }
+#settings-admin-root .stg-nav[aria-selected="true"]::before { content:'' !important; position:absolute !important; left:-1px !important; top:9px !important; bottom:9px !important; width:3px !important; border-radius:3px !important; background:var(--stg-accent) !important; }
+#settings-admin-root .stg-nav-ico { width:18px !important; height:18px !important; flex:none !important; color:var(--stg-ink3) !important; }
+#settings-admin-root .stg-nav[aria-selected="true"] .stg-nav-ico { color:var(--stg-accent) !important; }
+#settings-admin-root .stg-nav:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:1px !important; }
+#settings-admin-root .stg-main { min-width:0 !important; }
+#settings-admin-root .stg-page-head { margin:0 0 18px !important; padding-top:2px !important; }
+#settings-admin-root .stg-page-title { margin:0 !important; font-size:24px !important; line-height:1.25 !important; font-weight:600 !important; letter-spacing:-.02em !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-page-sub { margin:4px 0 0 !important; font-size:13.5px !important; color:var(--stg-ink2) !important; max-width:70ch !important; }
+#settings-admin-root .stg-shell2 .stg-sub-body .stg-wrap { max-width:none !important; padding:0 !important; }
+
+/* Cards and section heads */
+#settings-admin-root .stg-card { border-radius:12px !important; padding:20px 22px !important; margin-bottom:16px !important; box-shadow:0 1px 2px rgba(15,24,36,.04) !important; }
+#settings-admin-root .stg-card-title { margin:0 !important; font-size:15px !important; font-weight:600 !important; letter-spacing:-.005em !important; }
+#settings-admin-root .stg-sect-head { margin-bottom:14px !important; }
+#settings-admin-root .stg-sect-head .stg-card-sub { margin:3px 0 0 !important; color:var(--stg-ink2) !important; max-width:72ch !important; line-height:1.5 !important; }
+
+/* Buttons */
+#settings-admin-root .stg-btn { display:inline-flex !important; align-items:center !important; justify-content:center !important; gap:6px !important; min-height:36px !important; padding:8px 14px !important; border-radius:9px !important; font-weight:600 !important; }
+#settings-admin-root .stg-btn-ghost { background:var(--stg-surface) !important; color:var(--stg-ink) !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-btn-ghost:hover { background:var(--stg-surface2) !important; filter:none !important; }
+#settings-admin-root .stg-btn-outline-warn, #settings-admin-root .stg-btn-outline-danger { background:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; min-width:150px !important; }
+#settings-admin-root .stg-btn-outline-warn { color:#B45309 !important; }
+#settings-admin-root .stg-btn-outline-danger { color:#B91C1C !important; }
+#settings-admin-root .stg-btn-outline-warn:hover { border-color:#F59E0B !important; background:#FFFBEB !important; filter:none !important; }
+#settings-admin-root .stg-btn-outline-danger:hover { border-color:#EF4444 !important; background:#FEF2F2 !important; filter:none !important; }
+#settings-admin-root .stg-btn:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+
+/* Status panel: the one bold element on the page */
+#settings-admin-root .stg-panel { --tone:var(--stg-green); --tint:#ECFDF5; --ink-t:#065F46; border-radius:14px !important; margin-bottom:16px !important; background:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; overflow:hidden !important; box-shadow:0 1px 2px rgba(15,24,36,.04) !important; }
+#settings-admin-root .stg-panel-warning { --tone:var(--stg-amber); --tint:#FFFBEB; --ink-t:#92400E; }
+#settings-admin-root .stg-panel-danger { --tone:var(--stg-red); --tint:#FEF2F2; --ink-t:#991B1B; }
+#settings-admin-root .stg-panel-head { display:flex !important; align-items:center !important; gap:14px !important; padding:18px 22px !important; background:var(--tint) !important; border-bottom:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-panel-dot { width:12px !important; height:12px !important; flex:none !important; border-radius:50% !important; background:var(--tone) !important; box-shadow:0 0 0 5px color-mix(in srgb, var(--tone) 18%, transparent) !important; }
+#settings-admin-root .stg-panel-warning .stg-panel-dot, #settings-admin-root .stg-panel-danger .stg-panel-dot { animation:stg-pulse 1.6s ease-in-out infinite !important; }
+#settings-admin-root .stg-panel-text { flex:1 !important; min-width:0 !important; }
+#settings-admin-root .stg-panel-title { margin:0 !important; font-size:18px !important; font-weight:600 !important; letter-spacing:-.015em !important; color:var(--ink-t) !important; }
+#settings-admin-root .stg-panel-sub { margin:2px 0 0 !important; font-size:13px !important; color:var(--ink-t) !important; opacity:.85 !important; }
+#settings-admin-root .stg-panel-acts { display:flex !important; gap:8px !important; flex:none !important; }
+#settings-admin-root .stg-chips { list-style:none !important; margin:0 !important; padding:14px 18px 16px !important; display:grid !important; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) !important; gap:8px !important; }
+#settings-admin-root .stg-chip { display:flex !important; align-items:center !important; gap:9px !important; padding:9px 12px !important; border-radius:10px !important; background:var(--stg-surface2) !important; font-size:12.5px !important; min-width:0 !important; }
+#settings-admin-root .stg-chip-dot { width:8px !important; height:8px !important; flex:none !important; border-radius:50% !important; background:var(--stg-ink3) !important; }
+#settings-admin-root .stg-chip.stg-job-running .stg-chip-dot { background:var(--stg-green) !important; }
+#settings-admin-root .stg-chip.stg-job-paused .stg-chip-dot { background:var(--stg-red) !important; }
+#settings-admin-root .stg-chip-name { flex:1 !important; min-width:0 !important; font-weight:500 !important; color:var(--stg-ink) !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+#settings-admin-root .stg-chip-state { flex:none !important; font-size:11.5px !important; color:var(--stg-ink3) !important; }
+#settings-admin-root .stg-chip.stg-job-paused .stg-chip-state { color:#B91C1C !important; font-weight:600 !important; }
+@media (prefers-reduced-motion: reduce) { #settings-admin-root .stg-panel-dot { animation:none !important; } }
+
+/* Setting rows (title, description, control on the right) */
+#settings-admin-root .stg-pause-actions { display:flex !important; flex-direction:column !important; gap:0 !important; }
+#settings-admin-root .stg-line { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:20px !important; padding:14px 0 !important; border-top:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-sect-head + .stg-line, #settings-admin-root .stg-pause-actions > .stg-line:first-child { border-top:0 !important; padding-top:2px !important; }
+#settings-admin-root .stg-line-info { flex:1 !important; min-width:0 !important; }
+#settings-admin-root .stg-line-title { font-size:13.5px !important; font-weight:600 !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-line-desc { font-size:12.5px !important; color:var(--stg-ink2) !important; margin-top:2px !important; line-height:1.5 !important; max-width:68ch !important; }
+#settings-admin-root .stg-pause-dialog { margin-top:6px !important; }
+
+/* Switch */
+#settings-admin-root .stg-switch { position:relative !important; flex:none !important; width:44px !important; height:26px !important; padding:0 !important; border:0 !important; border-radius:999px !important; background:#D0D5DD !important; cursor:pointer !important; transition:background .18s var(--stg-ease) !important; }
+#settings-admin-root .stg-switch[aria-checked="true"] { background:var(--stg-accent) !important; }
+#settings-admin-root .stg-switch-knob { position:absolute !important; top:3px !important; left:3px !important; width:20px !important; height:20px !important; border-radius:50% !important; background:#fff !important; box-shadow:0 1px 3px rgba(15,24,36,.25) !important; transition:transform .18s var(--stg-ease) !important; }
+#settings-admin-root .stg-switch[aria-checked="true"] .stg-switch-knob { transform:translateX(18px) !important; }
+#settings-admin-root .stg-switch:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+#settings-admin-root .stg-switch:disabled { opacity:.6 !important; cursor:default !important; }
+
+/* CORS notice and system facts */
+#settings-admin-root .stg-general .stg-banner { background:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; border-left:3px solid var(--stg-amber) !important; color:var(--stg-ink) !important; box-shadow:none !important; border-radius:12px !important; }
+#settings-admin-root .stg-general .stg-banner .stg-banner-sub { color:var(--stg-ink2) !important; opacity:1 !important; }
+#settings-admin-root .stg-general .stg-banner .stg-banner-dot { display:none !important; }
+#settings-admin-root .stg-sys-item { padding:12px 14px !important; border-radius:10px !important; background:var(--stg-surface2) !important; min-width:0 !important; }
+#settings-admin-root .stg-sys-label { text-transform:none !important; letter-spacing:0 !important; font-size:12px !important; font-weight:500 !important; }
+#settings-admin-root .stg-sys-value { font-weight:600 !important; }
+
+/* Narrow screens: the side navigation becomes a scrolling row */
+@media (max-width: 900px) {
+  #settings-admin-root .stg-wrap.stg-shell2 { grid-template-columns:minmax(0,1fr) !important; gap:14px !important; padding:14px 16px 40px !important; }
+  #settings-admin-root .stg-side { position:static !important; flex-direction:row !important; gap:4px !important; overflow-x:auto !important; padding-bottom:4px !important; }
+  #settings-admin-root .stg-side-title, #settings-admin-root .stg-side-label { display:none !important; }
+  #settings-admin-root .stg-side-group { flex-direction:row !important; gap:4px !important; }
+  #settings-admin-root .stg-nav { width:auto !important; white-space:nowrap !important; }
+  #settings-admin-root .stg-nav[aria-selected="true"]::before { left:10px !important; right:10px !important; top:auto !important; bottom:2px !important; width:auto !important; height:2px !important; }
+  #settings-admin-root .stg-panel-head { flex-wrap:wrap !important; }
+  #settings-admin-root .stg-line { flex-wrap:wrap !important; }
+  #settings-admin-root .stg-pause-actions .stg-line-info { flex-basis:100% !important; }
+  #settings-admin-root .stg-panel-text { flex-basis:calc(100% - 30px) !important; }
+  #settings-admin-root .stg-panel-acts { margin-left:26px !important; }
+}
+/* Batch 349: dark mode for the redesigned pieces */
+html.dark-mode #settings-admin-root .stg-panel { --tint:rgba(52,211,153,.10); --ink-t:#6EE7B7; }
+html.dark-mode #settings-admin-root .stg-panel-warning { --tint:rgba(242,193,78,.10); --ink-t:#FCD34D; }
+html.dark-mode #settings-admin-root .stg-panel-danger { --tint:rgba(248,113,113,.10); --ink-t:#FCA5A5; }
+html.dark-mode #settings-admin-root .stg-nav:hover { background:rgba(255,255,255,.05) !important; }
+html.dark-mode #settings-admin-root .stg-switch { background:#3A4A5A !important; }
+html.dark-mode #settings-admin-root .stg-switch[aria-checked="true"] { background:var(--stg-accent) !important; }
+html.dark-mode #settings-admin-root .stg-btn-outline-warn { color:#FCD34D !important; }
+html.dark-mode #settings-admin-root .stg-btn-outline-danger { color:#FCA5A5 !important; }
+html.dark-mode #settings-admin-root .stg-btn-outline-warn:hover { background:rgba(242,193,78,.10) !important; }
+html.dark-mode #settings-admin-root .stg-btn-outline-danger:hover { background:rgba(248,113,113,.10) !important; }
+html.dark-mode #settings-admin-root .stg-chip.stg-job-paused .stg-chip-state { color:#FCA5A5 !important; }

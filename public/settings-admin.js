@@ -27,14 +27,14 @@
   }
 
   const JOBS = [
-    { name: 'Presence Sync', gate: 'rc_sync', desc: 'Polls RingCentral presence for every monitored agent (~every 30–60s).' },
-    { name: 'Call Log Sync', gate: 'rc_sync', desc: 'Pulls RingCentral call logs + refreshes monthly summary every 15 min.' },
-    { name: 'Missed Call Poll', gate: 'rc_sync', desc: 'Checks RC for missed calls every 1 min and posts to Google Chat.' },
-    { name: 'Realtime Webhook Renewal', gate: 'rc_sync', desc: 'Renews the RC webhook subscription shortly after boot.' },
-    { name: 'Alert Evaluator', gate: 'full', desc: 'Evaluates the 5 real-time alert rules every 30s.' },
-    { name: 'Anomaly Evaluator', gate: 'full', desc: 'Runs nightly anomaly detection (~3:00 AM CST).' },
-    { name: 'Predict Model Training', gate: 'full', desc: 'Retrains the abandonment-prediction model (~3:30 AM CST).' },
-    { name: 'DB Archive / Prune', gate: 'none', desc: 'Housekeeping, archives to Sheets + prunes old rows every 2h. Never paused (disk stewardship, not RC API load).' },
+    { name: 'Presence sync', gate: 'rc_sync', desc: 'Polls RingCentral presence for every monitored agent (~every 30–60s).' },
+    { name: 'Call log sync', gate: 'rc_sync', desc: 'Pulls RingCentral call logs + refreshes monthly summary every 15 min.' },
+    { name: 'Missed call poll', gate: 'rc_sync', desc: 'Checks RC for missed calls every 1 min and posts to Google Chat.' },
+    { name: 'Webhook renewal', gate: 'rc_sync', desc: 'Renews the RC webhook subscription shortly after boot.' },
+    { name: 'Alert checks', gate: 'full', desc: 'Evaluates the 5 real-time alert rules every 30s.' },
+    { name: 'Anomaly checks', gate: 'full', desc: 'Runs nightly anomaly detection (~3:00 AM CST).' },
+    { name: 'Model training', gate: 'full', desc: 'Retrains the abandonment-prediction model (~3:30 AM CST).' },
+    { name: 'Housekeeping', gate: 'none', desc: 'Housekeeping, archives to Sheets + prunes old rows every 2h. Never paused (disk stewardship, not RC API load).' },
   ];
 
   function fmtDateTime(ts) {
@@ -214,74 +214,41 @@
   function notificationsCard(data) {
     const enabled = data.missedCallNotifyEnabled !== false;
     return `
-      <div class="stg-card">
-        <div class="stg-card-title">Notifications</div>
-        <div class="stg-card-sub">Controls the Google Chat missed-call notifier. Turning this off still polls RingCentral for missed calls (so nothing is missed once re-enabled), it just stops the chat ping.</div>
-        <div class="stg-notify-row">
-          <div class="stg-notify-info">
-            <div class="stg-pause-option-title">Missed-call Google Chat alerts</div>
-            <div class="stg-pause-option-desc">${enabled ? 'Currently sending a chat message for each new missed call.' : 'Currently silent, missed calls are still tracked, just not posted to chat.'}</div>
+      <section class="stg-card stg-sect" aria-labelledby="stg-n-t">
+        <div class="stg-sect-head"><h3 class="stg-card-title" id="stg-n-t">Notifications</h3></div>
+        <div class="stg-line">
+          <div class="stg-line-info">
+            <div class="stg-line-title">Missed-call alerts in Google Chat</div>
+            <div class="stg-line-desc">${enabled ? 'A chat message goes out for each new missed call.' : 'Silent. Missed calls are still tracked, just not posted to chat.'}</div>
           </div>
-          <button type="button" class="stg-btn ${enabled ? 'stg-btn-warning' : 'stg-btn-light'} stg-notify-toggle" data-enabled="${enabled ? '0' : '1'}">${enabled ? 'Turn Off' : 'Turn On'}</button>
+          <button type="button" class="stg-switch stg-notify-toggle" role="switch" aria-checked="${enabled}" aria-label="Missed-call alerts in Google Chat" data-enabled="${enabled ? '0' : '1'}"><span class="stg-switch-knob"></span></button>
         </div>
-      </div>`;
+      </section>`;
   }
 
-  function statusBanner(pause) {
-    if (pause.fullPaused) {
-      return `
-        <div class="stg-banner stg-banner-danger">
-          <div class="stg-banner-main">
-            <span class="stg-banner-dot"></span>
-            <div>
-              <div class="stg-banner-title">Fully Paused</div>
-              <div class="stg-banner-sub">Until ${fmtDateTime(pause.fullPauseUntil)} · ${fmtRemaining(pause.fullPauseUntil)}${pause.fullPauseReason ? ' · "' + esc(pause.fullPauseReason) + '"' : ''}</div>
-            </div>
-          </div>
-          <button type="button" class="stg-btn stg-btn-light stg-resume-btn" data-mode="full">Resume Now</button>
-        </div>`;
-    }
-    if (pause.rcSyncPaused) {
-      return `
-        <div class="stg-banner stg-banner-warning">
-          <div class="stg-banner-main">
-            <span class="stg-banner-dot"></span>
-            <div>
-              <div class="stg-banner-title">RC Sync Paused</div>
-              <div class="stg-banner-sub">Until ${fmtDateTime(pause.rcSyncPauseUntil)} · ${fmtRemaining(pause.rcSyncPauseUntil)}${pause.rcSyncPauseReason ? ' · "' + esc(pause.rcSyncPauseReason) + '"' : ''}</div>
-            </div>
-          </div>
-          <button type="button" class="stg-btn stg-btn-light stg-resume-btn" data-mode="rc_sync">Resume Now</button>
-        </div>`;
-    }
-    return `
-      <div class="stg-banner stg-banner-ok">
-        <div class="stg-banner-main">
-          <span class="stg-banner-dot"></span>
-          <div>
-            <div class="stg-banner-title">Running Normally</div>
-            <div class="stg-banner-sub">All background jobs active.</div>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  function jobsTable(pause) {
-    const rows = JOBS.map((j) => {
+  // Batch 349: one status panel. It says the state in plain words and shows every background job as a live chip.
+  function statusPanel(pause) {
+    const st = pause.fullPaused ? 'danger' : (pause.rcSyncPaused ? 'warning' : 'ok');
+    const until = pause.fullPaused ? pause.fullPauseUntil : pause.rcSyncPauseUntil;
+    const why = pause.fullPaused ? pause.fullPauseReason : pause.rcSyncPauseReason;
+    const title = st === 'danger' ? 'Everything is paused' : st === 'warning' ? 'RingCentral sync is paused' : 'Everything is running';
+    const sub = st === 'ok' ? 'All background jobs are active.' : `Resumes ${esc(fmtDateTime(until))} (${esc(fmtRemaining(until))})${why ? '. Reason: ' + esc(why) : ''}`;
+    const chips = JOBS.map((j) => {
       const paused = (j.gate === 'full' && pause.fullPaused) || (j.gate === 'rc_sync' && pause.rcSyncPaused);
-      const stateClass = j.gate === 'none' ? 'stg-job-always' : (paused ? 'stg-job-paused' : 'stg-job-running');
-      const stateLabel = j.gate === 'none' ? 'Always on' : (paused ? 'Paused' : 'Running');
-      return `
-        <div class="stg-job-row">
-          <span class="stg-job-dot ${stateClass}"></span>
-          <div class="stg-job-info">
-            <div class="stg-job-name">${esc(j.name)}</div>
-            <div class="stg-job-desc">${esc(j.desc)}</div>
-          </div>
-          <span class="stg-job-state ${stateClass}">${stateLabel}</span>
-        </div>`;
+      const cls = j.gate === 'none' ? 'stg-job-always' : (paused ? 'stg-job-paused' : 'stg-job-running');
+      const lab = j.gate === 'none' ? 'Always on' : (paused ? 'Paused' : 'Running');
+      return `<li class="stg-chip ${cls}" title="${esc(j.desc)}"><span class="stg-chip-dot" aria-hidden="true"></span><span class="stg-chip-name">${esc(j.name)}</span><span class="stg-chip-state">${lab}</span></li>`;
     }).join('');
-    return `<div class="stg-jobs-list">${rows}</div>`;
+    return `
+      <section class="stg-panel stg-panel-${st}" aria-label="Tool status">
+        <div class="stg-panel-head">
+          <span class="stg-panel-dot" aria-hidden="true"></span>
+          <div class="stg-panel-text"><h3 class="stg-panel-title">${title}</h3><p class="stg-panel-sub">${sub}</p></div>
+          <div class="stg-panel-acts">${st === 'ok' ? '' : `<button type="button" class="stg-btn stg-btn-primary stg-resume-btn" data-mode="${pause.fullPaused ? 'full' : 'rc_sync'}">Resume now</button>`}
+            <button type="button" class="stg-btn stg-btn-ghost stg-refresh-btn" aria-label="Refresh status"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Refresh</button></div>
+        </div>
+        <ul class="stg-chips" aria-label="Background jobs">${chips}</ul>
+      </section>`;
   }
 
   function systemCard(system) {
@@ -291,8 +258,8 @@
       try { rl = JSON.stringify(system.rcRateLimit); } catch (e) { rl = String(system.rcRateLimit); }
     }
     return `
-      <div class="stg-card">
-        <div class="stg-card-title">System</div>
+      <section class="stg-card stg-sect">
+        <div class="stg-sect-head"><h3 class="stg-card-title">System</h3></div>
         <div class="stg-sys-grid">
           <div class="stg-sys-item"><div class="stg-sys-label">Database size</div><div class="stg-sys-value">${esc(dbSize)}</div></div>
           <div class="stg-sys-item"><div class="stg-sys-label">RC rate-limit state</div><div class="stg-sys-value stg-sys-mono">${esc(rl)}</div></div>
@@ -303,40 +270,30 @@
   function render(root, data) {
     const pause = data.pause || {};
     root.innerHTML = `
-      <div class="stg-wrap">
-        <div class="stg-header">
-          <div>
-            <div class="stg-h1">Settings</div>
-            <div class="stg-h1-sub">Pause controls and admin-tunable options for the RC Productivity Monitor.</div>
-          </div>
-          <button type="button" class="stg-btn stg-btn-ghost stg-refresh-btn">↻ Refresh</button>
-        </div>
-
-        ${statusBanner(pause)}
+      <div class="stg-wrap stg-general">
+        ${statusPanel(pause)}
         ${corsWarningBanner(data.system)}
 
-        <div class="stg-card">
-          <div class="stg-card-title">Pause Controls</div>
-          <div class="stg-card-sub">Stops the RingCentral API traffic this tool generates, useful when another RC-bound job (like a bulk run) needs headroom. Auto-resumes when the timer runs out; no redeploy needed.</div>
+        <section class="stg-card stg-sect" aria-labelledby="stg-p-t">
+          <div class="stg-sect-head"><h3 class="stg-card-title" id="stg-p-t">Pause controls</h3>
+            <p class="stg-card-sub">Stops the RingCentral traffic this tool makes, for example when a bulk run needs headroom. Jobs restart on their own when the timer ends.</p></div>
           <div class="stg-pause-actions">
-            <div class="stg-pause-option">
-              <div class="stg-pause-option-title">Partial Pause</div>
-              <div class="stg-pause-option-desc">Stops presence sync, call-log sync, missed-call polling &amp; webhook renewal. Dashboard stays up and usable with last-known data.</div>
-              <button type="button" class="stg-btn stg-btn-warning stg-pause-trigger" data-mode="rc_sync">Partial Pause…</button>
+            <div class="stg-line">
+              <div class="stg-line-info">
+                <div class="stg-line-title">Pause RingCentral sync</div>
+                <div class="stg-line-desc">Stops presence sync, call-log sync, missed-call polling and webhook renewal. Dashboards stay up with the last data.</div>
+              </div>
+              <button type="button" class="stg-btn stg-btn-outline-warn stg-pause-trigger" data-mode="rc_sync" ${pause.rcSyncPaused || pause.fullPaused ? 'disabled' : ''}>Pause sync</button>
             </div>
-            <div class="stg-pause-option">
-              <div class="stg-pause-option-title">Full Pause</div>
-              <div class="stg-pause-option-desc">Everything Partial Pause stops, plus the alert, anomaly and predict-model evaluators. Nothing calls out to RingCentral or runs background compute.</div>
-              <button type="button" class="stg-btn stg-btn-danger stg-pause-trigger" data-mode="full">Full Pause…</button>
+            <div class="stg-line">
+              <div class="stg-line-info">
+                <div class="stg-line-title">Pause everything</div>
+                <div class="stg-line-desc">The sync pause plus the alert, anomaly and prediction jobs. Nothing calls RingCentral or runs in the background.</div>
+              </div>
+              <button type="button" class="stg-btn stg-btn-outline-danger stg-pause-trigger" data-mode="full" ${pause.fullPaused ? 'disabled' : ''}>Pause everything</button>
             </div>
           </div>
-        </div>
-
-        <div class="stg-card">
-          <div class="stg-card-title">Background Jobs Status</div>
-          <div class="stg-card-sub">Read-only, reflects the pause state above.</div>
-          ${jobsTable(pause)}
-        </div>
+        </section>
 
         ${notificationsCard(data)}
 
@@ -356,7 +313,20 @@
   }
 
   // Batch 294: sub pages. General (pause controls, jobs, system) and AI usage (cost, Desk drafts, Expert log sheet).
-  const SUBS = [['general', 'General'], ['ai', 'AI usage'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook'], ['library', 'Expert library'], ['storage', 'Storage']];
+  // Batch 349: grouped side navigation with an icon, title and one-line description per page.
+  const SUBS = [['general', 'General'], ['storage', 'Storage'], ['ai', 'AI usage'], ['library', 'Expert library'], ['drafts', 'Desk drafts'], ['tickets', 'Drafted tickets'], ['webhook', 'Desk webhook']];
+  const GROUPS = [['Tool', ['general', 'storage']], ['Expert AI', ['ai', 'library']], ['Zoho Desk', ['drafts', 'tickets', 'webhook']]];
+  const DESC = { general: 'Tool status, pause controls and notifications.', storage: 'Disk space, Drive backups and the archive sheet.', ai: 'What the AI features cost and where the money goes.', library: 'What the Expert knows, test scores and knowledge gaps.', drafts: 'Who gets Expert drafts in Zoho Desk and how they are used.', tickets: 'Every ticket the Expert drafted a reply for.', webhook: 'Calls from Zoho Desk and the rules that skip them.' };
+  const ICON = {
+    general: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+    storage: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+    ai: '<path d="M5 20V11M12 20V5M19 20v-6"/>',
+    library: '<path d="M5 19V5a2 2 0 0 1 2-2h12v14H7a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h12"/>',
+    drafts: '<path d="M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4"/>',
+    tickets: '<path d="M3 13h5l2 3h4l2-3h5M5.5 5h13L21 13v6H3v-6z"/>',
+    webhook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  };
+  const ico = (k) => `<svg class="stg-nav-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
   function subNow() { try { const v = localStorage.getItem('stg.sub'); return SUBS.some((x) => x[0] === v) ? v : 'general'; } catch (e) { return 'general'; } }
   function setSub(v) { try { localStorage.setItem('stg.sub', v); } catch (e) { /* private mode */ } }
   // Batch 315: the AI usage and Desk drafts pages refresh themselves every 30 seconds while they are open, drawn off
@@ -370,7 +340,7 @@
     if (a && body.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
     if (body.querySelector('[aria-expanded="true"], .stg-loading, button:disabled') || (body.querySelector('.ddm-bl-list') && body.querySelector('.ddm-bl-list').children.length)) return;
     if (body.querySelectorAll('.ddm-tickets tbody tr.ddm-job').length > 50) return;
-    const fresh = document.createElement('div'); fresh.className = 'stg-sub-body'; fresh.setAttribute('role', 'tabpanel');
+    const fresh = document.createElement('div'); fresh.className = 'stg-sub-body'; fresh.setAttribute('role', 'region'); fresh.setAttribute('aria-label', body.getAttribute('aria-label') || 'Settings');
     try { await window[R](fresh); } catch (e) { return; }
     if (subNow() !== sub || !body.isConnected || fresh.querySelector('.stg-error')) return;
     const a2 = document.activeElement;
@@ -383,7 +353,13 @@
     if (!root) return;
     if (sub) setSub(sub);
     const cur = subNow();
-    root.innerHTML = `<div class="stg-wrap stg-shell"><div class="stg-subtabs" role="tablist" aria-label="Settings pages">${SUBS.map((x) => `<button type="button" role="tab" class="stg-subtab" aria-selected="${x[0] === cur}" data-sub="${x[0]}">${x[1]}</button>`).join('')}</div><div class="stg-sub-body" role="tabpanel"></div></div>`;
+    const name = Object.fromEntries(SUBS);
+    root.innerHTML = `<div class="stg-wrap stg-shell stg-shell2">
+      <nav class="stg-side" aria-label="Settings pages"><div class="stg-side-title">Settings</div>
+        ${GROUPS.map((g) => `<div class="stg-side-group"><div class="stg-side-label">${g[0]}</div>${g[1].map((k) => `<button type="button" class="stg-subtab stg-nav" data-sub="${k}" aria-selected="${k === cur}" ${k === cur ? 'aria-current="page"' : ''}>${ico(k)}<span>${name[k]}</span></button>`).join('')}</div>`).join('')}
+      </nav>
+      <div class="stg-main"><header class="stg-page-head"><h2 class="stg-page-title">${name[cur]}</h2><p class="stg-page-sub">${DESC[cur]}</p></header>
+        <div class="stg-sub-body" role="region" aria-label="${name[cur]}"></div></div></div>`;
     root.querySelectorAll('.stg-subtab').forEach((b) => b.addEventListener('click', () => window.openSettingsAdmin(b.dataset.sub)));
     const body = root.querySelector('.stg-sub-body');
     const R = { ai: 'renderAiUsageAdmin', drafts: 'renderDeskDraftsAdmin', tickets: 'renderDeskTicketsAdmin', webhook: 'renderDeskWebhookAdmin', library: 'renderExpertLibraryAdmin', storage: 'renderStorageAdmin' }[cur];
