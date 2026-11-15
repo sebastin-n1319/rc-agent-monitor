@@ -82,6 +82,7 @@
     if (!ms) return '-';
     return new Date(ms).toLocaleTimeString('en-US', { timeZone: tzName(), hour: 'numeric', minute: '2-digit' });
   }
+  function dayLabel() { try { const d = getBreakTrackerDate(); return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); } catch (err) { return 'that day'; } }
   function isToday() { try { return !(typeof breakHistoryMode === 'function' && breakHistoryMode()); } catch (err) { return true; } }
   function wingOf(email) {
     if (typeof window.aditWingOf === 'function') return window.aditWingOf(email);
@@ -159,7 +160,7 @@
   // Batch 163: live phone state (Call Wing) and open chats (Chat Wing) for the board, every 20 seconds.
   let liveNow = null, liveAt = 0;
   async function loadLiveNow() {
-    if (isToday()) loadFloorExtras();
+    loadFloorExtras(); // Batch 348: past days load their own day numbers too
     if (Date.now() - liveAt < 15000) return;
     liveAt = Date.now();
     try {
@@ -173,7 +174,9 @@
   async function loadFloorExtras() {
     const now = Date.now();
     if (now - presAt >= 30000) { presAt = now; fetch('/api/live-floor/presence', { credentials: 'include' }).then(r => r.json()).then(j => { if (j && j.success) { presNow = j; render(); } }).catch(() => {}); }
-    if (now - dayAt >= 90000) { dayAt = now; fetch('/api/live-floor/day', { credentials: 'include' }).then(r => r.json()).then(j => { if (j && j.success) { dayNow = j; render(); } }).catch(() => {}); }
+    // Batch 348: the day's RC and scrin.io numbers follow the date picked on the board (they always showed today before)
+    let want = ''; try { want = getBreakTrackerDate(); } catch (err) { want = ''; }
+    if (now - dayAt >= 90000 || (dayNow && want && dayNow.date !== want && dayNow._asked !== want)) { dayAt = now; const asked = want; fetch('/api/live-floor/day' + (asked ? '?date=' + encodeURIComponent(asked) : ''), { credentials: 'include' }).then(r => r.json()).then(j => { if (j && j.success) { j._asked = asked; dayNow = j; render(); } }).catch(() => {}); }
   }
   const presOf = (email) => (presNow && presNow.data && presNow.data[String(email || '').toLowerCase()]) || null;
   const dayOf = (email) => (dayNow && dayNow.data && dayNow.data[String(email || '').toLowerCase()]) || null;
@@ -202,14 +205,14 @@
       <div class="bx-row bx-between"><h3 id="bx-pop-t">${e(r.username || r.email)}</h3><button class="bx-btn bx-btn-s" data-bx-pop-close aria-label="Close">Close</button></div>
       <div class="bx-sub">${wingOf(r.email) === 'chat' ? 'Chat' : 'Call'} wing · ${e((LANES[r.currentStatus] || {}).label || r.currentStatus || '')}${isToday() && since && r.currentStatus !== 'Logged Out' ? ' since ' + e(timeOf(since)) : ''}</div>
       ${flags.length ? `<div class="bx-over-line">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
-      <h4>Today</h4>
+      <h4>${isToday() ? 'Today' : e(dayLabel())}</h4>
       ${row('RC available', rc ? dur(rc.availSec) : '-', rc ? '' : 'starts at the first Take all calls')}
       ${row('RC unavailable', rc ? dur(rc.unavailSec) : '-')}
       ${dayNow && dayNow.scrinOn ? row('scrin.io tracked', d.scrinSec == null ? '-' : dur(d.scrinSec)) : ''}
       ${row('Breaks', `${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))})`)}
       ${row('BRB', `${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})`)}
       ${laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds') >= 60 ? row('Away in scrin.io', dur(laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds'))) : ''}
-      <h4>Right now</h4>
+      <h4>Right now${isToday() ? '' : ' (live, not ' + e(dayLabel()) + ')'}</h4>
       ${row('RingCentral', tool('rc'), e((p.rc || {}).label || ''))}
       ${row('Zoho Desk', tool('desk'), e((p.desk || {}).label || ''))}
       ${row('SalesIQ chat', tool('chat'), e((p.chat || {}).label || ''))}
@@ -448,9 +451,9 @@
     let d = '';
     try { d = getBreakTrackerDate(); } catch (err) { d = ''; }
     return `<div class="bx-row bx-datebar">
-      <button class="bx-btn" data-bx-shift="-1" aria-label="Previous day">◀</button>
-      <input class="bx-date" type="date" value="${e(d)}" aria-label="Date">
-      <button class="bx-btn" data-bx-shift="1" aria-label="Next day">▶</button>
+      <button class="bx-btn" data-bx-shift="-1" aria-label="Previous day"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <input class="bx-date" type="date" value="${e(d)}" max="${e(typeof breakTodayStr === 'function' ? breakTodayStr() : '')}" aria-label="Date">
+      <button class="bx-btn" data-bx-shift="1" aria-label="Next day" ${isToday() ? 'disabled' : ''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
       ${isToday() ? '<span class="bx-pill bx-live"><span class="bx-dot"></span>Live</span>' : '<button class="bx-btn" data-bx-today>Today</button>'}
     </div>`;
   }
@@ -683,8 +686,8 @@
       return;
     }
     const sh = ev.target.closest('[data-bx-shift]');
-    if (sh && typeof shiftBreakTrackerWindow === 'function') { shiftBreakTrackerWindow(Number(sh.getAttribute('data-bx-shift'))); return; }
-    if (ev.target.closest('[data-bx-today]') && typeof setBreakTrackerDate === 'function') { setBreakTrackerDate(typeof breakTodayStr === 'function' ? breakTodayStr() : ''); return; }
+    if (sh && typeof shiftBreakTrackerWindow === 'function') { shiftBreakTrackerWindow(Number(sh.getAttribute('data-bx-shift'))); setTimeout(loadFloorExtras, 50); return; }
+    if (ev.target.closest('[data-bx-today]') && typeof setBreakTrackerDate === 'function') { setBreakTrackerDate(typeof breakTodayStr === 'function' ? breakTodayStr() : ''); setTimeout(loadFloorExtras, 50); return; }
     if (ev.target.closest('[data-bx-report]') && typeof window.openBreakReportSend === 'function') { window.openBreakReportSend(); return; }
     if (ev.target.closest('[data-bx-report]')) {
       try {
@@ -698,7 +701,7 @@
     }
   });
   document.addEventListener('change', ev => {
-    if (ev.target.classList && ev.target.classList.contains('bx-date') && typeof setBreakTrackerDate === 'function') setBreakTrackerDate(ev.target.value);
+    if (ev.target.classList && ev.target.classList.contains('bx-date') && typeof setBreakTrackerDate === 'function') { setBreakTrackerDate(ev.target.value); setTimeout(loadFloorExtras, 50); }
   });
 
   window.renderBreaksV2 = function () {

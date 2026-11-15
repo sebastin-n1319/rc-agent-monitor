@@ -53,9 +53,20 @@
     }
   }
 
+  // Batch 348: a 401 only signs you out when the server confirms the sign-in is really gone. Requests still running from
+  // a sign-out, or sent in the moment before a fresh sign-in's cookie lands, used to show "Your session has expired" on
+  // every sign-in and sign-out and could sign a fresh session straight back out.
+  function signedInHere() { try { return !!(sessionStorage.getItem('rcUser') || localStorage.getItem('rcSession')); } catch (e) { return true; } }
   function handleExpired() {
-    if (_handling) return;
+    if (_handling || window.__rcLoggingOut || !signedInHere()) return;
+    if (window.__rcLoginAt && Date.now() - window.__rcLoginAt < 15000) return;
     _handling = true;
+    origFetch('/api/session', { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (s) {
+      if (s && s.success) { _handling = false; return; } // still signed in: that request was just early or late
+      expiredNow();
+    }).catch(function () { _handling = false; });
+  }
+  function expiredNow() {
     var toastShown = false;
     try {
       if (typeof window.showToast === 'function') {

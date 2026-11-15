@@ -37,7 +37,7 @@
 </script>
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
-<script src="/session-guard.js?v=1.0.3"></script>
+<script src="/session-guard.js?v=1.0.4"></script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/guides'){ sessionStorage.setItem('rcNext','/guides'); } }catch(e){}</script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/assess'){ sessionStorage.setItem('rcNext','/assess'); var _g=Number(sessionStorage.getItem('rcAssessGo')||0); /* sent here by /assess moments after we sent the person there: the saved sign-in is stale, so drop it and show the login instead of bouncing again */ if(_g && Date.now()-_g < 20000){ localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); ['rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled'].forEach(function(k){sessionStorage.removeItem(k);}); sessionStorage.removeItem('rcAssessGo'); } } }catch(e){}</script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.109" id="adit-theme-link">
@@ -75,7 +75,7 @@
 <link rel="stylesheet" href="/breaks-v2.css?v=1.4.2">
 <script src="/regularise.js?v=1.0.3" defer></script>
 <script src="/dom-morph.js?v=1.0.1" defer></script>
-<script src="/breaks-v2.js?v=1.5.3" defer></script>
+<script src="/breaks-v2.js?v=1.5.4" defer></script>
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
@@ -3797,15 +3797,7 @@ async function handleTokenResponse(response){
     }catch(e){}
     // Login log
     let location = 'Unknown';
-    try{
-      await new Promise(res2 => {
-        if(!navigator.geolocation){ res2(); return; }
-        navigator.geolocation.getCurrentPosition(async pos => {
-          try{ const gr = await fetch('https://nominatim.openstreetmap.org/reverse?lat='+pos.coords.latitude+'&lon='+pos.coords.longitude+'&format=json'); const gj = await gr.json(); location = gj.display_name || (pos.coords.latitude+','+pos.coords.longitude); }catch(e){ location = pos.coords.latitude+','+pos.coords.longitude; }
-          res2();
-        }, ()=>res2(), {timeout:5000});
-      });
-    }catch(e){}
+    // Batch 348: no location lookup at sign-in (the browser blocks it here, and waiting for it delayed every sign-in by up to 5 seconds)
     fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
     sessionStorage.setItem('rcUser',name); sessionStorage.setItem('rcRole',role); sessionStorage.setItem('rcEmail',email); sessionStorage.setItem('rcPicture',picture||''); sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
     localStorage.setItem('rcLastUser', JSON.stringify({
@@ -3816,6 +3808,7 @@ async function handleTokenResponse(response){
     // it does not trust the email/name/picture read from that response
     // above for that. See savePersistedSession() and POST /api/session in
     // server.js.
+    window.__rcLoginAt = Date.now(); window.__rcLoggingOut = false;
     const sr = await savePersistedSession(name, role, email, picture, breakbotEnabled, { accessToken: response.access_token });
     resetLoginBtn();
     const sj = sr ? await sr.json().catch(() => null) : null;
@@ -3944,15 +3937,7 @@ async function handleGoogleCredential(response){
   }catch(e){ /* use defaults, agent with breakbot on */ }
   const systemInfo=navigator.userAgent;
   let location='Unknown';
-  try{
-    await new Promise(res=>{
-      if(!navigator.geolocation){res();return;}
-      navigator.geolocation.getCurrentPosition(async pos=>{
-        try{const gr=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+pos.coords.latitude+'&lon='+pos.coords.longitude+'&format=json');const gj=await gr.json();location=gj.display_name||(pos.coords.latitude+','+pos.coords.longitude);}catch(e){location=pos.coords.latitude+','+pos.coords.longitude;}
-        res();
-      },()=>res(),{timeout:5000});
-    });
-  }catch(e){}
+  // Batch 348: no location lookup at sign-in (the browser blocks it here, and waiting for it delayed every sign-in by up to 5 seconds)
   fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({
@@ -3962,7 +3947,8 @@ async function handleGoogleCredential(response){
   // before it will mint a session cookie, it does not trust the
   // client-decoded email/name/picture/sub above for that. See
   // savePersistedSession() and POST /api/session in server.js.
-  const sr = await savePersistedSession(name, role, email, picture, breakbotEnabled, { credential: response.credential });
+  window.__rcLoginAt = Date.now(); window.__rcLoggingOut = false;
+    const sr = await savePersistedSession(name, role, email, picture, breakbotEnabled, { credential: response.credential });
   const sj = sr ? await sr.json().catch(() => null) : null;
   if(sj && sj.accessRequest){ showAccessGate(sj); return; }
   if(sj && sj.success && sj.role){ role = sj.role; breakbotEnabled = sj.breakbotEnabled !== false; sessionStorage.setItem('rcRole', role); }
@@ -6920,6 +6906,7 @@ function toggleDarkMode(){
 })();
 
 function doLogout(){
+  window.__rcLoggingOut = true; // Batch 348: requests still running from the old session must not show "session expired"
   // 1. Show the logout loading overlay immediately (covers the app)
   const overlay = document.getElementById('logoutOverlay');
   if(overlay) overlay.style.display='flex';
@@ -6957,7 +6944,7 @@ function doLogout(){
       overlay.style.opacity='0';
       setTimeout(function(){ overlay.style.display='none'; overlay.style.opacity='1'; overlay.style.transition=''; }, 420);
     }
-  }, 900);
+  }, 350); // Batch 348: was 900 ms
 }
 // Session 63: nobody gets in without an admin's approval. The server says
 // so on sign-in (403 accessRequest) and we show where the request stands.
@@ -8707,14 +8694,18 @@ function _updateBudgetBars(self){
   }
 }
 
+let _btkAgain = false;
 async function loadBreakTracker(){
-  if(_btkIsLoading) return;           // prevent concurrent fetches
+  // Batch 348: a date picked while a refresh is still loading used to be dropped (the old day stayed on screen until the
+  // next 30-second refresh). Now it loads right after, and an answer for a day no longer selected is thrown away.
+  if(_btkIsLoading){ _btkAgain = true; return; }
   _btkIsLoading = true;
   _btkRefreshCountdown = 30;
   const selectedDate=getBreakTrackerDate();
   try{
     const res = await fetch(BACKEND+'/api/break-tracker?date='+selectedDate+'&tz='+encodeURIComponent(BREAK_DAY_TZ));
     const json = await res.json();
+    if(selectedDate!==getBreakTrackerDate()){ _btkIsLoading=false; return loadBreakTracker(); }
     breakTrackerMeta = json.chat || { enabled: false, target: 'Chat space' };
     breakTrackerData = json.success && json.data ? json.data : { summary:{}, tracker:[], recentLog:[] };
     _btkDataLoadedAt = Date.now();    // anchor for live timer ticks
@@ -8725,6 +8716,7 @@ async function loadBreakTracker(){
   }finally{
     _btkIsLoading = false;
   }
+  if(_btkAgain){ _btkAgain=false; if(selectedDate!==getBreakTrackerDate()) return loadBreakTracker(); }
   if(_timelineVisible) renderBreakTimeline(); // FEAT-6: refresh timeline if open
   syncBreakDateInputs();
   syncBreakActionState();
@@ -13937,11 +13929,11 @@ async function laLoadStats() {
       wrongList.innerHTML = j.wrong.map(w => `
         <div style="padding:10px 12px;border-radius:8px;background:#FFF5F5;border:1px solid rgba(237,102,107,.15);margin-bottom:8px;">
           <div style="font-size:11px;font-weight:700;color:#ED666B;margin-bottom:4px;">
-            Rule: ${esc(w.suggested_rule || '(no rule)')} → ${esc(w.agent_type || '?')}
+            Suggested ${esc(w.suggested_type || w.suggested_rule || '?')} → agent chose ${esc(w.agent_type || '?')}
           </div>
           <div style="font-size:11px;color:#6B849A;">
-            ❌ ${w.wrong_count} wrong classification${w.wrong_count>1?'s':''}
-            ${w.sample_subject ? `<br><span style="font-style:italic">"${esc(w.sample_subject)}"</span>` : ''}
+            ${Number(w.freq || w.wrong_count || 0)} wrong classification${Number(w.freq || w.wrong_count || 0)>1?'s':''}${w.zoho_channel ? ' · ' + esc(w.zoho_channel) : ''}
+            ${(w.ticket_subject || w.sample_subject) ? `<br><span style="font-style:italic">"${esc(w.ticket_subject || w.sample_subject)}"</span>` : ''}
           </div>
         </div>
       `).join('');

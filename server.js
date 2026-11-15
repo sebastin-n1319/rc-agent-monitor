@@ -194,14 +194,14 @@ app.use((req, res, next) => {
   // Cross-origin only sends opener for safe operations
   res.setHeader('X-XSS-Protection', '0');
   // Permissions policy, explicitly opt out of features we don't use
-  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()'); // Session 57: camera for optional assessment snapshots
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), identity-credentials-get=(self "https://accounts.google.com")'); // Batch 348: Google auto sign-in (FedCM) allowed // Session 57: camera for optional assessment snapshots
   // CSP, permissive baseline (allows inline scripts/styles which we use
   // heavily; the existing app would break with strict CSP). Lock down
   // external sources to known good origins.
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com", // Batch 348: Google sign-in button styles were blocked
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob:",
@@ -1320,10 +1320,14 @@ app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) =>
 // from first Take all calls) and scrin.io tracked time. email -> { rc: { availSec, unavailSec, started }, scrinSec }.
 app.get('/api/live-floor/day', requireAuth, async (req, res) => {
   try {
-    const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    // Batch 348: ?date=YYYY-MM-DD gives a past day (the break board's date picker); today by default
+    const tz = 'America/Chicago', nowDay = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const asked = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : nowDay;
+    const today = asked > nowDay ? nowDay : asked;
     const win = getDateWindow(today, tz), startMs = win.start.getTime ? win.start.getTime() : Date.parse(win.start);
+    const endMs = Math.min(Date.now(), win.end.getTime ? win.end.getTime() : Date.parse(win.end));
     const scrin = require('./lib/scrin');
-    const [av, monitored, tr] = await Promise.all([availabilityBody(today).catch(() => null), getMonitoredAgents(), scrin.trackedByEmail(Math.floor(startMs / 1000), Math.floor(Date.now() / 1000))]);
+    const [av, monitored, tr] = await Promise.all([availabilityBody(today).catch(() => null), getMonitoredAgents(), scrin.trackedByEmail(Math.floor(startMs / 1000), Math.floor(endMs / 1000))]);
     const data = {};
     for (const a of monitored) {
       const email = String(a.email || '').toLowerCase(); if (!email) continue;
