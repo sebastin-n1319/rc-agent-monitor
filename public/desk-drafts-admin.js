@@ -100,11 +100,15 @@
       <div class="stg-card">
         <div class="stg-card-title">Who gets drafts</div>
         <div class="stg-card-sub">${S.pilotFromEnv && pilotOn ? 'Now set by EXPERT_PILOT_OWNERS on Railway. Saving here takes over from it.' : 'A ticket gets a draft only when its owner is in this list, or every T1 ticket when "All T1 agents" is chosen.'}</div>
-        <div class="ddm-radio" role="radiogroup" aria-label="Who gets drafts">
-          <label><input type="radio" name="ddm-who" value="all" ${pilotOn ? '' : 'checked'}> All T1 agents</label>
-          <label><input type="radio" name="ddm-who" value="pilot" ${pilotOn ? 'checked' : ''}> Only these agents (pilot)</label></div>
-        <div class="ddm-agents" ${pilotOn ? '' : 'hidden'}>${st.agents.length ? st.agents.map((a) => `<label class="ddm-agent"><input type="checkbox" value="${esc(a.id)}" ${pilotSet.has(a.id) ? 'checked' : ''}> ${esc(a.name)}</label>`).join('') : '<p class="aiu-empty">No agents with a matching Desk name were found.</p>'}
-          ${st.pilot.filter((p) => !st.agents.some((a) => a.id === p.id)).map((p) => `<label class="ddm-agent"><input type="checkbox" value="${esc(p.id)}" checked> ${esc(p.name)}</label>`).join('')}</div>
+        <div class="ddm-seg" role="radiogroup" aria-label="Who gets drafts">
+          <label class="ddm-seg-opt"><input type="radio" name="ddm-who" value="all" ${pilotOn ? '' : 'checked'}><span>All T1 agents</span></label>
+          <label class="ddm-seg-opt"><input type="radio" name="ddm-who" value="pilot" ${pilotOn ? 'checked' : ''}><span>Only selected agents</span></label></div>
+        <div class="ddm-pick" ${pilotOn ? '' : 'hidden'}>
+          <div class="ddm-pick-bar"><span class="ddm-pick-count" aria-live="polite"></span><span class="ddm-pick-acts"><button type="button" class="ddm-link" data-pick="all">Select all</button><button type="button" class="ddm-link" data-pick="none">Clear</button></span></div>
+          <div class="ddm-agents">${(() => { const list = st.agents.concat(st.pilot.filter((p) => !st.agents.some((a) => a.id === p.id))); if (!list.length) return '<p class="aiu-empty">No agents with a matching Desk name were found.</p>';
+            const ini = (n) => String(n || '?').split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase();
+            return list.map((a) => `<label class="ddm-agent"><input type="checkbox" value="${esc(a.id)}" ${pilotSet.has(a.id) ? 'checked' : ''}><span class="ddm-av" aria-hidden="true">${esc(ini(a.name))}</span><span class="ddm-nm">${esc(a.name)}</span><svg class="ddm-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></label>`).join(''); })()}</div>
+        </div>
         <div class="ddm-row"><button type="button" class="stg-btn stg-btn-primary ddm-save-who">Save</button></div>
       </div>
       <div class="stg-card">
@@ -130,7 +134,13 @@
       </div>`;
     root.querySelectorAll('.ddm-rdays button').forEach((b) => b.addEventListener('click', () => { store.set('rdays', b.dataset.d); renderDrafts(root); }));
     root.querySelector('.ddm-pause').addEventListener('click', async (e) => { e.target.disabled = true; try { await api('/api/admin/desk-drafts/settings', { paused: !S.paused }); toast(S.paused ? 'Drafts resumed' : 'Drafts paused', 'success'); } catch (x) { toast(x.message, 'error'); } renderDrafts(root); });
-    const agentsBox = root.querySelector('.ddm-agents');
+    // Batch 348: the agent picker is a grid of selectable cards with a count, Select all and Clear
+    const agentsBox = root.querySelector('.ddm-pick');
+    const boxes = () => [...root.querySelectorAll('.ddm-agent input')];
+    const count = () => { const c = root.querySelector('.ddm-pick-count'); if (c) { const b = boxes(); c.textContent = `${b.filter((x) => x.checked).length} of ${b.length} selected`; } };
+    count();
+    root.querySelectorAll('.ddm-agent input').forEach((x) => x.addEventListener('change', count));
+    root.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => { const on = b.dataset.pick === 'all'; boxes().forEach((x) => { x.checked = on; }); count(); }));
     root.querySelectorAll('input[name="ddm-who"]').forEach((r) => r.addEventListener('change', () => { agentsBox.hidden = (root.querySelector('input[name="ddm-who"]:checked') || {}).value !== 'pilot'; }));
     root.querySelector('.ddm-save-who').addEventListener('click', async (e) => {
       const who = (root.querySelector('input[name="ddm-who"]:checked') || {}).value;

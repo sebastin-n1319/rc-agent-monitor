@@ -301,3 +301,28 @@ html.dark-mode #settings-admin-root .aiu-pill.bad, html.dark-mode #settings-admi
 #settings-admin-root .sc-agent-bar span { display:block !important; height:100% !important; }
 @media (max-width: 1100px) { #settings-admin-root .sc-g3 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } #settings-admin-root .sc-g21 { grid-template-columns:minmax(0,1fr) !important; } }
 @media (max-width: 760px) { #settings-admin-root .sc-g2, #settings-admin-root .sc-g3 { grid-template-columns:minmax(0,1fr) !important; } #settings-admin-root .sc-hbar { grid-template-columns:minmax(0,1fr) 56px !important; } #settings-admin-root .sc-hbar-t { grid-column:1 / -1 !important; grid-row:2 !important; } #settings-admin-root .sc-cols { height:170px !important; } #settings-admin-root .stg-wrap.stg-shell { padding:12px 12px 32px !important; } }
+
+/* ── Batch 348: Desk drafts agent picker, segmented choice + selectable cards ── */
+#settings-admin-root .ddm-seg { display:inline-flex !important; padding:3px !important; gap:2px !important; border:1px solid var(--stg-border) !important; border-radius:10px !important; background:var(--stg-surface2) !important; margin:4px 0 12px !important; }
+#settings-admin-root .ddm-seg-opt { position:relative !important; cursor:pointer !important; }
+#settings-admin-root .ddm-seg-opt input { position:absolute !important; opacity:0 !important; pointer-events:none !important; }
+#settings-admin-root .ddm-seg-opt span { display:block !important; padding:7px 14px !important; border-radius:8px !important; font-size:13px !important; font-weight:500 !important; color:var(--stg-ink2) !important; transition:background .15s, color .15s !important; }
+#settings-admin-root .ddm-seg-opt input:checked + span { background:var(--stg-surface) !important; color:var(--stg-ink) !important; font-weight:600 !important; box-shadow:0 1px 3px rgba(16,24,40,.12) !important; }
+#settings-admin-root .ddm-seg-opt input:focus-visible + span { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+#settings-admin-root .ddm-pick[hidden] { display:none !important; }
+#settings-admin-root .ddm-pick-bar { display:flex !important; justify-content:space-between !important; align-items:center !important; margin-bottom:8px !important; font-size:12px !important; color:var(--stg-ink3, var(--stg-ink2)) !important; }
+#settings-admin-root .ddm-pick-acts { display:flex !important; gap:4px !important; }
+#settings-admin-root .ddm-link { background:none !important; border:0 !important; padding:4px 8px !important; border-radius:6px !important; font:inherit !important; font-size:12px !important; font-weight:600 !important; color:var(--stg-accent) !important; text-decoration:none !important; cursor:pointer !important; }
+#settings-admin-root .ddm-link:hover { background:var(--stg-surface2) !important; }
+#settings-admin-root .ddm-agents { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)) !important; gap:8px !important; padding:0 !important; border:0 !important; background:none !important; }
+#settings-admin-root .ddm-agent { position:relative !important; display:flex !important; align-items:center !important; gap:10px !important; min-height:48px !important; padding:8px 12px !important; border:1px solid var(--stg-border) !important; border-radius:12px !important; background:var(--stg-surface) !important; cursor:pointer !important; transition:border-color .15s, background .15s, box-shadow .15s !important; }
+#settings-admin-root .ddm-agent:hover { border-color:var(--stg-accent) !important; }
+#settings-admin-root .ddm-agent input { position:absolute !important; opacity:0 !important; pointer-events:none !important; }
+#settings-admin-root .ddm-av { flex:none !important; width:30px !important; height:30px !important; border-radius:50% !important; display:grid !important; place-items:center !important; font-size:11px !important; font-weight:700 !important; letter-spacing:.02em !important; background:var(--stg-surface2) !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .ddm-nm { flex:1 !important; font-size:13px !important; font-weight:500 !important; color:var(--stg-ink) !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+#settings-admin-root .ddm-tick { flex:none !important; width:18px !important; height:18px !important; padding:2px !important; border-radius:50% !important; color:#fff !important; background:transparent !important; border:1.5px solid var(--stg-border) !important; box-sizing:border-box !important; }
+#settings-admin-root .ddm-agent input:checked ~ .ddm-tick { background:var(--stg-accent) !important; border-color:var(--stg-accent) !important; }
+#settings-admin-root .ddm-agent input:not(:checked) ~ .ddm-tick path { opacity:0 !important; }
+#settings-admin-root .ddm-agent:has(input:checked) { border-color:var(--stg-accent) !important; background:color-mix(in srgb, var(--stg-accent) 7%, var(--stg-surface)) !important; }
+#settings-admin-root .ddm-agent:has(input:checked) .ddm-av { background:var(--stg-accent) !important; color:#fff !important; }
+#settings-admin-root .ddm-agent:has(input:focus-visible) { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
