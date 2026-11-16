@@ -36,5 +36,7 @@ describe('Adit Pay home (Batch 355)', () => {
     expect(s.revenue.avgTicket).toBe(100);
     expect(s.terminals.cpShare).toBe(0.7);
     expect(s.missing).toContain('crm:termStatus');
+    expect(s.errors['crm:termStatus']).toMatch(/no CRM access/);
+    for (const k of ['vol90', 'top', 'termUsed']) expect(ap._coql[k]).not.toMatch(/> 0/);
   });
 });
