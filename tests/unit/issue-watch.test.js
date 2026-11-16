@@ -22,7 +22,7 @@ describe('repeated-issue watch (Batch 351)', () => {
     expect(d.headline).toMatch(/11 reports from 11 clients/);
     expect(d.headline).toMatch(/tickets?, .*chats?, .*calls?/);
     expect(d.asks.join(' ')).toMatch(/VoIP/);
-    expect(d.asks.join(' ')).toMatch(/parent Outage ticket/);
+    expect(d.asks.join(' ')).toMatch(/Check with the VoIP team for the parent Outage ticket/);
   });
   it('groups through the AI and maps ids back to reports', async () => {
     const items = [mk(1, 'Ticket', 'A', 'no dial tone'), mk(2, 'Chat', 'B', 'phones dead'), mk(3, 'Call', 'C', 'how do I add a user')];

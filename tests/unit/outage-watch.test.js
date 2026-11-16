@@ -18,7 +18,7 @@ describe('outage watch (Batch 287)', () => {
     expect(a.noAccount).toBe(3);
     const d = ow.describe(a, rows);
     expect(d.headline).toMatch(/Possible phones outage on V3: 9 practices/);
-    expect(d.asks[0]).toMatch(/parent Outage ticket/);
+    expect(d.asks[0]).toMatch(/Check with the VoIP team for the parent Outage ticket/);
     expect(d.tickets).toHaveLength(9);
   });
   it('stays quiet on a normal morning', () => {
