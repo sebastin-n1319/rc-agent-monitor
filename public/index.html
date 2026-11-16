@@ -6929,8 +6929,11 @@ function doLogout(){
   if(overlay) overlay.style.display='flex';
 
   // 2. Fire cleanup async in background
-  fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
-  try{ localStorage.removeItem('rcLastUser'); localStorage.removeItem('rcSession'); }catch(e){}
+  const outP = fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  try{ localStorage.removeItem('rcLastUser'); localStorage.removeItem('rcSession'); localStorage.removeItem('rcWorkspaces'); localStorage.removeItem('rcWorkspace'); }catch(e){}
+  // Batch 367: signing out reloads a clean sign-in page at "/", so it never sits on a dark screen at the last page's
+  // address (#admin/live). The in-page switch below stays as the fallback if the reload is slow.
+  Promise.race([outP, new Promise(r => setTimeout(r, 2500))]).then(() => { try { location.replace(location.pathname || '/'); } catch(e) {} });
   sessionStorage.clear();
   currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;agentPagesAllowed=null;agentPagesGlobal=null;try{localStorage.removeItem('rcAgentPages');}catch(e){}
   currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
