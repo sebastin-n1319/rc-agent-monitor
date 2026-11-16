@@ -328,3 +328,14 @@ describe('email text inside a signature block (Batch 361)', () => {
     expect(r.sigOnly).toBe(true);
   });
 });
+
+describe('Adit Pay Expert (Batch 364)', () => {
+  it('uses an Adit Pay system prompt without the T1-only call rule', () => {
+    const e = require('../../lib/expert.js');
+    const p = e._sysOf('aditpay');
+    expect(p).toContain('ADIT PAY TEAM');
+    expect(p).toContain('Adit Pay product and process expert');
+    expect(p).not.toContain('never promise that T1 will phone the client');
+    expect(e._sysOf('t1')).toContain('never promise that T1 will phone the client');
+  });
+});

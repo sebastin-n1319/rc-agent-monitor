@@ -78,6 +78,21 @@
         ${lr && lr.added && lr.added.length ? `<div class="aiu-sub-h">Rules from the last run</div><ul class="ddm-fails">${lr.added.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}</div></div>`;
   }
 
+  // Batch 364: Adit Pay drafts card. Tickets in the Adit Pay Desk team get drafts from Adit Pay Expert when switched on.
+  function payCard(pay) {
+    if (!pay) return '';
+    const sel = new Set((pay.pilot || []).map((p) => p.id));
+    const list = (pay.agents || []).concat((pay.pilot || []).filter((p) => !(pay.agents || []).some((a) => a.id === p.id)));
+    const ini = (n) => String(n || '?').split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase();
+    return `<div class="stg-card ddm-pay">
+      <div class="stg-card-title">Adit Pay drafts</div>
+      <div class="stg-card-sub">Tickets in the Adit Pay Desk team get a draft and a private note from Adit Pay Expert, with the same rules as T1 drafts. Pick the Adit Pay agents to start with; with none picked, every Adit Pay ticket gets a draft.</div>
+      <label class="ddm-row"><input type="checkbox" class="ddm-pay-on" ${pay.on ? 'checked' : ''}> <span>Draft Adit Pay tickets</span></label>
+      <div class="ddm-agents">${list.length ? list.map((a) => `<label class="ddm-agent"><input type="checkbox" value="${esc(a.id)}" ${sel.has(a.id) ? 'checked' : ''}><span class="ddm-av" aria-hidden="true">${esc(ini(a.name))}</span><span class="ddm-nm">${esc(a.name)}</span><svg class="ddm-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></label>`).join('') : '<p class="aiu-empty">No Adit Pay agents with a matching Desk name yet. Add them in Manage Agents in the Adit Pay workspace.</p>'}</div>
+      <div class="ddm-row"><button type="button" class="stg-btn stg-btn-primary ddm-pay-save">Save</button></div>
+    </div>`;
+  }
+
   // ── Desk drafts ──────────────────────────────────────────────────────
   async function renderDrafts(root) {
     root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading Desk drafts...</div>';
@@ -123,6 +138,7 @@
         <form class="ddm-row ddm-run"><label class="ddm-sr" for="ddm-num">Ticket number</label><input id="ddm-num" class="ddm-input" inputmode="numeric" placeholder="Ticket number, e.g. 428848" autocomplete="off">
           <button type="submit" class="stg-btn stg-btn-primary">Draft it</button><span class="ddm-run-msg" role="status"></span></form>
       </div></div>
+      ${payCard(st.pay)}
       <div class="stg-card">
         <div class="aiu-head"><div><div class="stg-card-title">Latest drafts</div><div class="stg-card-sub">The last 10. Search and filter every draft on the <button type="button" class="ddm-link ddm-go-tickets">Drafted tickets</button> page.</div></div>
           <div class="aiu-seg ddm-jfilter" role="radiogroup" aria-label="Filter drafts">${[['', 'All'], ['done', 'Done'], ['failed', 'Failed'], ['working', 'Writing']].map((x) => `<button type="button" role="radio" aria-checked="${filter === x[0]}" data-f="${x[0]}">${x[1]}</button>`).join('')}</div></div>
@@ -132,19 +148,27 @@
           <tr class="ddm-detail" hidden><td colspan="6"><div class="ddm-cols"><div><div class="aiu-sub-h">Draft reply</div><pre class="ddm-pre">${esc(j.reply || 'No reply text.')}</pre></div>
             <div><div class="aiu-sub-h">Private note</div><pre class="ddm-pre">${esc(j.note || 'No note.')}</pre></div></div></td></tr>`).join('')}</tbody></table></div>` : '<p class="aiu-empty">No drafts here yet.</p>'}
       </div>`;
+    // Batch 364: Adit Pay drafts, switched on and limited to selected Adit Pay agents here
+    const payBox = root.querySelector('.ddm-pay');
+    if (payBox) payBox.querySelector('.ddm-pay-save').addEventListener('click', async (e) => {
+      const on = payBox.querySelector('.ddm-pay-on').checked, ids = [...payBox.querySelectorAll('.ddm-agent input:checked')].map((x) => x.value);
+      e.target.disabled = true;
+      try { await api('/api/admin/desk-drafts/settings', { payOn: on, payPilot: ids }); toast('Saved', 'success'); } catch (x) { toast(x.message, 'error'); }
+      renderDrafts(root);
+    });
     root.querySelectorAll('.ddm-rdays button').forEach((b) => b.addEventListener('click', () => { store.set('rdays', b.dataset.d); renderDrafts(root); }));
     root.querySelector('.ddm-pause').addEventListener('click', async (e) => { e.target.disabled = true; try { await api('/api/admin/desk-drafts/settings', { paused: !S.paused }); toast(S.paused ? 'Drafts resumed' : 'Drafts paused', 'success'); } catch (x) { toast(x.message, 'error'); } renderDrafts(root); });
     // Batch 348: the agent picker is a grid of selectable cards with a count, Select all and Clear
     const agentsBox = root.querySelector('.ddm-pick');
-    const boxes = () => [...root.querySelectorAll('.ddm-agent input')];
+    const boxes = () => [...root.querySelectorAll('.ddm-pick .ddm-agent input')];
     const count = () => { const c = root.querySelector('.ddm-pick-count'); if (c) { const b = boxes(); c.textContent = `${b.filter((x) => x.checked).length} of ${b.length} selected`; } };
     count();
-    root.querySelectorAll('.ddm-agent input').forEach((x) => x.addEventListener('change', count));
+    root.querySelectorAll('.ddm-pick .ddm-agent input').forEach((x) => x.addEventListener('change', count));
     root.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => { const on = b.dataset.pick === 'all'; boxes().forEach((x) => { x.checked = on; }); count(); }));
     root.querySelectorAll('input[name="ddm-who"]').forEach((r) => r.addEventListener('change', () => { agentsBox.hidden = (root.querySelector('input[name="ddm-who"]:checked') || {}).value !== 'pilot'; }));
     root.querySelector('.ddm-save-who').addEventListener('click', async (e) => {
       const who = (root.querySelector('input[name="ddm-who"]:checked') || {}).value;
-      const ids = [...root.querySelectorAll('.ddm-agent input:checked')].map((x) => x.value);
+      const ids = [...root.querySelectorAll('.ddm-pick .ddm-agent input:checked')].map((x) => x.value);
       if (who === 'pilot' && !ids.length) { toast('Pick at least one agent, or choose All T1 agents', 'warning'); return; }
       e.target.disabled = true;
       try { await api('/api/admin/desk-drafts/settings', { pilot: who === 'pilot' ? ids : [] }); toast('Saved', 'success'); } catch (x) { toast(x.message, 'error'); }

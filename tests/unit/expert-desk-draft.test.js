@@ -476,3 +476,22 @@ describe('mail-server notices are not the client (Batch 331)', () => {
     expect(ws.waiting).toBe(true);
   });
 });
+
+describe('Adit Pay drafts (Batch 364)', () => {
+  it('drafts Adit Pay team tickets only when switched on, with their own pilot, and asks Adit Pay Expert', async () => {
+    const T = { ticketNumber: '430100', teamId: '197800000070274100', status: 'Open', channel: 'Email', email: 'dr@x.com', subject: 'Payout question', assigneeId: '555', lastThread: { direction: 'in' } };
+    xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : T });
+    const ev = { eventType: 'Ticket_Thread_Add', payload: { ticketId: '1978000200', direction: 'in', channel: 'EMAIL', fromEmailAddress: 'dr@x.com' } };
+    await xd.saveSettings({ payOn: false });
+    expect((await xd.decide(ev)).skip).toMatch(/Adit Pay drafts are off/);
+    await xd.saveSettings({ payOn: true, payPilot: ['999'] });
+    expect((await xd.decide(ev)).skip).toMatch(/pilot \(Adit Pay\)/);
+    await xd.saveSettings({ payPilot: ['555'] });
+    const d = await xd.decide(ev);
+    expect(d.skip).toBeUndefined(); expect(d.team).toBe('aditpay');
+    expect(xd.settings()).toMatchObject({ payOn: true, payPilot: ['555'] });
+    const brief = { reply_label: 'Reply to client', reply: 'Hi there,\n\nThanks.\n\nBest regards,' };
+    expect(xd.pick({ answer: { brief, note: 'Reason for contact: payout' } }, 'aditpay').note).toMatch(/Adit Pay team handles this/);
+    await xd.saveSettings({ payOn: false, payPilot: [] });
+  });
+});

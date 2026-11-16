@@ -58,7 +58,7 @@
 
   // ── shell ───────────────────────────────────────────────────────────
   // Batch 182: Adit Expert first, then the Help Center and the two guides; Teach for admins.
-  var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['rules', 'Rule list', 'rule'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
+  var TABS = [['ask', window.__ws === 'aditpay' ? 'Adit Pay Expert' : 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['rules', 'Rule list', 'rule'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
   function renderNav() {
     var tabs = TABS.slice(0, 1).concat(S.me && S.me.member ? [['chats', 'Live chats', 'chat']] : [], TABS.slice(1), S.me && S.me.admin ? [['triage', 'Open tickets', 'ticket'], ['research', 'Research', 'flask'], ['teach', 'Teach', 'school']] : []);
     nav.replaceChildren.apply(nav, tabs.map(function (t) {

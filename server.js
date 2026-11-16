@@ -2428,7 +2428,8 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
     b.question = question;
     const attachments = (Array.isArray(b.attachments) ? b.attachments : []).slice(0, 5).map(a => ({ name: String((a && a.name) || 'file').slice(0, 120), kind: String((a && a.kind) || '').slice(0, 10), text: String((a && a.text) || '').slice(0, 16000) }));
     const out = await expertMod().ask({ attachments, question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
-      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email });
+      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email,
+      team: req.workspace === 'aditpay' ? 'aditpay' : 't1' }); // Batch 364: Adit Pay Expert in the Adit Pay workspace
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
 });
@@ -2482,12 +2483,14 @@ app.get('/api/admin/desk-drafts/state', requireAdmin, async (req, res) => {
     const pilotIds = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean);
     const name = (id) => (agents.find((a) => a.id === id) || {}).name || ('Desk ID ' + id);
     res.json({ success: true, enabled: xd.enabled(), canSave: xd.canWrite(), separateWriter: !!process.env.ZOHO_DESK_WRITE_CLIENT_ID, settings: st,
-      pilot: pilotIds.map((id) => ({ id, name: name(id) })), agents, stats: await xd.stats(), team: xd.T1_TEAM(), skipSenders: xd.SKIP_SENDERS, skipSubjects: xd.SKIP_SUBJECTS,
+      pilot: pilotIds.map((id) => ({ id, name: name(id) })), agents, stats: await xd.stats(), team: xd.T1_TEAM(),
+      // Batch 364: Adit Pay drafts (tickets in the Adit Pay Desk team), with their own switch and pilot
+      pay: await (async () => { const pa = await WSX.run('aditpay', () => deskT1Agents()).catch(() => []); return { on: !!st.payOn, team: xd.PAY_TEAM(), agents: pa, pilot: (st.payPilot || []).map((id) => ({ id, name: (pa.find((a) => a.id === id) || {}).name || ('Desk ID ' + id) })) }; })(), skipSenders: xd.SKIP_SENDERS, skipSubjects: xd.SKIP_SUBJECTS,
       webhookPath: '/api/expert/desk-webhook?key=' + (process.env.EXPERT_DESK_KEY ? '\u2022\u2022\u2022\u2022' + String(process.env.EXPERT_DESK_KEY).slice(-4) : '(set EXPERT_DESK_KEY)') });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/desk-drafts/settings', requireAdmin, async (req, res) => {
-  try { const b = req.body || {}; res.json({ success: true, settings: await expertDraft().saveSettings({ paused: b.paused, pilot: b.pilot, extraSkip: b.extraSkip }, req.session.email) }); }
+  try { const b = req.body || {}; res.json({ success: true, settings: await expertDraft().saveSettings({ paused: b.paused, pilot: b.pilot, extraSkip: b.extraSkip, payOn: b.payOn, payPilot: b.payPilot }, req.session.email) }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/desk-drafts/jobs', requireAdmin, async (req, res) => {
