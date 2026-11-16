@@ -31,9 +31,11 @@
     box = h('div', { class: 'ob', role: 'alert', 'aria-live': 'assertive' }, [h('div', { class: 'ob-row' }, [
       h('div', { class: 'ob-main' }, [
         h('div', null, [h('b', { text: a.headline || 'Possible phones outage' })]),
-        a.mix ? h('div', { class: 'ob-sub', text: 'By voice version: ' + a.mix + (a.sharedError ? '. ' + a.sharedError : '') }) : null,
+        a.mix ? h('div', { class: 'ob-sub', text: 'By voice version: ' + a.mix + (a.sharedError ? '. ' + a.sharedError : '') }) : a.sub ? h('div', { class: 'ob-sub', text: a.sub }) : null,
         h('details', null, [h('summary', { text: 'What to do' }), h('ul', null, (a.asks || []).map(function (x) { return h('li', { text: x }); }))]),
-        tickets.length ? h('details', null, [h('summary', { text: 'Tickets (' + tickets.length + ')' }), h('ul', { class: 'ob-tk' }, tickets.map(function (t) {
+        tickets.length ? h('details', null, [h('summary', { text: (a.kind === 'issue' ? 'Reports (' : 'Tickets (') + tickets.length + ')' }), h('ul', { class: 'ob-tk' }, tickets.map(function (t) {
+          // Batch 351: repeated-issue reports come from tickets, chats and calls; each shows its source and what the client said.
+          if (a.kind === 'issue') return h('li', { style: 'flex-basis:100%' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : (t.kind || 'Report') + (t.number ? ' ' + t.number : ''), ' ' + ct(t.at) + ' ' + (t.kind === 'Ticket' && t.url ? '' : '') + (t.text ? ': ' + t.text : '')]);
           return h('li', null, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : '#' + t.number, ' ' + (t.practice || '') + ' · ' + (t.version || '') + ' · ' + ct(t.at)]);
         }))]) : null]),
       h('button', { type: 'button', class: 'ob-x', 'aria-label': 'Hide this alert', title: 'Hide (it comes back if more practices report it)', onclick: function () { setDismissed(a); paint(null); }, text: '×' })])]);

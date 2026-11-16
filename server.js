@@ -829,6 +829,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
         setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
+      // Batch 351: repeated-issue watch across tickets, live chats and call recordings (10+ reports of one problem in 30 minutes).
+      { const iw = require('./lib/issue-watch'); iw.setDB(db); await iw.initSchema(); iw.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
+        setTimeout(() => { const t = () => iw.check().then(r => { if (r && r.opened) console.log('🚨 Issue watch opened alert', r.opened); }).catch(e => console.warn('issue watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 120 * 1000); }
       // Batch 264: every 15 minutes on business hours, hourly otherwise (AI labels are cached, so a refresh is quick).
       if (require('./lib/aditkb-service').isConfigured()) setInterval(() => { if (th.isRunning() || !inWorkHours()) return; const every = th.due() ? 14 * 60 * 1000 : 59 * 60 * 1000; th.latest().then((r) => { if (r && Date.now() - r.at < every) return; return th.refresh(); }).catch(e => console.warn('ticket hygiene refresh:', e.message)); }, 3 * 60 * 1000); }
     { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
@@ -10270,7 +10273,11 @@ app.post('/api/ticket-hygiene/chat', requireAuth, requireAuditAccess, rateLimit(
 }));
 // Batch 263: Ask AI about tickets (any team). Admins and SPOCs; read-only.
 // Batch 287: the outage banner (everyone signed in sees an active alert) and admin controls.
-app.get('/api/outage-watch', requireAuth, async (req, res) => { try { res.json({ success: true, alert: await require('./lib/outage-watch').current() }); } catch (e) { res.json({ success: true, alert: null }); } });
+app.get('/api/outage-watch', requireAuth, async (req, res) => { try { const a = await require('./lib/outage-watch').current().catch(() => null); res.json({ success: true, alert: a || await require('./lib/issue-watch').current().catch(() => null) }); } catch (e) { res.json({ success: true, alert: null }); } });
+// Batch 351: repeated-issue watch admin controls (check now, recent alerts and the last run, close).
+app.post('/api/issue-watch/check', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, result: await require('./lib/issue-watch').check({ force: true }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); } });
+app.get('/api/issue-watch/history', requireAdmin, async (req, res) => { try { const iw = require('./lib/issue-watch'); res.json({ success: true, alerts: await iw.recentAlerts(30), last: iw.lastRun() }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
+app.post('/api/issue-watch/:id/close', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await require('./lib/issue-watch').close(req.params.id)) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
 app.get('/api/outage-watch/history', requireAdmin, async (req, res) => { try { res.json({ success: true, alerts: await require('./lib/outage-watch').recentAlerts(30) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
 app.post('/api/outage-watch/check', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, result: await require('./lib/outage-watch').check({ force: true }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); } });
 app.post('/api/outage-watch/:id/close', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await require('./lib/outage-watch').close(req.params.id, req.session.email)) }); } catch (e) { res.status(500).json({ success: false, error: e.message }); } });
