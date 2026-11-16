@@ -17,7 +17,7 @@ const {
   CALL_LOGS_RETENTION_DAYS,
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents, updateAgentChatId, getGoogleSubForEmail,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
-  getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
+  getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail, setWorkspaces,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
   isMonthWithinCallLogRetention, deleteFaxCallLogs, dedupeCallLogs, // Session 42
@@ -1058,7 +1058,7 @@ async function sessionRoleFor(email) {
     return acc.allowed ? { role: 'assessment', breakbotEnabled: false } : { role: null, breakbotEnabled: false };
   }
   const settings = await getRoleSettingsForEmail(email).catch(() => null);
-  return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true };
+  return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true, workspaces: (settings && settings.workspaces) || ['t1'] };
 }
 
 async function requireAuth(req, res, next) {
@@ -1776,6 +1776,20 @@ app.patch('/api/roles/:email/breakbot', requireAdmin, async (req, res) => {
   }
 });
 
+// Batch 353: which workspaces (T1 CS, Adit Pay) a person can open.
+app.patch('/api/roles/:email/workspaces', requireAdmin, async (req, res) => {
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  const list = Array.isArray(req.body && req.body.workspaces) ? req.body.workspaces : [];
+  if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+  try {
+    const r = await setWorkspaces(email, list);
+    if (!r.changes) return res.status(404).json({ success: false, error: 'Person not found in Access Control' });
+    invalidateMembers();
+    insertAuditLog(req.session.email, 'workspaces_set', email, `workspaces:${r.workspaces.join(',')}`).catch(()=>{});
+    res.json({ success: true, workspaces: r.workspaces });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
   const email = decodeURIComponent(req.params.email).trim().toLowerCase();
   // Session 63: admins can be removed too, except the owner, and you
@@ -2043,7 +2057,7 @@ app.get('/api/session', async (req, res) => {
     const session = await getAppSession(token); // also rolls expiry
     if (!session) return res.json({ success: false });
     // Look up role, default to 'agent' if not in app_roles (don't block the session)
-    const { role, breakbotEnabled } = await sessionRoleFor(session.email); // Session 56
+    const { role, breakbotEnabled, workspaces } = await sessionRoleFor(session.email); // Session 56
     if (!role) {
       // Session 63: access was removed. End the session and say why.
       await deleteAppSession(token).catch(() => {});
@@ -2058,7 +2072,8 @@ app.get('/api/session', async (req, res) => {
       name: session.name,
       picture: session.picture,
       role,
-      breakbotEnabled
+      breakbotEnabled,
+      workspaces: workspaces || ['t1'] // Batch 353
     });
   } catch(e) { res.json({ success: false }); }
 });

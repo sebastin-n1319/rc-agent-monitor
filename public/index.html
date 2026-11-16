@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.130"></script>
+<script src="/adit-reset.js?v=1.19.131"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -81,7 +81,7 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.28.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.5.2">
+<link rel="stylesheet" href="/access-control.css?v=1.5.3">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
@@ -108,6 +108,7 @@
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
 <script src="/appraisal.js?v=1.3.0" defer></script>
 <script src="/app-header.js?v=1.3.0" defer></script>
+<script src="/workspace.js?v=1.0.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -11014,11 +11015,14 @@ function renderRoleRows(){
     const open=acxOpenEmail===email.toLowerCase();
     const roleSel='<select class="acx-role-sel" data-email="'+esc(email)+'" aria-label="Role for '+esc(email)+'" onchange="setRoleInline(this)"'+(isCore||isSelf?' disabled title="'+(isCore?'Owner':'Your own role')+'"':'')+'>'+
       '<option value="agent"'+(isAdmin||r.role==='qa'?'':' selected')+'>Agent</option><option value="qa"'+(r.role==='qa'?' selected':'')+'>QA</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
+    const wsv=String(r.workspaces||'t1').split(',').filter(Boolean).sort().join(',')||'t1';
+    const wsSel='<select class="acx-role-sel acx-ws-sel" data-email="'+esc(email)+'" aria-label="Workspace for '+esc(email)+'" title="Workspace" onchange="setWorkspaceInline(this)">'+
+      '<option value="t1"'+(wsv==='t1'?' selected':'')+'>T1 CS</option><option value="aditpay"'+(wsv==='aditpay'?' selected':'')+'>Adit Pay</option><option value="aditpay,t1"'+(wsv==='aditpay,t1'?' selected':'')+'>Both</option></select>';
     const pagesBtn=isAdmin?'':'<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" aria-expanded="'+open+'" data-email="'+esc(email)+'" onclick="togglePersonPages(this)">'+(open?'Close':'Pages')+'</button>';
     const removeBtn=isCore?'<span class="acx-muted" title="The owner account cannot be removed">Owner</span>':(isSelf?'<span class="acx-muted" title="You cannot remove your own access">You</span>':'<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(email)+'" data-role="'+esc(r.role)+'" onclick="deleteRoleBtn(this)">Remove</button>');
     return '<tr class="'+(open?'is-open':'')+'">'+
       '<td><div class="acx-person"><span class="acx-name">'+esc(deriveRoleName(email))+(isSelf?' <span class="acx-tag">You</span>':'')+'</span><span class="acx-email" title="'+esc(email)+'">'+esc(email)+'</span></div></td>'+
-      '<td>'+roleSel+'</td>'+
+      '<td><div class="acx-role-pair">'+roleSel+wsSel+'</div></td>'+
       '<td><div class="acx-tags">'+acxPagesSummary(r)+'</div></td>'+
       '<td><span class="acx-muted acx-by" title="'+esc(r.added_by||'system')+'">'+esc(r.added_by||'system')+'</span></td>'+
       '<td class="acx-right"><div class="acx-actions">'+pagesBtn+removeBtn+'</div></td>'+
@@ -11093,6 +11097,23 @@ async function setRoleInline(sel){
   }catch(e){ sel.value=prev; showToast(e.message,'error'); }
   sel.disabled=false;
   renderRoleRows(); renderRoleOverview(roleDirectory); renderAgentPagesCard();
+}
+
+// Batch 353: workspace per person (T1 CS, Adit Pay or both).
+async function setWorkspaceInline(sel){
+  const email=String(sel.dataset.email||''), list=String(sel.value||'t1').split(',');
+  const row=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
+  const prev=row?(row.workspaces||'t1'):'t1';
+  sel.disabled=true;
+  try{
+    const res=await fetch(BACKEND+'/api/roles/'+encodeURIComponent(email)+'/workspaces',{method:'PATCH',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({workspaces:list})});
+    const j=await res.json();
+    if(!j.success) throw new Error(j.error||'Could not change workspace');
+    if(row) row.workspaces=j.workspaces.join(',');
+    showToast(deriveRoleName(email)+' can now open '+(j.workspaces.length>1?'T1 CS and Adit Pay':(j.workspaces[0]==='aditpay'?'Adit Pay':'T1 CS')),'success');
+  }catch(e){ if(row) row.workspaces=prev; showToast(e.message,'error'); }
+  sel.disabled=false;
+  renderRoleRows();
 }
 
 function handleRoleSearchInput(value){

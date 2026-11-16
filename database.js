@@ -742,6 +742,8 @@ async function initDB() {
     `ALTER TABLE break_events ADD COLUMN notify_status TEXT`,
     `ALTER TABLE break_events ADD COLUMN notify_response TEXT`,
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
+    // Batch 353: workspaces a person can open (null = T1 only)
+    `ALTER TABLE app_roles ADD COLUMN workspaces TEXT`,
     // #21 Session 8: PWA offline queue idempotency
     `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
     // Google Chat user ID for @mention notifications
@@ -1663,8 +1665,19 @@ function normalizeBreakbotEnabled(value){
   return value === false || value === 0 || value === '0' ? 0 : 1;
 }
 
+// Batch 353: workspaces. 't1' (T1 CS) and 'aditpay' (Adit Pay). Null or empty means T1 only.
+const WORKSPACES=['t1','aditpay'];
+function parseWorkspaces(v){
+  const list=String(v||'').split(',').map(x=>x.trim().toLowerCase()).filter(x=>WORKSPACES.includes(x));
+  return list.length?[...new Set(list)]:['t1'];
+}
+function setWorkspaces(e,list){
+  const ws=parseWorkspaces((list||[]).join(','));
+  return run(`UPDATE app_roles SET workspaces=? WHERE email=?`,[ws.join(','),String(e||'').trim().toLowerCase()]).then(r=>{ _roleSeen.delete(String(e||'').toLowerCase()); return {changes:r.changes,workspaces:ws}; });
+}
+
 function getAllRoles(){
-  return all(`SELECT id,email,role,added_by,added_at,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles ORDER BY role ASC,email ASC`);
+  return all(`SELECT id,email,role,added_by,added_at,COALESCE(breakbot_enabled,1) AS breakbot_enabled,workspaces FROM app_roles ORDER BY role ASC,email ASC`);
 }
 
 function setRole(e,r,by,breakbotEnabled=1){
@@ -1700,8 +1713,8 @@ async function getRoleSettingsForEmail(e){
   let lastErr = null;
   for (let i = 0; i < 4; i++) {
     try {
-      const row=await get(`SELECT role,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles WHERE email=?`,[e]);
-      const out = row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
+      const row=await get(`SELECT role,COALESCE(breakbot_enabled,1) AS breakbot_enabled,workspaces FROM app_roles WHERE email=?`,[e]);
+      const out = row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled,workspaces:parseWorkspaces(row.workspaces)}:null;
       _roleSeen.set(String(e||'').toLowerCase(), out);
       return out;
     } catch (err) { lastErr = err; await new Promise(r => setTimeout(r, 1500)); }
@@ -2696,7 +2709,7 @@ module.exports={
   upsertUserProfile,getAllUserProfiles,getUserProfile,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
-  getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
+  getAllRoles,setRole,setBreakbotEnabled,removeRole,parseWorkspaces,setWorkspaces,WORKSPACES,getRoleForEmail,getRoleSettingsForEmail,
   insertAuditLog,getAuditLog,
   // Session 17, admin settings (pause controls, etc.)
   getSetting,setSetting,deleteSetting,getAllSettings,
