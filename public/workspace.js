@@ -124,8 +124,8 @@
     ".ws-tag{display:none;margin-left:8px;font:600 10.5px 'DM Sans',sans-serif;color:#1F8E93;background:#E6F6F6;padding:3px 8px;border-radius:999px;white-space:nowrap}",
     "body.ws-aditpay .ws-tag{display:inline-block}",
     // Batch 360: T1 processes with no Adit Pay counterpart are not shown in the Adit Pay workspace
-    "body.ws-aditpay #sb-bonus,body.ws-aditpay #sb-audits,body.ws-aditpay #sb-ai-agent,body.ws-aditpay #sb-agent-bonus,body.ws-aditpay #sb-agent-tickets,body.ws-aditpay #sb-agent-audits,body.ws-aditpay #sb-agent-qateach,body.ws-aditpay #sb-agent-callqa,body.ws-aditpay #sb-agent-hall,body.ws-aditpay #brain-fab-wrap,body.ws-aditpay #brain-panel{display:none !important}",
-    "body.ws-aditpay .sb-subtab-btn[data-tab=cf1025],body.ws-aditpay .sb-subtab-btn[data-tab=roster],body.ws-aditpay .sb-subtab-btn[data-tab=call-qa],body.ws-aditpay .sb-subtab-btn[data-tab=callsummary],body.ws-aditpay .sb-subtab-btn[data-tab=ticket-hygiene],body.ws-aditpay .sb-subtab-btn[data-tab=voip-project],body.ws-aditpay .sb-subtab-btn[data-tab=voip-fix],body.ws-aditpay .sb-subtab-btn[data-tab=custom-reports],body.ws-aditpay .sb-subtab-btn[data-tab=digest],body.ws-aditpay .sb-subtab-btn[data-tab=alerts-missed]{display:none !important}"
+    "body.ws-aditpay #sb-bonus,body.ws-aditpay #sb-audits,body.ws-aditpay #sb-ai-agent,body.ws-aditpay #sb-agent-bonus,body.ws-aditpay #sb-agent-tickets,body.ws-aditpay #sb-agent-audits,body.ws-aditpay #sb-agent-qateach,body.ws-aditpay #sb-agent-hall,body.ws-aditpay #brain-fab-wrap,body.ws-aditpay #brain-panel{display:none !important}",
+    "body.ws-aditpay .sb-subtab-btn[data-tab=cf1025],body.ws-aditpay .sb-subtab-btn[data-tab=roster],body.ws-aditpay .sb-subtab-btn[data-tab=callsummary],body.ws-aditpay .sb-subtab-btn[data-tab=ticket-hygiene],body.ws-aditpay .sb-subtab-btn[data-tab=voip-project],body.ws-aditpay .sb-subtab-btn[data-tab=voip-fix],body.ws-aditpay .sb-subtab-btn[data-tab=custom-reports],body.ws-aditpay .sb-subtab-btn[data-tab=digest],body.ws-aditpay .sb-subtab-btn[data-tab=alerts-missed]{display:none !important}"
   ].join('\n');
 
   var built = '';

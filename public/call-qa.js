@@ -47,6 +47,7 @@
 
   function mount(root, opts) {
     var QA = !!(opts && opts.qa); // Batch 267: the QA role reads and corrects audits; settings stay with admins
+    var PAY = window.__ws === 'aditpay'; // Batch 363: the Adit Pay team's calls, same rubric; settings, calibration and teaching stay with T1
     var S = { preset: '7', tab: 'overview', agent: '', status: '', fatal: false, q: '', data: null, calls: null, calib: null };
     root.innerHTML = '';
     var wrap = h('div', { class: 'cq' }); root.appendChild(wrap);
@@ -56,11 +57,11 @@
       var seg = h('div', { class: 'cq-seg', role: 'group', 'aria-label': 'Date range' }, PRESETS.map(function (p) {
         return h('button', { type: 'button', 'aria-pressed': S.preset === p[0] ? 'true' : 'false', onclick: function () { S.preset = p[0]; S.calls = null; load(); }, text: p[1] });
       }));
-      return h('div', { class: 'cq-head' }, [h('div', null, [h('h1', { text: 'Call QA' }), h('p', { class: 'cq-sub', text: 'Every recorded T1 CS call, audited by AI with the QA rubric: the Avoma or RingCentral transcript, the ticket from the call and Adit Expert knowledge, calibrated on a year of human QA audits. Scores stay in this tool; nothing is written to CRM.' })]),
+      return h('div', { class: 'cq-head' }, [h('div', null, [h('h1', { text: 'Call QA' }), h('p', { class: 'cq-sub', text: PAY ? 'Every recorded Adit Pay team call, inbound and outbound, audited by AI on communication, process and product with the standard call QA rubric (no survey pitch), until Adit Pay has its own QA form. Scores stay in this tool; nothing is written to CRM.' : 'Every recorded T1 CS call, audited by AI with the QA rubric: the Avoma or RingCentral transcript, the ticket from the call and Adit Expert knowledge, calibrated on a year of human QA audits. Scores stay in this tool; nothing is written to CRM.' })]),
         h('div', { class: 'cq-ctl' }, [seg, h('button', { type: 'button', class: 'cq-btn', onclick: function () { load(); }, text: 'Refresh' })])]);
     }
     function tabs() {
-      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['teach', 'Teach the AI'], ['guide', 'What the AI learned']].filter(function (t) { return !(QA && t[0] === 'teach'); }).map(function (t) {
+      return h('div', { class: 'cq-tabs', role: 'tablist' }, [['overview', 'Overview'], ['calls', 'Calls'], ['calibration', 'Calibration'], ['teach', 'Teach the AI'], ['guide', 'What the AI learned']].filter(function (t) { return !(QA && t[0] === 'teach') && !(PAY && t[0] !== 'overview' && t[0] !== 'calls'); }).map(function (t) {
         return h('button', { type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', onclick: function () { var again = S.tab === 'teach'; S.tab = t[0]; draw(); if (t[0] === 'teach' && S.teachApi && !again) S.teachApi.refresh(); if (t[0] === 'calls' && !S.calls) loadCalls(); if ((t[0] === 'calibration' || t[0] === 'guide') && !S.calib) loadCalib(); }, text: t[1] });
       }));
     }
@@ -74,14 +75,14 @@
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'Audit progress' }), h('p', { text: 'Calls are found every 30 minutes and audited about 20 minutes after they end, so Avoma has posted its transcript.' })]),
         h('div', { class: 'cq-prog', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(all), 'aria-valuenow': String(done), 'aria-label': 'Calls audited' }, h('i', { style: 'width:' + (all ? Math.round(done / all * 100) : 0) + '%' })),
         h('p', { class: 'cq-small cq-muted' }, done + ' of ' + all + ' calls audited (' + t.fromAvoma + ' from Avoma, ' + t.fromRc + ' transcribed from RingCentral). ' + t.waiting + ' waiting, ' + t.skipped + ' with no recording or speech' + (t.errors ? ', ' + t.errors + ' failed' : '') + '.'),
-        QA ? null : h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/backfill', { days: 7 }).then(function (r) { b.disabled = false; toast(r.success ? r.added + ' older calls found, they will be audited next' : r.error, r.success ? 'success' : 'error'); load(); }); }, text: 'Find calls from the last 7 days' }),
+        QA || PAY ? null : h('div', { class: 'cq-ctl' }, [h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/backfill', { days: 7 }).then(function (r) { b.disabled = false; toast(r.success ? r.added + ' older calls found, they will be audited next' : r.error, r.success ? 'success' : 'error'); load(); }); }, text: 'Find calls from the last 7 days' }),
           h('button', { type: 'button', class: 'cq-btn sm', onclick: function (e) { var b = e.currentTarget; b.disabled = true; api('/api/call-qa/enabled', { on: st.enabled === false }).then(function () { load(); }); }, text: st.enabled === false ? 'Resume Call QA' : 'Pause Call QA' })])]));
       var hm = d.human || {};
       kids.push(h('div', { class: 'cq-kpis' }, [
         h('div', { class: 'cq-kpi' }, [h('b', null, t.avg == null ? 'none' : String(t.avg)), h('span', { text: 'AI QA score' }), h('small', { text: hm.scored ? 'Human QA ' + hm.avg + ' on ' + hm.scored + ' calls' : 'No human QA audits in these days' })]),
         h('div', { class: 'cq-kpi' }, [h('b', { text: String(t.scored) }), h('span', { text: 'Calls scored' }), h('small', { text: hm.scored ? 'Human QA scored ' + hm.scored + ' in the same days' : 'Human QA scored none' })]),
         h('div', { class: 'cq-kpi' }, [h('b', { text: pc(t.fatalPct) }), h('span', { text: 'Fatal (' + t.fatals + ' calls)' }), h('small', { text: hm.scored ? 'Human QA ' + pc(hm.fatalPct) : 'No human QA to compare' })]),
-        h('div', { class: 'cq-kpi' }, [h('b', { text: pc(t.surveyPct) }), h('span', { text: 'Full survey pitch' }), h('small', { text: 'on ' + t.surveyNeed + ' calls that needed it' })])]));
+        PAY ? null : h('div', { class: 'cq-kpi' }, [h('b', { text: pc(t.surveyPct) }), h('span', { text: 'Full survey pitch' }), h('small', { text: 'on ' + t.surveyNeed + ' calls that needed it' })])]));
       kids.push(h('div', { class: 'cq-card' }, [h('div', { class: 'cq-ch' }, [h('h2', { text: 'By agent' }), h('p', { text: 'Lowest AI score first. Not Relevant and Disconnected calls are left out of the averages, the same as the CRM QA report. Open an agent to see their calls.' })]),
         table([['Agent'], ['Audited', 'n'], ['AI QA', 'n'], ['Human QA', 'n'], ['Fatal', 'n'], ['Most missed']], d.agents.map(function (a) {
           return h('tr', { class: 'cq-click', tabindex: '0', onclick: function () { S.agent = a.email; S.tab = 'calls'; S.calls = null; draw(); loadCalls(); }, onkeydown: function (e) { if (e.key === 'Enter') e.currentTarget.click(); } }, [

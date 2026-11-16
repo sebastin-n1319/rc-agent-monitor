@@ -773,8 +773,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const ct = require('./lib/call-qa-teach'); ct.setDB(db); await ct.initSchema(); ct.setDeps({ ai: require('./lib/ai'), cq }); }
       cq.setDeps({ ai: require('./lib/ai'), kbq: (sql, limit) => require('./lib/aditkb-service').query(sql, limit), crmCoql: (q) => require('./lib/crm-qa').coql(q),
         rc: { listRecordedCalls: (ext, a, b) => require('./rc-service').listRecordedCalls(ext, a, b), fetchRecording: (u) => require('./rc-service').fetchRecording(u) },
-        // Batch 360: AI call QA scores T1 calls with T1's rubric; Adit Pay calls are left out until it has its own
-        agents: () => WSX.unscoped(() => getMonitoredAgents()).then((l) => l.filter((a) => String(a.workspace || 't1') !== 'aditpay')), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
+        // Batch 363: Adit Pay calls are audited too, with the same rubric (communication, process, product) until Adit Pay
+        // has its own QA form; each page shows only its own workspace's calls
+        agents: () => WSX.unscoped(() => getMonitoredAgents()), teamOf: (email) => WSX.wsOfEmail(email) || 't1',
+        scope: (rows) => WSX.filterRows(rows, { email: 'agent_email' }), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
         deskIdOf: async (email) => {
           if (!_deskIds.m || Date.now() - _deskIds.at > 3600e3) {
             const byName = new Map(); for (const [id, n] of await require('./lib/desk-lifecycle').agentNameById()) byName.set(String(n).trim().toLowerCase(), String(id).replace(/\D/g, ''));
@@ -1077,7 +1079,7 @@ async function sessionRoleFor(email) {
 // Batch 360: workspaces. Adit Pay uses the same tool as T1 CS, scoped to its own team (lib/ws-context.js). The pages
 // below are T1 processes with no Adit Pay counterpart, so they are refused in the Adit Pay workspace.
 const WSX = require('./lib/ws-context');
-const T1_ONLY_API = /^\/api\/(bonus|hof|cf1025|review|audits|escalations|voip-project|voip-share|ticket-hygiene|livechat|chat-reports|predict|custom-reports|appraisals|weekend-sheet|report-sheet|roster|issue-watch|outage-watch\/check|brain|agent-learning|ticket-feedback|zoho\/rules|call-summary\/backfill|call-qa|anomaly|anomalies\/agent|tickets|my-tickets|ticket-entry|ticket\/weekend-log|check-ticket|hof)(\/|$|\?)/;
+const T1_ONLY_API = /^\/api\/(bonus|hof|cf1025|review|audits|escalations|voip-project|voip-share|ticket-hygiene|livechat|chat-reports|predict|custom-reports|appraisals|weekend-sheet|report-sheet|roster|issue-watch|outage-watch\/check|brain|agent-learning|ticket-feedback|zoho\/rules|call-summary\/backfill|call-qa\/(?:teach|calibration|relearn|backfill|enabled)|anomaly|anomalies\/agent|tickets|my-tickets|ticket-entry|ticket\/weekend-log|check-ticket|hof)(\/|$|\?)/;
 const _wsOf = new Map();
 async function workspacesOf(email) {
   const k = String(email || '').toLowerCase(), hit = _wsOf.get(k);
@@ -9738,6 +9740,8 @@ async function requireCallQaView(req, res, next) {
   if (!req.session || !req.session.email) return res.status(401).json({ success: false, error: 'Authentication required' });
   try {
     if (await isAdminSession(req)) return next();
+    // Batch 363: an Adit Pay admin reads the Adit Pay team's audits in the Adit Pay workspace
+    if (req.workspace === 'aditpay') { const st = await getRoleSettingsForEmail(req.session.email).catch(() => null); if (st && st.role === 'admin') return next(); }
     const eff = await effectiveAgentPages(req.session.email);
     if (eff.pages && eff.pages.callqa) return next();
     return res.status(403).json({ success: false, error: 'Call QA is not turned on for your account' });
@@ -9750,12 +9754,16 @@ app.get('/api/call-qa/calls', requireAuth, requireCallQaView, rateLimit(60, 6000
   try { const r = cqRange(req.query); res.json({ success: true, calls: await cqMod().list({ ...r, agent: String(req.query.agent || ''), status: String(req.query.status || ''), fatal: String(req.query.fatal || ''), q: String(req.query.q || '').slice(0, 80) }) }); } catch (e) { cqErr(res, e, 'Could not load calls'); }
 });
 app.get('/api/call-qa/calls/:id', requireAuth, requireCallQaView, rateLimit(120, 60000), async (req, res) => {
-  try { res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not load the call'); }
+  try { const c = await cqMod().detail(Number(req.params.id)); if (!(await WSX.hasEmail(c.email))) return res.status(404).json({ success: false, error: 'Call not found' }); res.json({ success: true, call: c }); } catch (e) { cqErr(res, e, 'Could not load the call'); }
 });
+// Batch 363: a call can be corrected or audited again only from its own team's workspace
+async function cqInWs(id) { try { const c = await cqMod().detail(Number(id)); return WSX.hasEmail(c.email); } catch (e) { return true; } }
 app.post('/api/call-qa/calls/:id/override', requireAuth, requireCallQaView, rateLimit(60, 60000), async (req, res) => {
+  if (!(await cqInWs(req.params.id))) return res.status(404).json({ success: false, error: 'Call not found' });
   try { res.json({ success: true, call: await cqMod().override(Number(req.params.id), { email: req.session && req.session.email }, req.body || {}) }); } catch (e) { cqErr(res, e, 'Could not save the correction'); }
 });
 app.post('/api/call-qa/calls/:id/reaudit', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  if (!(await cqInWs(req.params.id))) return res.status(404).json({ success: false, error: 'Call not found' });
   try { await cqMod().reaudit(Number(req.params.id)); res.json({ success: true, call: await cqMod().detail(Number(req.params.id)) }); } catch (e) { cqErr(res, e, 'Could not audit the call again'); }
 });
 app.get('/api/call-qa/calibration', requireAuth, requireCallQaView, rateLimit(30, 60000), async (req, res) => {
@@ -10443,11 +10451,21 @@ app.get('/api/aditpay/daily', requireAuth, rateLimit(30, 60000), async (req, res
         require('./lib/aditpay-daily').sessions(day, emails).catch((e) => { console.warn('pay daily sessions:', e.message); return null; }),
       ]);
       const byT = {}; for (const r of tk || []) byT[String(r.email).toLowerCase()] = r;
+      // Batch 363: incoming calls split into queue calls and calls straight to the person's own number or extension
+      const split = {};
+      try {
+        const D_ = require('./lib/aditpay-daily'), dbm = require('./database');
+        for (const a of await getMonitoredAgents()) {
+          const e = String(a.email || '').toLowerCase(); if (!e || !a.rc_id || !emails.includes(e)) continue;
+          const rows = await new Promise((rs) => dbm.db.all(`SELECT direction, result, duration, is_voicemail, queue_name FROM call_logs WHERE agent_id = ? AND start_time >= ? AND start_time < ?`, [String(a.rc_id), from, to], (er, r) => rs(er ? [] : r || [])));
+          split[e] = Object.assign(D_.splitCalls(rows, a.name), { ext: a.extension ? String(a.extension) : null });
+        }
+      } catch (e) { console.warn('pay daily call split:', e.message); }
       const nameOf = (e) => roster.agentNames[e] || e.split('@')[0].split(/[._]/).map((x) => x.charAt(0).toUpperCase() + x.slice(1)).join(' ');
       return { sessionsOk: !!sess, people: emails.map((e) => {
         const c = (calls[e] && calls[e].callStats) || null, t = byT[e] || {}, ss = (sess && sess[e]) || { training: 0, demo: 0, meeting: 0, total: 0, list: [] };
         return { email: e, name: nameOf(e), tracked: !!roster.agentNames[e],
-          calls: c ? { inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, total: c.totalCalls || 0, missed: c.missedCalls || 0 } : null,
+          calls: c ? { inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, total: c.totalCalls || 0, missed: c.missedCalls || 0, split: split[e] || null } : null,
           tickets: { new: t.tickets_handled_new || 0, followup: t.tickets_handled_followup || 0 }, sessions: ss };
       }) };
     });

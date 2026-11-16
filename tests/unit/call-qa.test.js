@@ -157,3 +157,18 @@ describe('Call QA shadow learning', () => {
     expect((await cq.learning()).lessons.list.length).toBe(1);
   });
 });
+
+describe('Call QA for the Adit Pay team (Batch 363)', () => {
+  it('uses the same rubric with Adit Pay context, allows outbound calls and drops the survey fatal', () => {
+    const cq = require('../../lib/call-qa.js');
+    const p = cq.systemPrompt(null, null, null, [], 'aditpay');
+    expect(p).toContain('Adit Pay team');
+    expect(p).toContain('an outbound call is never a fault');
+    expect(p).not.toContain('T1 CS does not make outbound calls');
+    expect(cq.systemPrompt(null, null, null, [], 't1')).toContain('T1 CS does not make outbound calls');
+    const res = { stage: 'Resolved', params: { closing: { r: 'met' }, documentation: { r: 'met' } }, fatal: { survey: { hit: true }, documentation_task: { hit: false } }, survey: { required: true, pitched: 'no' } };
+    const out = cq.enforce(res, [{ number: 1 }], { surveyMode: 'none' });
+    expect(out.fatal.survey.hit).toBe(false);
+    expect(out.survey.required).toBe(false);
+  });
+});
