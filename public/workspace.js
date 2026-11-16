@@ -135,11 +135,17 @@
     for (var i = 0; i < sheets.length; i++) {
       var sh = sheets[i];
       if (sh.disabled) continue;
-      if (sh.ownerNode && sh.ownerNode.id === 'ws-css') continue;
+      if (sh.ownerNode && (sh.ownerNode.id === 'ws-css' || sh.ownerNode.id === 'ws-base')) continue;
       var rules; try { rules = sh.cssRules; } catch (e) { continue; }
       if (rules) scanRules(rules, out);
     }
-    return BASE + '\n' + out.join('\n');
+    return out.join('\n');
+  }
+  // Batch 366: the switch styles and the Adit Pay hide rules go in at once, in both workspaces, in their own style tag,
+  // so they never wait on (or are lost with) the colour scan below
+  function ensureBase() {
+    if (document.getElementById('ws-base')) return;
+    var st = document.createElement('style'); st.id = 'ws-base'; st.textContent = BASE; document.head.appendChild(st);
   }
   function ensureStyle() {
     var st = document.getElementById('ws-css');
@@ -158,7 +164,7 @@
     if (state.current !== 'aditpay') return;
     clearTimeout(timer);
     timer = setTimeout(function () {
-      var css = build();
+      var css = ''; try { css = build(); } catch (e) { css = built; }
       if (css !== built) { built = css; ensureStyle().textContent = css; }
     }, 250);
   }
@@ -186,6 +192,7 @@
   }
 
   function apply() {
+    ensureBase();
     document.body.classList.toggle('ws-aditpay', state.current === 'aditpay');
     document.body.setAttribute('data-workspace', state.current);
     if (state.current === 'aditpay') { ensureFont(); ensureStyle(); refresh(); }
@@ -227,7 +234,7 @@
     new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) {
         var m = muts[i];
-        if (m.target && m.target.id === 'ws-css') continue;
+        if (m.target && (m.target.id === 'ws-css' || m.target.id === 'ws-base')) continue;
         if (m.type === 'childList' || m.attributeName === 'disabled' || m.attributeName === 'media') { refresh(); break; }
       }
     }).observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'media'] });
