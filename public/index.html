@@ -1338,11 +1338,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         <section class="acx-card" aria-labelledby="acx-add-h">
           <div class="acx-card-hd"><h3 id="acx-add-h">Add or update a person</h3></div>
           <div class="acx-form">
-            <label class="acx-field acx-field-grow"><span>Email</span><input type="email" id="roleEmail" class="acx-req-field" required aria-required="true" placeholder="name@adit.com" autocomplete="off" onkeydown="if(event.key==='Enter')addRole()"></label>
+            <label class="acx-field acx-field-grow"><span>Emails <small id="roleEmailCount" class="acx-muted" aria-live="polite"></small></span><input type="text" id="roleEmail" class="acx-req-field" required aria-required="true" placeholder="name@adit.com, another@adit.com" autocomplete="off" oninput="acxCountEmails()" onkeydown="if(event.key==='Enter')addRole()"></label>
             <label class="acx-field"><span>Role</span><select id="roleSelect"><option value="agent">Agent</option><option value="qa">QA (chosen pages only)</option><option value="admin">Admin</option></select></label>
+            <label class="acx-field"><span>Team</span><select id="roleTeam"><option value="t1">T1 CS</option><option value="aditpay">Adit Pay</option><option value="both">Both</option></select></label>
             <button class="acx-btn acx-btn-primary" type="button" onclick="addRole()">Save</button>
           </div>
-          <p class="acx-note">Adding someone here approves them straight away. Agents see only the pages switched on under Agent pages; admins see every page. To give one person a different set, open Pages on their row below.</p>
+          <p class="acx-note">Add several people at once by separating emails with commas or spaces. Team sets which workspace they open (T1 CS, Adit Pay or both), also for people already listed. Adding someone here approves them straight away. Agents see only the pages switched on under Agent pages; admins see every page. To give one person a different set, open Pages on their row below.</p>
         </section>
 
         <section class="acx-card" aria-labelledby="acx-pages-h">
@@ -11465,21 +11466,37 @@ async function loadRoles(){
   }catch(e){ showToast('Could not load access list','error'); }
 }
 
+// Batch 365: several people at once, each with a team (workspace)
+function acxEmails(){ return Array.from(new Set(String((document.getElementById('roleEmail')||{}).value||'').split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))); }
+function acxCountEmails(){ const n=acxEmails().length, el=document.getElementById('roleEmailCount'); if(el) el.textContent=n>1?'('+n+' people)':''; }
+function acxTeamDefault(){ const t=document.getElementById('roleTeam'); if(t && !t.dataset.set){ t.value=window.__ws==='aditpay'?'aditpay':'t1'; t.dataset.set='1'; } }
+document.addEventListener('DOMContentLoaded',acxTeamDefault);
 async function addRole(){
-  const email=document.getElementById('roleEmail').value.trim();
+  const emails=acxEmails();
   const role=document.getElementById('roleSelect').value;
-  if(!email){ showToast('Enter an email address','warning'); return; }
-  const existing=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
-  const breakbotEnabled=existing?existing.breakbot_enabled!==0:true;
-  try{
-    const res=await fetch(BACKEND+'/api/roles',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled})});
-    const json=await res.json();
-    if(json.success){
-      showToast(existing?'Updated '+email:'Added '+email,'success');
-      document.getElementById('roleEmail').value='';
-      loadRoles();
-    }else showToast(json.error||'Could not save','error');
-  }catch(e){ showToast('Could not save','error'); }
+  const team=(document.getElementById('roleTeam')||{}).value||'t1';
+  const wsList=team==='both'?['t1','aditpay']:[team];
+  if(!emails.length){ showToast('Enter an email address','warning'); return; }
+  const bad=emails.filter(e=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+  if(bad.length){ showToast('Check these emails: '+bad.join(', '),'warning'); return; }
+  let added=0, updated=0; const failed=[];
+  for(const email of emails){
+    const existing=roleDirectory.find(r=>String(r.email).toLowerCase()===email);
+    const breakbotEnabled=existing?existing.breakbot_enabled!==0:true;
+    try{
+      const res=await fetch(BACKEND+'/api/roles',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled})});
+      const json=await res.json();
+      if(!json.success){ failed.push(email+(json.error?' ('+json.error+')':'')); continue; }
+      const w=await fetch(BACKEND+'/api/roles/'+encodeURIComponent(email)+'/workspaces',{method:'PATCH',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({workspaces:wsList})}).then(r=>r.json()).catch(()=>({success:false}));
+      if(!w.success){ failed.push(email+' (team not set)'); continue; }
+      existing?updated++:added++;
+    }catch(e){ failed.push(email); }
+  }
+  const tl=team==='both'?'T1 CS and Adit Pay':team==='aditpay'?'Adit Pay':'T1 CS';
+  if(added||updated) showToast([added?'Added '+added:'',updated?'updated '+updated:''].filter(Boolean).join(', ')+' ('+tl+')','success');
+  if(failed.length) showToast('Could not save: '+failed.join(', '),'error');
+  if(!failed.length){ document.getElementById('roleEmail').value=''; acxCountEmails(); }
+  loadRoles();
 }
 
 function deleteRoleBtn(btn){
