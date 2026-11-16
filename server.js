@@ -10296,6 +10296,10 @@ app.get('/api/aditpay/home', requireAuth, rateLimit(30, 60000), async (req, res)
     res.json({ success: true, data: await require('./lib/aditpay-home').summary({ fresh: req.query.fresh === '1' }) });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
 });
+// Batch 358: admin check of the Stripe data in Zoho Analytics (aggregates only) before Pay home uses it.
+app.get('/api/aditpay/stripe-probe', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { res.json({ success: true, data: await require('./lib/aditpay-stripe').probe({ query: req.query.q ? String(req.query.q).slice(0, 2000) : '' }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }
+});
 app.get('/api/outage-watch', requireAuth, async (req, res) => { try { const a = await require('./lib/outage-watch').current().catch(() => null); res.json({ success: true, alert: a || await require('./lib/issue-watch').current().catch(() => null) }); } catch (e) { res.json({ success: true, alert: null }); } });
 // Batch 351: repeated-issue watch admin controls (check now, recent alerts and the last run, close).
 app.post('/api/issue-watch/check', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, result: await require('./lib/issue-watch').check({ force: true }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); } });
