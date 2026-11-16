@@ -122,7 +122,10 @@
     ".ws-sw button[aria-pressed=true]{background:#F4891F;color:#fff}",
     "body.ws-aditpay .ws-sw button[aria-pressed=true]{background:#2A9FA4;color:#fff}",
     ".ws-tag{display:none;margin-left:8px;font:600 10.5px 'DM Sans',sans-serif;color:#1F8E93;background:#E6F6F6;padding:3px 8px;border-radius:999px;white-space:nowrap}",
-    "body.ws-aditpay .ws-tag{display:inline-block}"
+    "body.ws-aditpay .ws-tag{display:inline-block}",
+    // Batch 360: T1 processes with no Adit Pay counterpart are not shown in the Adit Pay workspace
+    "body.ws-aditpay #sb-bonus,body.ws-aditpay #sb-audits,body.ws-aditpay #sb-ai-agent,body.ws-aditpay #sb-agent-bonus,body.ws-aditpay #sb-agent-tickets,body.ws-aditpay #sb-agent-audits,body.ws-aditpay #sb-agent-qateach,body.ws-aditpay #sb-agent-callqa,body.ws-aditpay #sb-agent-hall,body.ws-aditpay #brain-fab-wrap,body.ws-aditpay #brain-panel{display:none !important}",
+    "body.ws-aditpay .sb-subtab-btn[data-tab=cf1025],body.ws-aditpay .sb-subtab-btn[data-tab=roster],body.ws-aditpay .sb-subtab-btn[data-tab=call-qa],body.ws-aditpay .sb-subtab-btn[data-tab=callsummary],body.ws-aditpay .sb-subtab-btn[data-tab=ticket-hygiene],body.ws-aditpay .sb-subtab-btn[data-tab=voip-project],body.ws-aditpay .sb-subtab-btn[data-tab=voip-fix],body.ws-aditpay .sb-subtab-btn[data-tab=custom-reports],body.ws-aditpay .sb-subtab-btn[data-tab=digest],body.ws-aditpay .sb-subtab-btn[data-tab=alerts-missed]{display:none !important}"
   ].join('\n');
 
   var built = '';
@@ -200,16 +203,20 @@
     else if (state.current !== 'aditpay' && onPay) window.sbAdmin('live', document.getElementById('sb-live'));
   }
 
+  // Batch 360: every page's data comes from the workspace (ws-fetch.js sends it with each request), so a switch reloads
+  // the tool in the other workspace instead of mixing what is already on screen.
   function set(ws) {
     if (state.list.indexOf(ws) < 0) return;
-    state.current = ws; lsSet(KEY, ws); apply(); syncNav(true);
+    lsSet(KEY, ws);
+    try { localStorage.setItem('rcActiveTab', ws === 'aditpay' ? 'aditpay' : 'live'); } catch (e) {}
+    location.reload();
   }
 
   function init(list) {
     state.list = (list && list.length ? list : ['t1']).filter(function (w) { return NAMES[w]; });
     if (!state.list.length) state.list = ['t1'];
     var saved = lsGet(KEY);
-    state.current = state.list.indexOf(saved) >= 0 ? saved : state.list[0];
+    state.current = state.list.indexOf(saved) >= 0 ? saved : (state.list.indexOf('t1') >= 0 ? 't1' : state.list[0]);
     apply(); syncNav(false);
   }
 
@@ -234,9 +241,12 @@
       if (!s || !s.success) return;
       var list = Array.isArray(s.workspaces) ? s.workspaces : ['t1'];
       lsSet('rcWorkspaces', JSON.stringify(list));
-      // Batch 359: Adit Pay-only people use the Adit Pay page, not the T1 tool
-      if (list.indexOf('t1') < 0 && /^\/?$/.test(location.pathname)) { location.replace('/pay'); return; }
       init(list);
+      // Batch 360: the page loaded with an older workspace (first sign-in, or access changed): load it again in the right one
+      if ((window.__ws || '') !== state.current) {
+        var guard = 0; try { guard = Number(sessionStorage.getItem('rcWsReload') || 0); } catch (e) {}
+        if (Date.now() - guard > 20000) { try { sessionStorage.setItem('rcWsReload', String(Date.now())); localStorage.setItem('rcActiveTab', state.current === 'aditpay' ? 'aditpay' : 'live'); } catch (e) {} location.reload(); }
+      }
     }).catch(function () {});
     // The header can render after this script: place the switch once it exists.
     var tries = 0, iv = setInterval(function () { tries++; if (document.querySelector('.hm-brand')) { renderSwitch(); syncNav(false); clearInterval(iv); } else if (tries > 40) clearInterval(iv); }, 250);

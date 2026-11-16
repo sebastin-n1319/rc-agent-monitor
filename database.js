@@ -14,6 +14,9 @@ console.log('Using DB at:', dbPath);
 const run = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, function(err){err?rej(err):res(this);}));
 const get = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row)=>err?rej(err):res(row)));
 const all = (sql, params=[]) => new Promise((res,rej) => db.all(sql, params, (err,rows)=>err?rej(err):res(rows)));
+// Batch 360: the T1 CS / Adit Pay workspace of the current request (none for background jobs)
+const WS = require('./lib/ws-context');
+WS.setDeps({ all });
 
 // Session 40: single source of truth for how long raw call_logs rows survive.
 // Previously this lived only in server.js and only governed the nightly
@@ -744,6 +747,8 @@ async function initDB() {
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
     // Batch 353: workspaces a person can open (null = T1 only)
     `ALTER TABLE app_roles ADD COLUMN workspaces TEXT`,
+    // Batch 360: the workspace an agent works in (t1 or aditpay)
+    `ALTER TABLE monitored_agents ADD COLUMN workspace TEXT DEFAULT 't1'`,
     // #21 Session 8: PWA offline queue idempotency
     `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
     // Google Chat user ID for @mention notifications
@@ -801,9 +806,11 @@ async function initDB() {
 }
 
 // AGENTS
-function addAgent(n,ext,email){return run(`INSERT OR IGNORE INTO monitored_agents (name,extension,email) VALUES (?,?,?)`,[n,ext,email||null]);}
-function removeAgent(ext){return run(`DELETE FROM monitored_agents WHERE extension=?`,[ext]);}
-function getMonitoredAgents(){return all(`SELECT * FROM monitored_agents ORDER BY name ASC`);}
+function addAgent(n,ext,email,workspace){WS.bust();return run(`INSERT OR IGNORE INTO monitored_agents (name,extension,email,workspace) VALUES (?,?,?,?)`,[n,ext,email||null,workspace==='aditpay'?'aditpay':'t1']);}
+function removeAgent(ext){WS.bust();return run(`DELETE FROM monitored_agents WHERE extension=?`,[ext]);}
+// Batch 360: inside a request, only the agents of that request's workspace; background jobs see every agent
+function getMonitoredAgents(){const w=WS.current();if(!w)return all(`SELECT * FROM monitored_agents ORDER BY name ASC`);return all(`SELECT * FROM monitored_agents WHERE COALESCE(workspace,'t1')=? ORDER BY name ASC`,[w]);}
+function setAgentWorkspace(ext,workspace){WS.bust();return run(`UPDATE monitored_agents SET workspace=? WHERE extension=?`,[workspace==='aditpay'?'aditpay':'t1',ext]);}
 function updateAgentRcId(ext,rcId){return run(`UPDATE monitored_agents SET rc_id=? WHERE extension=?`,[rcId,ext]);}
 function updateAgentChatId(ext,chatId){return run(`UPDATE monitored_agents SET chat_id=? WHERE extension=?`,[chatId||null,ext]);}
 
@@ -1347,12 +1354,12 @@ async function getAbandonedCalls(date,timeZone='America/Chicago'){
       AND c.start_time < ?
     ORDER BY ringDuration DESC, c.start_time DESC`,
     [callStart, callEnd]
-  );
+  ).then((rows) => WS.filterRows(rows, { email: null, agentId: 'agentId' }));
 }
 
 // LOGIN LOGS
 function insertLoginLog(u,e,r,ip,loc,sys){return run(`INSERT INTO login_logs (username,email,role,ip,location,system_info) VALUES (?,?,?,?,?,?)`,[u,e,r,ip||null,loc||null,sys||null]);}
-function getLoginLogs(){return all(`SELECT * FROM login_logs ORDER BY logged_in_at DESC LIMIT 500`);}
+function getLoginLogs(){return all(`SELECT * FROM login_logs ORDER BY logged_in_at DESC LIMIT 500`).then((rows) => WS.filterRows(rows));}
 
 // BREAK BOT
 async function createBreakEventRow({ username, email, role, meta, note, createdAt, notified = 0, notifyStatus = null, notifyResponse = null }){
@@ -1481,7 +1488,7 @@ async function getBreakEvents(date, timeZone='America/Chicago', email=null){
     params.push(email);
   }
   sql += ` ORDER BY datetime(created_at) DESC, id DESC`;
-  return all(sql, params);
+  return all(sql, params).then((rows) => WS.filterRows(rows));
 }
 
 async function getBreakTracker(date, timeZone='America/Chicago', email=null){
@@ -1572,6 +1579,8 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     latestMap.set(key, event);
   });
 
+  // Batch 360: only the people of the request's workspace
+  if(WS.current()) for(const k of Array.from(users.keys())) if(!(await WS.hasEmail(k))) users.delete(k);
   const tracker = [];
   const dayEnd = date === getTodayForTimeZone(timeZone)
     ? new Date(Math.min(Date.now(), end.getTime()))
@@ -1724,7 +1733,15 @@ async function getRoleSettingsForEmail(e){
   throw lastErr;
 }
 
+// Batch 360: call_logs rows of the request's workspace (Adit Pay agents' calls, or everything else for T1)
+async function callScopeSql(col='agent_id'){
+  const w=WS.current(); if(!w) return {sql:'',params:[]};
+  const ids=Array.from((await WS.members()).agentIds);
+  if(w==='aditpay') return ids.length?{sql:` AND ${col} IN (${ids.map(()=>'?').join(',')})`,params:ids}:{sql:' AND 0',params:[]};
+  return ids.length?{sql:` AND (${col} IS NULL OR ${col} NOT IN (${ids.map(()=>'?').join(',')}))`,params:ids}:{sql:'',params:[]};
+}
 async function getCallVolume(dateIso, timeZone='Asia/Kolkata') {
+  const sc = await callScopeSql();
   const { start, end } = getDateWindow(dateIso, timeZone);
   const startIso = start.toISOString();
   const endIso = end.toISOString();
@@ -1739,11 +1756,11 @@ async function getCallVolume(dateIso, timeZone='Asia/Kolkata') {
     const label = hourStart.toLocaleTimeString('en-US', { timeZone, hour: 'numeric', hour12: true });
     const inb = await get(
       `SELECT COUNT(*) as total, SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed
-       FROM call_logs WHERE direction='Inbound' AND start_time >= ? AND start_time < ?`,
-      [hStartIso, hEndIso]);
+       FROM call_logs WHERE direction='Inbound' AND start_time >= ? AND start_time < ?${sc.sql}`,
+      [hStartIso, hEndIso, ...sc.params]);
     const out = await get(
-      `SELECT COUNT(*) as total FROM call_logs WHERE direction='Outbound' AND start_time >= ? AND start_time < ?`,
-      [hStartIso, hEndIso]);
+      `SELECT COUNT(*) as total FROM call_logs WHERE direction='Outbound' AND start_time >= ? AND start_time < ?${sc.sql}`,
+      [hStartIso, hEndIso, ...sc.params]);
     const inbTotal = inb?.total || 0;
     const outTotal = out?.total || 0;
     const missed = inb?.missed || 0;
@@ -1760,19 +1777,20 @@ async function getCallLogsFull(dateIso, timeZone='Asia/Kolkata', limit=200, offs
   const { start, end } = getDateWindow(dateIso, timeZone);
   const startIso = start.toISOString();
   const endIso = end.toISOString();
+  const sc = await callScopeSql();
   const rows = await all(
     `SELECT id, agent_id, agent_name, source_call_id, direction, result,
             duration, ring_duration, hold_duration, transferred, is_voicemail,
             from_number, to_number, queue_name, start_time, fetched_at
      FROM call_logs
-     WHERE start_time >= ? AND start_time < ?
+     WHERE start_time >= ? AND start_time < ?${sc.sql}
      ORDER BY start_time DESC
      LIMIT ? OFFSET ?`,
-    [startIso, endIso, limit, offset]
+    [startIso, endIso, ...sc.params, limit, offset]
   );
   const total = await get(
-    `SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?`,
-    [startIso, endIso]
+    `SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql}`,
+    [startIso, endIso, ...sc.params]
   );
   return { rows, total: total?.cnt || 0, limit, offset };
 }
@@ -1783,11 +1801,12 @@ async function getCallLogStats(dateIso) {
   const istNext = new Date(istMidnight.getTime() + 86400000);
   const start = istMidnight.toISOString();
   const end = istNext.toISOString();
-  const total = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?`, [start, end]);
-  const byAgent = await all(`SELECT agent_id, COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? GROUP BY agent_id`, [start, end]);
-  const inbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND direction='Inbound'`, [start, end]);
-  const outbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND direction='Outbound'`, [start, end]);
-  const missed = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND lower(COALESCE(result,'')) IN ('missed','abandoned')`, [start, end]);
+  const sc = await callScopeSql();
+  const total = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql}`, [start, end, ...sc.params]);
+  const byAgent = await all(`SELECT agent_id, COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql} GROUP BY agent_id`, [start, end, ...sc.params]);
+  const inbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql} AND direction='Inbound'`, [start, end, ...sc.params]);
+  const outbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql} AND direction='Outbound'`, [start, end, ...sc.params]);
+  const missed = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?${sc.sql} AND lower(COALESCE(result,'')) IN ('missed','abandoned')`, [start, end, ...sc.params]);
   return { total: total?.cnt || 0, inbound: inbound?.cnt || 0, outbound: outbound?.cnt || 0, missed: missed?.cnt || 0, byAgent };
 }
 
@@ -1912,7 +1931,7 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
   const events = await all(
     `SELECT * FROM break_events WHERE datetime(created_at) >= datetime(?) AND datetime(created_at) < datetime(?) ORDER BY email, datetime(created_at) ASC`,
     [startSql, endSql]
-  );
+  ).then((rows) => WS.filterRows(rows));
   const thresholds = await all(`SELECT * FROM break_thresholds`);
   const threshMap = {};
   thresholds.forEach(t => { threshMap[t.aux_type] = t; });
@@ -2212,7 +2231,7 @@ async function getAuditLog(limit = 200) {
   return all(
     `SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?`,
     [limit]
-  );
+  ).then((r) => WS.filterRows(r, { email: 'actor_email' }));
 }
 
 // ── Session 17: Generic app settings (key/value) ───────────────────────────────
@@ -2296,11 +2315,11 @@ async function createHandoff(email, note){
 }
 async function getRecentHandoffs(limit=20){
   return all(`SELECT id,email,note,created_at,acknowledged,acknowledged_by,acknowledged_at
-              FROM shift_handoff ORDER BY created_at DESC LIMIT ?`,[limit]);
+              FROM shift_handoff ORDER BY created_at DESC LIMIT ?`,[limit]).then((r) => WS.filterRows(r));
 }
 async function getUnreadHandoffs(){
   return all(`SELECT id,email,note,created_at FROM shift_handoff
-              WHERE acknowledged=0 ORDER BY created_at DESC LIMIT 10`);
+              WHERE acknowledged=0 ORDER BY created_at DESC LIMIT 10`).then((r) => WS.filterRows(r));
 }
 async function ackHandoff(id, byEmail){
   return run(`UPDATE shift_handoff SET acknowledged=1,acknowledged_by=?,acknowledged_at=CURRENT_TIMESTAMP WHERE id=?`,[byEmail,id]);
@@ -2318,6 +2337,11 @@ async function getWellnessForEmail(email, days=30){
               WHERE email=? AND date>=DATE('now',?) ORDER BY date DESC`,[email,`-${days} days`]);
 }
 async function getWellnessTeamSummary(days=7){
+  if (WS.current()) { // Batch 360: only the workspace's people
+    const rows = await WS.filterRows(await all(`SELECT date,mood,email FROM wellness_checkin WHERE date>=DATE('now',?)`,[`-${days} days`]));
+    const m = new Map(); for (const r of rows) { const k = r.date + '|' + r.mood; m.set(k, (m.get(k) || 0) + 1); }
+    return Array.from(m, ([k, count]) => ({ date: k.split('|')[0], mood: k.split('|')[1], count })).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
   return all(`SELECT date,mood,COUNT(*) AS count FROM wellness_checkin
               WHERE date>=DATE('now',?) GROUP BY date,mood ORDER BY date DESC`,[`-${days} days`]);
 }
@@ -2340,7 +2364,7 @@ async function ackCoachFlag(id){
 }
 async function listActiveCoachFlags(){
   return all(`SELECT id,agent_email,set_by,reason,status,created_at FROM coach_flag
-              WHERE status='pending' ORDER BY created_at DESC`);
+              WHERE status='pending' ORDER BY created_at DESC`).then((r) => WS.filterRows(r, { email: 'agent_email' }));
 }
 
 // ── Real-time alerts (#11 Session 2) ──────────────────────────────────
@@ -2413,7 +2437,7 @@ async function getActiveAlerts(limit){
               FROM alert_events
               WHERE acked_at IS NULL
                 AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)
-              ORDER BY created_at DESC LIMIT ?`,[limit || 50]);
+              ORDER BY created_at DESC LIMIT ?`,[limit || 50]).then((r) => WS.filterRows(r, { email: 'agent_email' }));
 }
 
 /** Full audit list, used for retrospective analytics. */
@@ -2422,7 +2446,7 @@ async function getRecentAlerts(days){
   return all(`SELECT id,key,severity,body,data_json,agent_email,created_at,acked_at,acked_by,snoozed_until
               FROM alert_events
               WHERE created_at > datetime('now', ?)
-              ORDER BY created_at DESC LIMIT 500`, [`-${d} days`]);
+              ORDER BY created_at DESC LIMIT 500`, [`-${d} days`]).then((r) => WS.filterRows(r, { email: 'agent_email' }));
 }
 
 async function ackAlert(id, byEmail){
@@ -2555,13 +2579,13 @@ async function getRecentAnomalies(days){
   const d = Math.min(Math.max(parseInt(days)||7, 1), 90);
   return all(`SELECT * FROM anomaly_events
               WHERE created_at > datetime('now', ?)
-              ORDER BY created_at DESC, severity LIMIT 500`, [`-${d} days`]);
+              ORDER BY created_at DESC, severity LIMIT 500`, [`-${d} days`]).then((r) => WS.filterRows(r, { email: 'agent_email' }));
 }
 
 async function getActiveAnomalies(limit){
   return all(`SELECT * FROM anomaly_events
               WHERE acked_at IS NULL
-              ORDER BY created_at DESC LIMIT ?`,[limit || 100]);
+              ORDER BY created_at DESC LIMIT ?`,[limit || 100]).then((r) => WS.filterRows(r, { email: 'agent_email' }));
 }
 
 async function getAnomaliesForAgent(email, days){
@@ -2603,7 +2627,7 @@ async function getAllSchedules(){
   const rows = await all(`SELECT id,agent_email,day_of_week,start_time,end_time,timezone,
                           is_working_day,effective_from,effective_to,created_at,created_by
                           FROM agent_schedules
-                          ORDER BY agent_email, day_of_week, effective_from DESC`);
+                          ORDER BY agent_email, day_of_week, effective_from DESC`).then((r) => WS.filterRows(r, { email: 'agent_email' }));
   const out = {};
   for (const r of rows) {
     if (!out[r.agent_email]) out[r.agent_email] = [];
@@ -2667,7 +2691,9 @@ async function deleteAllSchedulesForAgent(email){
 
 /** Returns unack count grouped by severity, used by the bell badge. */
 async function getAlertCounts(){
-  const rows = await all(`SELECT severity, COUNT(*) AS n FROM alert_events
+  const rows = WS.current() ? Object.entries((await WS.filterRows(await all(`SELECT severity, agent_email FROM alert_events
+                          WHERE acked_at IS NULL AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)`), { email: 'agent_email' })).reduce((o, r) => { o[r.severity] = (o[r.severity] || 0) + 1; return o; }, {})).map(([severity, n]) => ({ severity, n }))
+    : await all(`SELECT severity, COUNT(*) AS n FROM alert_events
                           WHERE acked_at IS NULL
                             AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)
                           GROUP BY severity`);
@@ -2700,7 +2726,7 @@ module.exports={
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
   // #16 Session 11, predictive abandonment
   savePredictModel, loadPredictModel,
-  initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
+  initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,setAgentWorkspace,callScopeSql,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAgentCallListRange,getAbandonedCalls,getDateWindow,
   getCallLogStats,getCallVolume,getCallLogsFull,

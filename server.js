@@ -356,7 +356,12 @@ global.broadcastSseEvent = function broadcastSseEvent(eventType, payload, target
   const safePayload = JSON.stringify(payload || {});
   const msg = `event: ${eventType}\ndata: ${safePayload}\n\n`;
   let sent = 0;
+  // Batch 360: an event about one person reaches only the pages open in that person's workspace; alerts with no person
+  // (queue, coverage) are T1's
+  const who = payload && (payload.agentEmail || payload.agent_email || payload.email);
+  const evWs = who ? WSX.wsOfEmail(who) : (/^(alert|anomaly)$/.test(eventType) ? 't1' : null);
   for (const [res, meta] of sseClients) {
+    if (evWs && meta.ws && meta.ws !== evWs) continue;
     if (!targetRole || targetRole === 'all' || meta.role === targetRole) {
       try { res.write(msg); sent++; } catch (e) { /* dead socket, close handler will clean up */ }
     }
@@ -506,14 +511,21 @@ async function sendBreakChatNotification(event, opts){
   if(grp && Array.isArray(ALERT_HOOKS.breakEvents) && !ALERT_HOOKS.breakEvents.includes(grp)){
     return { notified: false, status: 'filtered', response: `${grp} events are not posted (Alerts page setting)` };
   }
-  if(!GOOGLE_CHAT_WEBHOOK_URL){
+  // Batch 360: Adit Pay people's breaks post to the Adit Pay break space (Alerts page in the Adit Pay workspace), never to T1's
+  let breakHook = GOOGLE_CHAT_WEBHOOK_URL;
+  if (event.email && (await WSX.members()).emails.has(String(event.email).toLowerCase())) {
+    if (ALERT_HOOKS.payBreakLogEnabled === false) return { notified: false, status: 'disabled', response: 'Adit Pay break log alerts are turned off on the Alerts page' };
+    breakHook = ALERT_HOOKS.payBreakLog || process.env.ADITPAY_BREAK_WEBHOOK_URL || '';
+    if (!breakHook) return { notified: false, status: 'disabled', response: 'No Adit Pay break log space is set (Alerts page, Adit Pay workspace)' };
+  }
+  if(!breakHook){
     return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
   }
   // Batch 197: Google Chat sometimes answers 500 "Internal error" for a while. Each post has a 10 s limit and is tried
   // again after 3, 10 and 30 seconds; if the card keeps failing, a plain text message (no photo) is sent instead.
   const post = async (body) => {
     try {
-      const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
+      const resp = await fetch(breakHook, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
       const text = await resp.text().catch(() => '');
       return { ok: resp.ok, status: resp.ok ? 'sent' : `http_${resp.status}`, retry: resp.status >= 500 || resp.status === 429, response: (text || resp.statusText || 'ok').slice(0, 500) };
     } catch (e) { return { ok: false, status: 'network', retry: true, response: String(e.message || e).slice(0, 300) }; }
@@ -761,7 +773,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const ct = require('./lib/call-qa-teach'); ct.setDB(db); await ct.initSchema(); ct.setDeps({ ai: require('./lib/ai'), cq }); }
       cq.setDeps({ ai: require('./lib/ai'), kbq: (sql, limit) => require('./lib/aditkb-service').query(sql, limit), crmCoql: (q) => require('./lib/crm-qa').coql(q),
         rc: { listRecordedCalls: (ext, a, b) => require('./rc-service').listRecordedCalls(ext, a, b), fetchRecording: (u) => require('./rc-service').fetchRecording(u) },
-        agents: () => getMonitoredAgents(), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
+        // Batch 360: AI call QA scores T1 calls with T1's rubric; Adit Pay calls are left out until it has its own
+        agents: () => WSX.unscoped(() => getMonitoredAgents()).then((l) => l.filter((a) => String(a.workspace || 't1') !== 'aditpay')), dayWindow: getDateWindow, ticketContext: (tid) => escalationWatch.ticketContext(tid), expert: require('./lib/expert'),
         deskIdOf: async (email) => {
           if (!_deskIds.m || Date.now() - _deskIds.at > 3600e3) {
             const byName = new Map(); for (const [id, n] of await require('./lib/desk-lifecycle').agentNameById()) byName.set(String(n).trim().toLowerCase(), String(id).replace(/\D/g, ''));
@@ -1061,18 +1074,21 @@ async function sessionRoleFor(email) {
   return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true, workspaces: (settings && settings.workspaces) || ['t1'] };
 }
 
-// Batch 359: people whose access covers only the Adit Pay workspace (no T1) reach Pay home, Expert and the account
-// lookup Expert uses; every T1 page and its data is refused on the server, whatever the page in the browser asks for.
-const PAY_ONLY_ALLOW = /^\/api\/(aditpay\/|guides\/|client-lookup\/|logout\b|role-check\b)/;
-const _payOnly = new Map();
-async function isPayOnly(email) {
-  const k = String(email || '').toLowerCase(), hit = _payOnly.get(k);
-  if (hit && Date.now() - hit.at < 30000) return hit.v;
+// Batch 360: workspaces. Adit Pay uses the same tool as T1 CS, scoped to its own team (lib/ws-context.js). The pages
+// below are T1 processes with no Adit Pay counterpart, so they are refused in the Adit Pay workspace.
+const WSX = require('./lib/ws-context');
+const T1_ONLY_API = /^\/api\/(bonus|hof|cf1025|review|audits|escalations|voip-project|voip-share|ticket-hygiene|livechat|chat-reports|predict|custom-reports|appraisals|weekend-sheet|report-sheet|roster|issue-watch|outage-watch\/check|brain|agent-learning|ticket-feedback|zoho\/rules|call-summary\/backfill|call-qa|anomaly|anomalies\/agent|tickets|my-tickets|ticket-entry|ticket\/weekend-log|check-ticket|hof)(\/|$|\?)/;
+const _wsOf = new Map();
+async function workspacesOf(email) {
+  const k = String(email || '').toLowerCase(), hit = _wsOf.get(k);
+  if (hit && Date.now() - hit.at < 20000) return hit.v;
   const st = await getRoleSettingsForEmail(k).catch(() => null);
-  const v = !!(st && Array.isArray(st.workspaces) && !st.workspaces.includes('t1'));
-  _payOnly.set(k, { at: Date.now(), v }); if (_payOnly.size > 500) _payOnly.delete(_payOnly.keys().next().value);
+  const v = (st && Array.isArray(st.workspaces) && st.workspaces.length) ? st.workspaces : ['t1'];
+  _wsOf.set(k, { at: Date.now(), v }); if (_wsOf.size > 500) _wsOf.delete(_wsOf.keys().next().value);
   return v;
 }
+async function isPayOnly(email) { return !(await workspacesOf(email)).includes('t1'); }
+const TOOL_ADMIN_API = /^\/api\/(admin\/|guides\/|db-|storage|ai\/|alert-hub|t1-alerts\/config|sessions\/all|announce|roles|access-requests|agent-pages|tours|updates)(\/|$|\?)/;
 async function requireAuth(req, res, next) {
   try {
     const token = req.cookies[SESSION_COOKIE];
@@ -1087,8 +1103,14 @@ async function requireAuth(req, res, next) {
       if (await guides.isGuest(session.email)) return res.status(403).json({ success: false, guidesOnly: true, error: 'This account can only use the Support guides page.' });
       return res.status(403).json({ success: false, assessmentOnly: true, error: 'This account can only use the Assessments page.' });
     }
-    if (!PAY_ONLY_ALLOW.test(String(req.path || '')) && await isPayOnly(session.email)) return res.status(403).json({ success: false, payOnly: true, error: 'Your access covers the Adit Pay workspace only.' });
-    next();
+    // Batch 360: the request runs in one workspace (T1 CS or Adit Pay): the one the page asked for when the person has
+    // it, else their first. Everything below reads only that workspace's people, calls and tickets.
+    const allowed = await workspacesOf(session.email);
+    let ws = String(req.get('x-workspace') || req.query.ws || '').toLowerCase();
+    if (!allowed.includes(ws)) ws = allowed.includes('t1') ? 't1' : allowed[0];
+    req.workspace = ws;
+    if (ws === 'aditpay' && T1_ONLY_API.test(String(req.path || ''))) return res.status(403).json({ success: false, wsBlocked: true, error: 'This page is part of T1 CS only.' });
+    return WSX.run(ws, () => next());
   } catch(e) { res.status(500).json({ success: false, error: 'Auth check failed' }); }
 }
 
@@ -1100,8 +1122,9 @@ async function requireAdmin(req, res, next) {
       if (!settings || settings.role !== 'admin') {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
-      // Batch 359: an Adit Pay-only admin is an admin of Pay home only, never of T1 settings, rules or Expert teaching
-      if (Array.isArray(settings.workspaces) && !settings.workspaces.includes('t1') && !String(req.path || '').startsWith('/api/aditpay/')) return res.status(403).json({ success: false, payOnly: true, error: 'Admin access required' });
+      // Batch 360: an Adit Pay-only admin manages the Adit Pay workspace; tool-wide settings (Expert teaching, storage,
+      // debug, AI) stay with T1 admins
+      if (Array.isArray(settings.workspaces) && !settings.workspaces.includes('t1') && TOOL_ADMIN_API.test(String(req.path || ''))) return res.status(403).json({ success: false, payOnly: true, error: 'Admin access required' });
       next();
     } catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
   });
@@ -1186,17 +1209,20 @@ app.post('/api/agents', requireAdmin, async (req, res) => {
   const { name, extension, email } = req.body;
   if (!name || !extension) return res.status(400).json({ success: false, error: 'Name and extension required' });
   try {
-    await addAgent(name.trim(), extension.trim(), email ? email.trim() : null);
-    insertAuditLog(req.session.email, 'agent_added', name.trim(), `ext:${extension}`).catch(()=>{});
-    _cache.delete('agents:list'); // #3: invalidate cache on mutation
+    // Batch 360: an agent added in the Adit Pay workspace belongs to Adit Pay
+    await addAgent(name.trim(), extension.trim(), email ? email.trim() : null, req.workspace);
+    insertAuditLog(req.session.email, 'agent_added', name.trim(), `ext:${extension}${req.workspace === 'aditpay' ? ' (Adit Pay)' : ''}`).catch(()=>{});
+    _cache.delete('agents:list'); _cache.delete('aditpay:agents:list'); // #3: invalidate cache on mutation
     res.json({ success: true, message: `${name} added` });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.delete('/api/agents/:extension', requireAdmin, async (req, res) => {
   // #3: invalidate cache on mutation (runs before handler)
-  _cache.delete('agents:list');
+  _cache.delete('agents:list'); _cache.delete('aditpay:agents:list');
   try {
+    // Batch 360: only an agent of the workspace the admin is in
+    if (!(await getMonitoredAgents()).some((a) => String(a.extension) === String(req.params.extension))) return res.status(404).json({ success: false, error: 'Agent not found in this workspace' });
     await removeAgent(req.params.extension);
     insertAuditLog(req.session.email, 'agent_removed', req.params.extension).catch(()=>{});
     res.json({ success: true });
@@ -1292,10 +1318,11 @@ app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) =>
 const rcAudit = require('./lib/rc-audit');
 const _availCache = new Map();
 let _auditSample = null;
-async function availabilityBody(date, fresh) {
+async function availabilityBody(date0, fresh) {
   const tz = 'America/Chicago';
   const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  const hit = _availCache.get(date);
+  const date = date0, ck = WSX.key(date0); // Batch 360: kept per workspace
+  const hit = _availCache.get(ck);
   if (hit && hit.body && Date.now() - hit.at < (hit.ttl || 90000) && !fresh) return hit.body;
   if (hit && hit.p) return hit.p;
   const p = (async () => {
@@ -1323,11 +1350,11 @@ async function availabilityBody(date, fresh) {
         note: denied ? 'RingCentral did not allow the Audit Trail. Add the "Read Audit Trail" permission to the RC app. Showing presence data meanwhile.' : 'Audit Trail was not reachable (' + String(auditErr.message).slice(0, 120) + '). Showing presence data meanwhile.' };
     }
     // Batch 248: a past day read from the Audit Trail does not change, so it is kept for 12 hours (fewer RC calls).
-    _availCache.set(date, { at: Date.now(), body, ttl: body.source === 'audit' && date < today ? 12 * 3600e3 : 90000 });
+    _availCache.set(ck, { at: Date.now(), body, ttl: body.source === 'audit' && date < today ? 12 * 3600e3 : 90000 });
     return body;
   })();
-  _availCache.set(date, Object.assign({}, hit || { at: 0 }, { p }));
-  try { return await p; } finally { const h = _availCache.get(date); if (h && h.p === p) delete h.p; }
+  _availCache.set(ck, Object.assign({}, hit || { at: 0 }, { p }));
+  try { return await p; } finally { const h = _availCache.get(ck); if (h && h.p === p) delete h.p; }
 }
 app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) => {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
@@ -1432,7 +1459,11 @@ async function expertWorkload(req, question) {
 }
 
 app.get('/api/live-status', requireAuth, async (req, res) => {
-  try { res.json({ success: true, data: await fetchLiveCallStatus() }); }
+  try {
+    // Batch 360: only the agents of the request's workspace
+    const snap = await fetchLiveCallStatus(), ids = new Set((await getMonitoredAgents()).flatMap((a) => [String(a.rc_id || ''), String(a.extension || '')]).filter(Boolean));
+    res.json({ success: true, data: Object.fromEntries(Object.entries(snap || {}).filter(([k]) => ids.has(String(k)))) });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -1447,7 +1478,7 @@ app.get('/api/live-stream', requireAuth, async (req, res) => {
   const clientRole = req.session?.email
     ? await getRoleSettingsForEmail(req.session.email).then(s => s?.role || 'agent').catch(() => 'agent')
     : 'agent';
-  sseClients.set(res, { role: clientRole });
+  sseClients.set(res, { role: clientRole, ws: req.workspace || 't1' });
   req.on('close', () => sseClients.delete(res));
 
   // Heartbeat every 25 seconds, prevents proxies from closing idle connections
@@ -1758,7 +1789,8 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
 });
 
 app.get('/api/roles', requireAdmin, async (req, res) => {
-  try { res.json({ success: true, data: await getAllRoles() }); }
+  // Batch 360: each workspace lists the people who can open it
+  try { const w = req.workspace || 't1'; res.json({ success: true, data: (await getAllRoles()).filter((r) => { const ws = String(r.workspaces || '').split(',').map((x) => x.trim()).filter(Boolean); return (ws.length ? ws : ['t1']).includes(w); }) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -1768,7 +1800,10 @@ app.post('/api/roles', requireAdmin, async (req, res) => {
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
   if (!['admin','agent','qa','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, QA or readonly' });
   try {
+    const isNew = !(await getRoleSettingsForEmail(email.trim().toLowerCase()).catch(() => null));
     await setRole(email.trim().toLowerCase(), role, req.session.email || addedBy, breakbotEnabled);
+    // Batch 360: someone added from the Adit Pay workspace starts in Adit Pay
+    if (isNew && req.workspace === 'aditpay') { await setWorkspaces(email.trim().toLowerCase(), ['aditpay']).catch(() => {}); _wsOf.delete(email.trim().toLowerCase()); WSX.bust(); }
     invalidateMembers();
     const st = await accessReq.statusOf(email).catch(() => null);
     if (st && st.status !== 'approved') await accessReq.decide(email, 'approved', req.session.email, { role }).catch(() => {});
@@ -1799,6 +1834,7 @@ app.patch('/api/roles/:email/workspaces', requireAdmin, async (req, res) => {
   try {
     const r = await setWorkspaces(email, list);
     if (!r.changes) return res.status(404).json({ success: false, error: 'Person not found in Access Control' });
+    _wsOf.delete(email); WSX.bust(); // Batch 360
     invalidateMembers();
     insertAuditLog(req.session.email, 'workspaces_set', email, `workspaces:${r.workspaces.join(',')}`).catch(()=>{});
     res.json({ success: true, workspaces: r.workspaces });
@@ -2157,6 +2193,10 @@ app.get('/api/audit-log', requireAdmin, async (req, res) => {
     const data = await new Promise((rs, rj) => db.all(sql, [...p, limit], (e, rows) => e ? rj(e) : rs(rows || [])));
     const facets = await new Promise((rs) => db.all(`SELECT action, COUNT(*) AS n FROM audit_log GROUP BY action ORDER BY n DESC`, [], (e, rows) => rs(e ? [] : rows)));
     const actors = await new Promise((rs) => db.all(`SELECT lower(actor_email) AS actor, COUNT(*) AS n FROM audit_log GROUP BY lower(actor_email) ORDER BY n DESC LIMIT 100`, [], (e, rows) => rs(e ? [] : rows)));
+    if (req.workspace === 'aditpay') { // Batch 360: changes by or about the Adit Pay team, and Adit Pay settings
+      const m = await WSX.members(), isPay = (x) => m.emails.has(String(x || '').toLowerCase());
+      return res.json({ success: true, data: data.filter((r) => isPay(r.actor_email) || isPay(r.target) || /aditpay|adit pay/i.test(String(r.action || '') + ' ' + String(r.target || '') + ' ' + String(r.detail || ''))), facets, actors: actors.filter((a) => isPay(a.actor)), limit });
+    }
     res.json({ success: true, data, facets, actors, limit });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -3584,31 +3624,60 @@ function t1Alerts() {
       const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
       return (a && a.chat_id) || await getGoogleSubForEmail(email);
     },
-    getMonitoredAgents,
+    // Batch 360: T1's alerts watch T1 agents only
+    getMonitoredAgents: async () => (await WSX.unscoped(() => getMonitoredAgents())).filter((a) => String(a.workspace || 't1') !== 'aditpay'),
     db: require('./database'),
     fetchFn: fetch,
   });
   return _t1Alerts;
 }
+// Batch 360: the Adit Pay workspace gets the same ticket alerts for its own Desk team (T2 - Adit Pay) and agents, with
+// its own settings and Chat space. Queue and coverage alerts stay T1's (they read the Customer Service queue).
+let _payAlerts = null;
+const alertsCfgKey = (ws) => (ws === 'aditpay' ? 'pay_alerts_config' : 't1_alerts_config');
+function payAlerts() {
+  if (_payAlerts) return _payAlerts;
+  const ds = require('./lib/desk-service');
+  _payAlerts = createT1Alerts({
+    isPaused: async () => { const p = await getPauseStatus(); return !!p.fullPaused; },
+    getConfigRaw: async () => { let c = {}; try { c = JSON.parse((await getSetting('pay_alerts_config')) || '{}') || {}; } catch (e) { c = {}; }
+      return JSON.stringify({ mentionLabel: 'Sandy', ...c, queue: { enabled: false }, coverage: { enabled: false }, tickets: { ...(c.tickets || {}), teamIds: [WSX.deskTeam('aditpay')] } }); },
+    fetchLive: async () => ({}), fetchQueueWaiting: async () => ({ calls: [] }),
+    deskGet: (path) => ds.fetchRaw(path),
+    fetchDepartments: () => ds.fetchDepartments(),
+    inAlertHours, alertHoursLabel: ALERT_HOURS.label,
+    reviewMsgOn: () => false, reviewHook: () => '',
+    resolveChatId: async (email) => {
+      const a = (await WSX.unscoped(() => getMonitoredAgents()).catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
+      return (a && a.chat_id) || await getGoogleSubForEmail(email);
+    },
+    getMonitoredAgents: async () => (await WSX.unscoped(() => getMonitoredAgents())).filter((a) => String(a.workspace || 't1') === 'aditpay'),
+    db: require('./database'),
+    fetchFn: fetch,
+  });
+  return _payAlerts;
+}
+const alertsOf = (ws) => (ws === 'aditpay' ? payAlerts() : t1Alerts());
 const maskUrl = (u) => (u ? String(u).replace(/(key=)[^&]+/, '$1••••').replace(/(token=)[^&]+/, '$1••••') : '');
 app.get('/api/t1-alerts/state', requireAuth, async (req, res) => {
   try {
     const isAdmin = (await getRoleForEmail(req.session.email).catch(() => null)) === 'admin' && req.query.scope !== 'me';
-    res.json({ success: true, isAdmin, ...t1Alerts().publicState(isAdmin ? null : String(req.session.email || '').toLowerCase()) });
+    res.json({ success: true, isAdmin, ...alertsOf(req.workspace).publicState(isAdmin ? null : String(req.session.email || '').toLowerCase()) });
   } catch (e) { res.status(500).json({ success: false, error: 'Could not load alerts' }); }
 });
 app.post('/api/t1-alerts/scan', requireAdmin, rateLimit(6, 60000), async (req, res) => {
-  try { await t1Alerts().tickTickets(true); res.json({ success: true, ...t1Alerts().publicState(null) }); }
+  try { const A = alertsOf(req.workspace); await A.tickTickets(true); res.json({ success: true, ...A.publicState(null) }); }
   catch (e) { res.status(500).json({ success: false, error: 'Scan failed' }); }
 });
 app.get('/api/t1-alerts/config', requireAdmin, async (req, res) => {
-  const cfg = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
-  res.json({ success: true, config: { ...cfg, webhookUrl: undefined, webhookSet: !!cfg.webhookUrl, webhookMasked: maskUrl(cfg.webhookUrl) }, mentionPreview: (await t1Alerts().resolveMention(cfg)).text, mention: await t1Alerts().resolveMention(cfg) });
+  const A = alertsOf(req.workspace), cfg = req.workspace === 'aditpay' ? await A.config() : A.mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+  res.json({ success: true, config: { ...cfg, webhookUrl: undefined, webhookSet: !!cfg.webhookUrl, webhookMasked: maskUrl(cfg.webhookUrl) }, mentionPreview: (await A.resolveMention(cfg)).text, mention: await A.resolveMention(cfg) });
 });
 app.post('/api/t1-alerts/config', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {};
-    const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+    const cfgKey = alertsCfgKey(req.workspace); // Batch 360: each workspace keeps its own alert settings
+    const cur = alertsOf(req.workspace).mergeConfig(await getSetting(cfgKey).catch(() => null));
     const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, lo), hi) : d; };
     const next = { ...cur };
     if (typeof b.webhookUrl === 'string' && b.webhookUrl.trim()) {
@@ -3626,15 +3695,15 @@ app.post('/api/t1-alerts/config', requireAdmin, rateLimit(20, 60000), async (req
       lookbackDays: num(b.tickets.lookbackDays, 3, 1, 14), scanMin: num(b.tickets.scanMin, 5, 2, 60),
       teamIds: Array.isArray(b.tickets.teamIds) ? b.tickets.teamIds.map(String).slice(0, 50) : cur.tickets.teamIds };
     if (next.tickets.overMin <= next.tickets.unassignedMin) next.tickets.overMin = next.tickets.unassignedMin + 30;
-    await setSetting('t1_alerts_config', JSON.stringify(next), req.session.email);
-    t1Alerts().invalidate();
-    insertAuditLog(req.session.email, 't1_alerts_config', 'saved', `webhook:${next.webhookUrl ? 'set' : 'none'}`).catch(() => {});
+    await setSetting(cfgKey, JSON.stringify(next), req.session.email);
+    alertsOf(req.workspace).invalidate();
+    insertAuditLog(req.session.email, cfgKey, 'saved', `webhook:${next.webhookUrl ? 'set' : 'none'}`).catch(() => {});
     res.json({ success: true });
   } catch (e) { res.status(500).json({ success: false, error: 'Could not save' }); }
 });
 app.post('/api/t1-alerts/test', requireAdmin, rateLimit(5, 60000), async (req, res) => {
-  const a = t1Alerts(); const cfg = await a.config();
-  const r = await a.post('test', null, `🔔 Test from T1 CS Stars alerts. ${(await a.resolveMention(cfg)).text || ''} If you can read this, queue, coverage and ticket alerts will land here.`.trim(), cfg);
+  const a = alertsOf(req.workspace); const cfg = await a.config();
+  const r = await a.post('test', null, `🔔 Test from ${WSX.label(req.workspace)} alerts. ${(await a.resolveMention(cfg)).text || ''} If you can read this, queue, coverage and ticket alerts will land here.`.trim(), cfg);
   res.json({ success: r.ok, error: r.error });
 });
 app.get('/api/t1-alerts/log', requireAdmin, async (req, res) => {
@@ -3686,6 +3755,18 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const ast = await assessments.alertStatus().catch(() => ({ cfg: { enabled: true }, hook: '', sentToday: 0, failedToday: 0, last: null, due: [], recent: [] }));
     const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
     const lastPoll = (_pollLog || []).slice(-1)[0] || null;
+    // Batch 360: the Adit Pay workspace has its own break log space and ticket alerts (the rest are T1 processes)
+    if (req.workspace === 'aditpay') {
+      const pcfg = await payAlerts().config();
+      const payHook = h.payBreakLog || process.env.ADITPAY_BREAK_WEBHOOK_URL || '';
+      return res.json({ success: true, workspace: 'aditpay', channels: [
+        { key: 'breakLog', label: 'Break log', desc: 'Every break, BRB, training, QA, internal call and shift start or end tap by the Adit Pay team.', enabled: h.payBreakLogEnabled !== false,
+          source: h.payBreakLog ? 'app' : (process.env.ADITPAY_BREAK_WEBHOOK_URL ? 'env' : 'none'), masked: maskHook(payHook), events: ['shift', 'break', 'brb', 'training', 'qa', 'internal'], timing: { note: 'Posts the moment a tap is recorded. Without a space here, Adit Pay taps are kept in the tool only.' } },
+        { key: 'liveOps', label: 'Ticket alerts', desc: 'Unassigned T2 - Adit Pay tickets and assigned tickets with no action.', enabled: pcfg.enabled !== false,
+          source: pcfg.webhookUrl ? 'app' : 'none', masked: maskHook(pcfg.webhookUrl), parts: { tickets: pcfg.tickets.enabled },
+          timing: { fields: [{ path: 'tickets.scanMin', label: 'Ticket check: every', unit: 'min', value: pcfg.tickets.scanMin, min: 2, max: 120 }] } },
+      ] });
+    }
     res.json({ success: true, channels: [
       { key: 'breakLog', label: 'Break log', desc: 'Every break, BRB, training, QA, internal call and shift start or end tap.', enabled: h.breakLogEnabled !== false,
         source: hookSource(h.breakLog, ENV_GOOGLE_CHAT_WEBHOOK_URL), masked: maskHook(GOOGLE_CHAT_WEBHOOK_URL), events: Array.isArray(h.breakEvents) ? h.breakEvents : ['shift', 'break', 'brb', 'training', 'qa', 'internal'],
@@ -3726,6 +3807,25 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
     if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review', 'reviewMsg'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
     const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
     if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
+    // Batch 360: Adit Pay workspace settings
+    if (req.workspace === 'aditpay') {
+      if (key === 'breakLog') {
+        const h = await loadAlertHooks();
+        if (url) h.payBreakLog = url;
+        if (b.clearWebhook) delete h.payBreakLog;
+        if (typeof b.enabled === 'boolean') h.payBreakLogEnabled = b.enabled;
+        await setSetting('alert_hooks', JSON.stringify(h), req.session.email); await loadAlertHooks();
+      } else if (key === 'liveOps') {
+        let cur = {}; try { cur = JSON.parse((await getSetting('pay_alerts_config')) || '{}') || {}; } catch (e) { cur = {}; }
+        if (url) cur.webhookUrl = url;
+        if (b.clearWebhook) cur.webhookUrl = '';
+        if (typeof b.enabled === 'boolean') cur.enabled = b.enabled;
+        if (b.tickets && b.tickets.scanMin != null) cur.tickets = { ...(cur.tickets || {}), scanMin: Math.max(2, Math.min(120, Math.round(Number(b.tickets.scanMin)) || 5)) };
+        await setSetting('pay_alerts_config', JSON.stringify(cur), req.session.email); payAlerts().invalidate();
+      } else return res.status(400).json({ success: false, error: 'This alert is part of T1 CS only' });
+      insertAuditLog(req.session.email, 'alert_channel_saved', 'aditpay:' + key, url ? 'webhook set' : b.clearWebhook ? 'webhook cleared' : '').catch(() => {});
+      return res.json({ success: true });
+    }
     if (key === 'assessments') {
       await assessments.setAlertCfg({ webhook: url || undefined, clearWebhook: !!b.clearWebhook, enabled: typeof b.enabled === 'boolean' ? b.enabled : undefined, closing: b.closing, overdue: b.overdue, low: b.low, stuck: b.stuck });
     } else if (key === 'review') {
@@ -3774,6 +3874,12 @@ app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, r
   const key = String((req.body || {}).key || '');
   await loadAlertHooks();
   let url = '';
+  if (req.workspace === 'aditpay') { // Batch 360
+    url = key === 'breakLog' ? (ALERT_HOOKS.payBreakLog || process.env.ADITPAY_BREAK_WEBHOOK_URL || '') : key === 'liveOps' ? (await payAlerts().config()).webhookUrl : '';
+    if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
+    try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: `🔔 Test: Adit Pay ${key === 'breakLog' ? 'break log' : 'ticket'} alerts will post in this space.` }), signal: AbortSignal.timeout(15000) }); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); }
+    catch (e) { return res.json({ success: false, error: 'Could not reach Google Chat' }); }
+  }
   if (key === 'breakLog') url = GOOGLE_CHAT_WEBHOOK_URL;
   else if (key === 'missed') url = MISSED_CALL_WEBHOOK_URL;
   else if (key === 'summaries') url = ALERT_HOOKS.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL;
@@ -6406,23 +6512,26 @@ app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
 
 // ─── #3: In-memory cache with TTL ────────────────────────────────────────────
 const _cache = new Map();
+// Batch 360: every cached answer is kept per workspace, so an Adit Pay page never gets a T1 answer or the reverse.
 function cacheGet(key) {
+  key = WSX.key(key);
   const e = _cache.get(key);
   if (!e) return null;
   if (Date.now() > e.exp) { _cache.delete(key); return null; }
   return e.val;
 }
 function cacheSet(key, val, ttlMs) {
-  _cache.set(key, { val, exp: Date.now() + ttlMs });
+  _cache.set(WSX.key(key), { val, exp: Date.now() + ttlMs });
 }
 // Like cacheWrap, but callers that arrive while the first one is still running share its answer (no duplicate queries).
 const _inflight = new Map();
 function sharedWrap(key, ttlMs, fn) {
+  const ik = WSX.key(key);
   const hit = cacheGet(key);
   if (hit !== null) return Promise.resolve(hit);
-  if (_inflight.has(key)) return _inflight.get(key);
-  const p = Promise.resolve().then(fn).then((v) => { cacheSet(key, v, ttlMs); return v; }).finally(() => _inflight.delete(key));
-  _inflight.set(key, p);
+  if (_inflight.has(ik)) return _inflight.get(ik);
+  const p = Promise.resolve().then(fn).then((v) => { cacheSet(key, v, ttlMs); return v; }).finally(() => _inflight.delete(ik));
+  _inflight.set(ik, p);
   return p;
 }
 async function cacheWrap(key, ttlMs, fn) {
@@ -10529,6 +10638,7 @@ async function start() {
       if (typeof global._startAlertCron === 'function') global._startAlertCron();
       // Session 51: T1 CS alerts to Google Chat (queue wait, coverage, tickets)
       try { t1Alerts().start(); } catch (e) { console.error('❌ T1 alerts start:', e.message); }
+      try { payAlerts().start(); } catch (e) { console.error('❌ Adit Pay alerts start:', e.message); } // Batch 360
       // Session 11: nightly predict-model retraining at 03:30 CST
       if (typeof global._startPredictCron === 'function') global._startPredictCron();
       // #20 Session 6: anomaly cron (fires at 03:00 CST daily)

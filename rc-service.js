@@ -1,6 +1,11 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId, countCallLogsForAgentSince } = require('./database');
+const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents: dbMonitoredAgents, updateAgentRcId, countCallLogsForAgentSince } = require('./database');
+const WSX = require('./lib/ws-context'); // Batch 360: T1 CS / Adit Pay workspace of the request
+// Batch 360: RingCentral polling, presence snapshots and webhooks always cover every agent of both workspaces, even when
+// a page request starts them; only the T1 queue summary below narrows to T1 agents on purpose.
+const getMonitoredAgents = () => WSX.unscoped(() => dbMonitoredAgents());
+const t1Agents = async () => (await getMonitoredAgents()).filter((a) => String(a.workspace || 't1') !== 'aditpay');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -625,8 +630,42 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
 // Now: one fetch at a time per day/timezone, and callers that pass
 // maxWaitMs get the last good summary (marked stale) if the fresh one takes
 // longer than that; the fetch keeps running and refills the cache.
+// Batch 360: the Adit Pay workspace reads its own queue (Adit Pay, ext 9018). Its call log gives inbound, answered,
+// voicemail and abandoned calls; outbound comes from the Adit Pay agents' own call log rows.
+const PAY_QUEUE_ID = () => String(process.env.ADITPAY_QUEUE_ID || '63673493004');
+const PAY_QUEUE_NAME = () => String(process.env.ADITPAY_QUEUE_NAME || 'Adit Pay');
+const _payQ = new Map();
+async function fetchPayQueueSummary(dateStr, timeZone = 'America/Chicago') {
+  const k = dateStr + '|' + timeZone, hit = _payQ.get(k);
+  if (hit && Date.now() - hit.at < 60000) return hit.v;
+  const { start, end } = getDateWindow(dateStr, timeZone);
+  const qcalls = await listExtensionCallLogRecords(PAY_QUEUE_ID(), { dateFrom: start.toISOString(), dateTo: end.toISOString(), type: 'Voice', view: 'Simple', perPage: 250 });
+  const seen = new Set(), byResult = {}, abandonedCalls = [];
+  let inbound = 0, vm = 0, ab = 0, talk = 0, talkN = 0, longest = 0;
+  for (const c of qcalls) {
+    if (normalizeCallResult(c.direction) !== 'inbound') continue;
+    const key = c.sessionId || c.telephonySessionId || c.id; if (seen.has(key)) continue; seen.add(key);
+    const r = normalizeCallResult(c.result); byResult[r || 'none'] = (byResult[r || 'none'] || 0) + 1;
+    inbound++;
+    if (r.includes('voicemail')) { vm++; continue; }
+    if (['accepted', 'call connected', 'connected', 'completed'].includes(r)) { if (c.duration > 0) { talk += c.duration; talkN++; } continue; }
+    ab++; longest = Math.max(longest, c.duration || 0);
+    abandonedCalls.push({ agentId: 'queue:' + PAY_QUEUE_ID(), agentName: PAY_QUEUE_NAME(), extension: null, callId: c.id, result: c.result, ringDuration: c.duration || 0, holdDuration: 0, startTime: c.startTime });
+  }
+  let outbound = 0;
+  try { const dbm = require('./database'); const ids = (await getMonitoredAgents()).filter((a) => String(a.workspace || 't1') === 'aditpay').map((a) => a.rc_id).filter(Boolean);
+    if (ids.length) { const row = await new Promise((rs) => dbm.db.get(`SELECT COUNT(*) AS n FROM call_logs WHERE direction='Outbound' AND start_time >= ? AND start_time < ? AND agent_id IN (${ids.map(() => '?').join(',')})`, [start.toISOString(), end.toISOString(), ...ids], (e, r) => rs(e ? null : r))); outbound = row ? row.n : 0; } } catch (e) { /* outbound stays 0 */ }
+  abandonedCalls.sort((a, b) => (b.ringDuration || 0) - (a.ringDuration || 0));
+  const v = { date: dateStr, timeZone, source: 'queue-call-log', inboundCount: inbound, outboundCount: outbound, voicemailCount: vm, abandonedCount: ab, transferCount: 0,
+    ahtInbound: talkN ? Math.round(talk / talkN) : 0, ahtOutbound: 0, avgRingTime: 0, avgHoldTime: 0, totalHoldTime: 0, longestRing: longest, matchedCalls: inbound + outbound, abandonedCalls,
+    queueSource: { queue: PAY_QUEUE_NAME(), inbound, voicemail: vm, abandoned: ab, byResult } };
+  _payQ.set(k, { at: Date.now(), v });
+  return v;
+}
+
 const _queueDashInflight = new Map();
 async function fetchQueueDashboardSummaryFast(dateStr, timeZone = 'America/Chicago', maxWaitMs = 6000) {
+  if (WSX.current() === 'aditpay') return fetchPayQueueSummary(dateStr, timeZone).catch(() => (_payQ.get(dateStr + '|' + timeZone) || {}).v || null);
   const key = dateStr + '|' + timeZone;
   let p = _queueDashInflight.get(key);
   if (!p) {
@@ -650,6 +689,11 @@ async function fetchQueueDashboardSummaryFast(dateStr, timeZone = 'America/Chica
 }
 
 async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'America/Chicago') {
+  if (WSX.current() === 'aditpay') return fetchPayQueueSummary(dateStr, timeZone);
+  return fetchT1QueueDashboardSummary(dateStr, force, timeZone);
+}
+// The T1 queue summary counts the T1 agents only (Adit Pay agents' calls stay out of it), whoever asked for it.
+async function fetchT1QueueDashboardSummary(dateStr, force = false, timeZone = 'America/Chicago') {
   const now = Date.now();
   if (
     !force &&
@@ -663,7 +707,7 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
 
   try {
     await resolveAgentRcIds();
-    const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+    const agents = (await t1Agents()).filter(a => a.rc_id);
     const lookups = buildAgentLookups(agents);
     if (!customerServiceQueueId) await findQueueId();
 

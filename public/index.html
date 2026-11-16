@@ -22,6 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
+<script src="/ws-fetch.js?v=1.0.0"></script>
 <script src="/adit-reset.js?v=1.19.132"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
@@ -109,7 +110,7 @@
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
 <script src="/appraisal.js?v=1.3.0" defer></script>
 <script src="/app-header.js?v=1.3.0" defer></script>
-<script src="/workspace.js?v=1.2.0" defer></script>
+<script src="/workspace.js?v=1.3.0" defer></script>
 <script src="/aditpay-home.js?v=1.3.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
@@ -4094,9 +4095,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   try{ if(sessionStorage.getItem('rcNext') === '/guides'){ sessionStorage.removeItem('rcNext'); goGuidesChecked(); return; } }catch(e){}
   if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} goAssessChecked(); return; }
   try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); goAssessChecked(); return; } }catch(e){}
-  // Batch 359: a sign-in that started from /pay goes back there, and Adit Pay-only people always open /pay
+  // Batch 359: a sign-in that started from /pay goes back there
   try{ if(sessionStorage.getItem('rcNext') === '/pay'){ sessionStorage.removeItem('rcNext'); window.location.replace('/pay'); return; } }catch(e){}
-  try{ var _ws=JSON.parse(localStorage.getItem('rcWorkspaces')||'null'); if(Array.isArray(_ws) && _ws.length && _ws.indexOf('t1')<0){ window.location.replace('/pay'); return; } }catch(e){}
   // DO NOT clear rcActiveView here, agents need it to restore their last page.
   // We only override it if the stored view doesn't match the user's role
   // (e.g. admin logged in, last session was agent view, keep admin default).
@@ -4400,6 +4400,7 @@ function openBreakbotPreview(el){
 
 function switchAgentSection(section,el){
   if(section==='writer'){ section='dashboard'; el=document.getElementById('agent-tab-dashboard'); } // AI Write was removed; old links land on the dashboard
+  if(window.__ws==='aditpay' && /^(bonus|tickets|audits|qateach|callqa|hall)$/.test(section)){ section='dashboard'; el=document.getElementById('agent-tab-dashboard'); } // Batch 360: T1 processes, not in Adit Pay
   if(isQaRole() && section==='dashboard'){ section='qateach'; el=document.getElementById('agent-tab-qateach'); } // QA has no Home; this is not an error
   if(section!=='breakbot' && !agentPageOn(section)){
     if(!window.__sasToastAt || Date.now()-window.__sasToastAt>4000){ window.__sasToastAt=Date.now(); showToast('This page is turned off for your account.','warning'); }
@@ -9166,6 +9167,8 @@ function syncAdminSubtabActive(tab){
 function switchTab(tab,el){
   // Batch 261: the Ticket Report page is gone; old links, shortcuts and saved tabs open Ticket hygiene.
   if(tab==='tickets') tab='ticket-hygiene';
+  // Batch 360: pages that are T1 processes open their Adit Pay counterpart in the Adit Pay workspace
+  if(window.__ws==='aditpay'){ var _payMap={ 'ticket-hygiene':'ticket-lifecycle', 'voip-project':'ticket-lifecycle', 'voip-fix':'ticket-lifecycle', 'custom-reports':'ticket-lifecycle', 'cf1025':'live', 'roster':'breaks', 'call-qa':'calllogs', 'callsummary':'calllogs', 'digest':'alerts', 'alerts-missed':'alerts', 'bonus':'aditpay', 'bonus-calc':'aditpay', 'appraisals':'aditpay', 'hall':'aditpay', 'audits':'aditpay', 'ai-agent':'aditpay', 'debug':'aditpay' }; if(_payMap[tab]) tab=_payMap[tab]; }
   // Save scroll position of the page we're LEAVING
   try{
     const curTab = localStorage.getItem('rcActiveTab') || 'live';

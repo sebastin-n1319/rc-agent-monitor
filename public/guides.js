@@ -68,7 +68,7 @@
   function renderUser() {
     if (EMBED || !S.me) return;
     var kids = [h('b', { text: S.me.name || S.me.email })];
-    if (S.me.payOnly) kids.push(h('a', { class: 'gd-btn', href: '/pay', text: 'Pay home' })); // Batch 359
+    if (S.me.payOnly) kids.push(h('a', { class: 'gd-btn', href: '/', text: 'Open the tool' })); // Batch 360: the tool opens in Adit Pay
     else if (S.me.member) kids.push(h('a', { class: 'gd-btn', href: '/', text: 'Open the tool' }));
     else if (S.me.assess) kids.push(h('a', { class: 'gd-btn', href: '/assess', text: 'Tests' }));
     kids.push(h('button', { type: 'button', class: 'gd-btn', text: 'Sign out', onclick: function () {
