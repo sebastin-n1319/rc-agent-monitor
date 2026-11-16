@@ -13,8 +13,11 @@ describe('Adit Pay home (Batch 355)', () => {
     expect(ap._sql.oldest()).toMatch(/status <> 'Closed'/);
   });
   it('builds the summary and keeps going when one source is not readable', async () => {
-    ap.setDeps({ query: async (sql) => {
-      if (/deal_terminal_usage/.test(sql)) throw new Error('no access');
+    ap.setDeps({ coql: async (q) => {
+      if (/from Stripe_Terminal/.test(q)) throw new Error('no CRM access');
+      if (/Terminal_Count\) from Adit_Pay/.test(q)) return { data: [{ 'SUM(Transaction_Value_Last_30_Days)': 1000, 'SUM(Transaction_Value_CP_Last_30_Days)': 700, 'SUM(No_of_Transactions_Last_30_Days)': 10, 'SUM(No_of_CP_Transactions_Last_30_Days)': 6, 'SUM(Terminal_Count)': 4 }] };
+      return { data: [] };
+    }, query: async (sql) => {
       if (/GROUP BY 1 ORDER BY 2 DESC$/.test(sql.trim()) && /t\.status, count/.test(sql)) return { rows: [{ status: 'Open', n: 5 }, { status: 'Pending Customer', n: 2 }] };
       if (/AS who/.test(sql)) return { rows: [{ who: 'Sandy Clark (Adit Pay)', n: 4, stale: 2, oldest: '2026-10-01' }] };
       if (/aria_deal_rows/.test(sql)) return { rows: [{ deals: 10, mrr: '1234.5' }] };
@@ -28,6 +31,10 @@ describe('Adit Pay home (Batch 355)', () => {
     expect(s.terminals.withTerminal).toBe(27);
     expect(s.terminals.notUsing).toBe(7);
     expect(s.terminals.ok).toBe(false);
-    expect(s.missing).toContain('volume');
+    expect(s.revenue.vol30).toBe(1000);
+    expect(s.revenue.cnp30).toBe(300);
+    expect(s.revenue.avgTicket).toBe(100);
+    expect(s.terminals.cpShare).toBe(0.7);
+    expect(s.missing).toContain('crm:termStatus');
   });
 });

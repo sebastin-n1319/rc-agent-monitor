@@ -10,7 +10,7 @@
     '.aph-hd h2{font:600 20px Poppins,sans-serif;color:#072B40;margin:0}',
     '.aph-hd p{margin:2px 0 0;color:#6B849A;font-size:12.5px}',
     '.aph-hd button{margin-left:auto;border:1px solid #E6ECF4;background:#fff;border-radius:10px;padding:7px 12px;font:600 12px Poppins,sans-serif;color:#072B40;cursor:pointer}',
-    '.aph-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}',
+    '.aph-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}','.aph-split{display:flex;height:10px;border-radius:999px;overflow:hidden;background:#F0F2F5;margin:4px 0 6px}.aph-split i{display:block;height:100%}','.aph-leg{display:flex;gap:14px;font-size:11.5px;color:#3A5068;flex-wrap:wrap}.aph-leg span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;background:var(--c)}',
     '.aph-k{position:relative;background:#fff;border:1px solid #E6ECF4;border-radius:14px;padding:12px 14px 12px 16px;overflow:hidden}',
     '.aph-k:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#36AFB4}',
     '.aph-k.c2:before{background:#21AAE0}.aph-k.c3:before{background:#2DDC96}.aph-k.c4:before{background:#072B40}.aph-k.c5:before{background:#FBC84B}',
@@ -73,27 +73,38 @@
       '<div class="aph-k"><label>Open tickets</label><b>' + n(q.open) + '</b><small>' + n(q.stale) + ' open more than 5 days</small></div>' +
       '<div class="aph-k c2"><label>Created / closed (7 days)</label><b>' + n(q.created7d) + ' / ' + n(q.closed7d) + '</b><small>' + (q.closed7d >= q.created7d ? 'Closing faster than new ones arrive' : 'More arriving than closing') + '</small></div>' +
       '<div class="aph-k c3"><label>Median resolution (30 days)</label><b>' + (q.medianBusinessHours30d == null ? '-' : q.medianBusinessHours30d + 'h') + '</b><small>Business hours, Mon to Fri 7 AM to 7 PM CT</small></div>' +
-      '<div class="aph-k c4"><label>Adit Pay MRR</label><b>' + money(r.mrr, true) + '</b><small>' + n(r.deals) + ' deals with Adit Pay revenue</small></div>' +
-      '<div class="aph-k c5"><label>Practices with a terminal</label><b>' + n(t.withTerminal) + '</b><small>' + n(t.notUsing) + ' have one but are not using Pay</small></div>' +
+      '<div class="aph-k c4"><label>Processing volume (30 days)</label><b>' + money(r.vol30, true) + '</b><small>' + n(r.txns30) + ' transactions · ' + n(r.active30d) + ' practices</small></div>' +
+      '<div class="aph-k c5"><label>Adit Pay MRR</label><b>' + money(r.mrr, true) + '</b><small>' + n(r.deals) + ' deals with Adit Pay revenue</small></div>' +
       '</div>';
     h += '<div class="aph-g2">';
     h += '<div class="aph-c"><h3>Queue by owner</h3><p class="sub">Open T2 Adit Pay tickets now</p>' + (q.owners.length ? bars(q.owners, function (o) { return o.who; }, function (o) { return o.open; }, function (o) { return o.stale ? '<span class="st">' + o.stale + ' stale</span>' : ''; }) : '<div class="aph-empty">No open tickets.</div>') +
       '<p class="sub" style="margin-top:10px">' + q.byStatus.map(function (s) { return esc(s.status) + ' ' + s.n; }).join(' · ') + '</p></div>';
     h += '<div class="aph-c"><h3>What tickets are about</h3><p class="sub">Last 30 days, from the ticket subject</p>' + (d.topics.length ? bars(d.topics, function (x) { return x.topic; }, function (x) { return x.n; }) : '<div class="aph-empty">No tickets in 30 days.</div>') + '</div>';
     h += '</div><div class="aph-g2">';
-    h += '<div class="aph-c"><h3>Revenue and volume</h3><p class="sub">Adit Pay revenue across deals; processing volume since each practice started on Pay</p><div class="aph-stats">' +
+    var cpPct = r.vol30 ? Math.round(100 * (r.cp30 || 0) / r.vol30) : 0;
+    h += '<div class="aph-c"><h3>Revenue and volume</h3><p class="sub">Adit Pay revenue from deals; volume from the CRM Adit Pay module</p>' + (r.crmOk ? '<div class="aph-stats">' +
+      '<div><label>Volume (30 days)</label><b>' + money(r.vol30) + '</b></div>' +
+      '<div><label>Volume (90 days, active practices)</label><b>' + money(r.vol90, true) + '</b></div>' +
+      '<div><label>Transactions (30 days)</label><b>' + n(r.txns30) + '</b></div>' +
+      '<div><label>Average transaction</label><b>' + money(r.avgTicket) + '</b></div>' +
+      '<div><label>Average per business day</label><b>' + money(r.dailyAvg, true) + '</b></div>' +
       '<div><label>Adit Pay MRR</label><b>' + money(r.mrr) + '</b></div>' +
-      '<div><label>Deals with Pay revenue</label><b>' + n(r.deals) + '</b></div>' +
-      '<div><label>Processing volume (all time)</label><b>' + (r.volumeOk ? money(r.volume, true) : '-') + '</b></div>' +
-      '<div><label>Practices processing (30 days)</label><b>' + (r.volumeOk ? n(r.active30d) : '-') + '</b></div>' +
-      '</div>' + (r.volumeOk ? '' : '<p class="aph-note">Processing volume needs read access to the Stripe charges data in AditKB.</p>') + '</div>';
-    h += '<div class="aph-c"><h3>Terminals</h3><p class="sub">Card present payments on Adit Pay terminals</p><div class="aph-stats">' +
-      '<div><label>Terminal volume (all time)</label><b>' + (t.ok ? money(t.volume, true) : '-') + '</b></div>' +
-      '<div><label>Terminal transactions</label><b>' + (t.ok ? n(t.txns) : '-') + '</b></div>' +
-      '<div><label>' + (t.ok ? 'Practices using a terminal' : 'Practices with a terminal') + '</label><b>' + (t.ok ? n(t.practices) : n(t.withTerminal)) + '</b></div>' +
-      '<div><label>Used in the last 30 days</label><b>' + (t.ok ? n(t.active30d) : '-') + '</b></div></div>' +
-      (t.top.length ? '<table class="aph-t"><thead><tr><th>Busiest terminal practices</th><th>Terminals</th><th>Volume</th><th>Last used</th></tr></thead><tbody>' + t.top.map(function (x) { return '<tr><td>' + esc(x.practice) + '</td><td>' + n(x.terminals) + '</td><td>' + money(x.volume, true) + '</td><td>' + esc(ago(x.last)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="aph-note">' + (t.ok ? 'No terminal activity yet.' : 'Terminal detail needs read access to the Stripe terminal data in AditKB.') + '</p>') + '</div>';
+      '</div><div class="aph-split" title="Card present ' + cpPct + '%"><i style="width:' + cpPct + '%;background:#36AFB4"></i><i style="width:' + (100 - cpPct) + '%;background:#21AAE0"></i></div>' +
+      '<div class="aph-leg"><span style="--c:#36AFB4">Terminal (card present) ' + money(r.cp30, true) + ', ' + cpPct + '%</span><span style="--c:#21AAE0">Online (card not present) ' + money(r.cnp30, true) + '</span></div>'
+      : '<div class="aph-stats"><div><label>Adit Pay MRR</label><b>' + money(r.mrr) + '</b></div><div><label>Deals with Pay revenue</label><b>' + n(r.deals) + '</b></div></div><p class="aph-note">Volume needs the CRM Adit Pay module, which the tool could not read just now.</p>') + '</div>';
+    h += '<div class="aph-c"><h3>Terminals</h3><p class="sub">Every reader in the CRM Stripe Terminal module</p>' + (t.ok ? '<div class="aph-stats">' +
+      '<div><label>Delivered</label><b>' + n(t.delivered) + '</b></div>' +
+      '<div><label>Used in the last 30 days</label><b>' + n(t.used30) + '</b></div>' +
+      '<div><label>On the way (ready, shipped, pending)</label><b>' + n(t.inTransit) + '</b></div>' +
+      '<div><label>Returned or lost</label><b>' + n(t.returned) + '</b></div>' +
+      '<div><label>Terminal volume (30 days)</label><b>' + money(t.vol30, true) + '</b></div>' +
+      '<div><label>Practices with a terminal, not using Pay</label><b>' + n(t.notUsing) + '</b></div>' +
+      '</div>' + (t.readers.length ? '<p class="sub" style="margin:0">Delivered by reader: ' + t.readers.map(function (x) { return esc(x.type) + ' ' + n(x.n); }).join(' · ') + '</p>' : '')
+      : '<div class="aph-stats"><div><label>Practices with a terminal</label><b>' + n(t.withTerminal) + '</b></div><div><label>Not using Pay</label><b>' + n(t.notUsing) + '</b></div></div><p class="aph-note">Terminal detail needs the CRM Stripe Terminal module, which the tool could not read just now.</p>') + '</div>';
     h += '</div>';
+    if (d.topPractices && d.topPractices.length) h += '<div class="aph-c" style="margin-bottom:14px"><h3>Top practices by volume</h3><p class="sub">Last 30 days</p><table class="aph-t"><thead><tr><th>Practice</th><th>Volume</th><th>Terminal share</th><th>Transactions</th><th>Terminals</th><th>Last payment</th></tr></thead><tbody>' + d.topPractices.map(function (x) {
+      return '<tr><td>' + esc(x.practice) + '</td><td>' + money(x.vol30) + '</td><td>' + (x.vol30 ? Math.round(100 * (x.cp30 || 0) / x.vol30) + '%' : '-') + '</td><td>' + n(x.txns30) + '</td><td>' + n(x.terminals) + '</td><td>' + esc(ago(x.last)) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
     h += '<div class="aph-c aph-ad" style="margin-bottom:14px"><h3>Adit Pay adoption</h3><p class="sub">Current category of each deal (' + n(a.total) + ' deals)</p>' + (a.buckets.length ? bars(a.buckets, function (x) { return x.k + '. ' + x.label; }, function (x) { return x.n; }, null, function (x) { return x.k === 7 ? 'k7' : x.k === 3 ? 'k3' : x.k >= 8 ? 'kx' : ''; }) : '<div class="aph-empty">Not available.</div>') + '</div>';
     h += '<div class="aph-c"><h3>Oldest open tickets</h3><p class="sub">Start here: the ones waiting longest</p>' + (q.oldest.length ? '<table class="aph-t"><thead><tr><th>Ticket</th><th>Practice and subject</th><th>Owner</th><th>Status</th><th>Age</th></tr></thead><tbody>' + q.oldest.map(function (x) {
       var days = Math.floor((Date.now() - new Date(x.created).getTime()) / 864e5);
