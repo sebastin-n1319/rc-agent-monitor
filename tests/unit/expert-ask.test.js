@@ -310,3 +310,21 @@ describe('account numbers in a question (Batch 357)', () => {
     expect(T.detect('#428732 how to handle')).toBe('428732');
   });
 });
+
+describe('email text inside a signature block (Batch 361)', () => {
+  const T = require('../../lib/expert-ticket');
+  it('reads a message typed inside the signature block (#430002)', () => {
+    const html = '<div style="font-size:10pt"><div id="x_431725401signature"><div class="x_pre"><span><em>Hello Sofia,<br>Please move the termination date to December 15, 2026.<br><br>Thank you,<br><br>Pat, Practice Manager</em></span></div><div>Sample Kids Dental</div><div>55 Main Street</div></div></div>';
+    const r = T._bodyOf({ content: html });
+    expect(r.sigOnly).toBe(false);
+    expect(r.text).toMatch(/move the termination date/);
+  });
+  it('reads the message under an empty signature block', () => {
+    const r = T._bodyOf({ content: '<div id="Signature"></div><div>Hi team, the forms are not syncing for two patients.</div>' });
+    expect(r.text).toMatch(/forms are not syncing/);
+  });
+  it('still calls a signature with a review tagline only a signature', () => {
+    const r = T._bodyOf({ content: '<div class="gmail_signature"><div>Pat Lee</div><div>Office Manager</div><div>Leave us a review on Google!</div></div>' });
+    expect(r.sigOnly).toBe(true);
+  });
+});
