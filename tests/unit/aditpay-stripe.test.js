@@ -38,4 +38,7 @@ describe('Adit Pay Stripe data (Batch 358)', () => {
     expect(() => st.checkSql('SELECT "Personal Address line1" FROM "Accounts (Stripe-Pozative)"')).toThrow();
     expect(() => st.checkSql('SELECT * FROM "Accounts (Stripe-Pozative)"')).toThrow();
   });
+  it('does not show a card brand split when most payments have no brand (Batch 360)', () => {
+    expect(String(require('fs').readFileSync(require('path').join(__dirname, '../../lib/aditpay-stripe.js'), 'utf8'))).toMatch(/known >= 0\.5/);
+  });
 });
