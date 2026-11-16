@@ -18,3 +18,14 @@ describe('Expert drafts during an outage (Batch 353)', () => {
     expect(await ed._outageMatch('4', { subject: 'How do I add a user' })).toBeNull();
   });
 });
+
+describe('never expose app or company issues to clients (Batch 354)', () => {
+  it('flags outage, bug, other offices and developer talk', () => {
+    const t = ed._toneIssues;
+    expect(t('We are aware of an outage affecting several practices.').map((x) => x.kind)).toContain('exposes an app or company issue');
+    expect(t('Our developers are working on a bug in the app.').length).toBe(1);
+    expect(t('Other offices are reporting the same thing.').length).toBe(1);
+    expect(t('I have escalated this to our engineering team.').length).toBe(1);
+    expect(t('Please go to Settings > Phone and select your greeting.').length).toBe(0);
+  });
+});
