@@ -83,7 +83,7 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.28.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.6.0">
+<link rel="stylesheet" href="/access-control.css?v=1.6.1">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
@@ -11357,7 +11357,7 @@ function acxPeopleSuggest(input, multi){
   const part=()=>{ const v=input.value; if(!multi) return {pre:'',q:v.trim()}; const i=Math.max(v.lastIndexOf(','),v.lastIndexOf(';')); return {pre:i<0?'':v.slice(0,i+1)+' ',q:v.slice(i+1).trim()}; };
   const close=()=>{ list.hidden=true; input.setAttribute('aria-expanded','false'); input.removeAttribute('aria-activedescendant'); at=-1; };
   const mark=()=>{ [...list.children].forEach((li,i)=>li.setAttribute('aria-selected',i===at?'true':'false')); if(at>=0){ input.setAttribute('aria-activedescendant',list.children[at].id); list.children[at].scrollIntoView({block:'nearest'}); } };
-  const pick=(p)=>{ const {pre}=part(); input.value=multi?(pre+p.email+', '):p.email; close(); input.focus(); };
+  const pick=(p)=>{ const {pre}=part(); input.value=multi?(pre+p.email+', '):p.email; close(); input.focus(); if(input.id==='roleEmail' && window.acxCountEmails) acxCountEmails(); };
   const draw=()=>{
     list.innerHTML='';
     if(!items.length){ close(); return; }
@@ -11390,7 +11390,7 @@ function acxPeopleSuggest(input, multi){
   },true);
   input.addEventListener('blur',()=>setTimeout(close,120));
 }
-(function(){ const go=()=>{ acxPeopleSuggest(document.getElementById('roleEmail'),false); acxPeopleSuggest(document.getElementById('acx-guides-emails'),true); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go(); })();
+(function(){ const go=()=>{ acxPeopleSuggest(document.getElementById('roleEmail'),true); acxPeopleSuggest(document.getElementById('acx-guides-emails'),true); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go(); })();
 // Batch 156: Support guides guest list
 function guidesLink(){ return location.origin+'/guides'; }
 function acxCopy(text, btn, done){

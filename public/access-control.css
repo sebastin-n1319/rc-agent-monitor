@@ -301,3 +301,15 @@ html.dark-mode #adit-admin-sidebar .sb-item .pu-badge,html.dark-mode #adit-agent
 .acx-mf{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #F0F2F5}
 @media (max-width:700px){.acx-wtiles{grid-template-columns:repeat(2,1fr)}.acx-mg{grid-template-columns:1fr}.acx-table td:nth-child(4),.acx-table th:nth-child(4){display:none}}
 html.dark-mode .acx-mc{background:#0F2433;color:#E6ECF4}html.dark-mode .acx-wt{background:#0F2433;color:#E6ECF4;border-color:#1E3A4D}
+
+/* Batch 368: People list kept compact: one line per person (avatar, name and email side by side), small workspace tiles */
+.acx-person{flex-direction:row;align-items:center;gap:8px;text-align:left}
+#mainApp .acx .acx-table td{padding:5px 12px!important}
+.acx-table .acx-av{width:24px;height:24px;font-size:9.5px}
+.acx-table .acx-pn{flex-direction:row;align-items:baseline;gap:8px;min-width:0}
+.acx-table .acx-name{white-space:nowrap}
+.acx-table .acx-email{max-width:260px}
+.acx-wtiles{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
+.acx-wt{padding:4px 10px 4px 12px;border-radius:999px;display:inline-flex;align-items:baseline;gap:6px}
+.acx-wt b{display:inline;font-size:13px}
+.acx-wt span{font-size:11px}
