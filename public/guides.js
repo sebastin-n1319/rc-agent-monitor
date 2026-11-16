@@ -68,7 +68,8 @@
   function renderUser() {
     if (EMBED || !S.me) return;
     var kids = [h('b', { text: S.me.name || S.me.email })];
-    if (S.me.member) kids.push(h('a', { class: 'gd-btn', href: '/', text: 'Open the tool' }));
+    if (S.me.payOnly) kids.push(h('a', { class: 'gd-btn', href: '/pay', text: 'Pay home' })); // Batch 359
+    else if (S.me.member) kids.push(h('a', { class: 'gd-btn', href: '/', text: 'Open the tool' }));
     else if (S.me.assess) kids.push(h('a', { class: 'gd-btn', href: '/assess', text: 'Tests' }));
     kids.push(h('button', { type: 'button', class: 'gd-btn', text: 'Sign out', onclick: function () {
       fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }).finally(function () { try { localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); } catch (e) {} location.replace('/?next=/guides'); });

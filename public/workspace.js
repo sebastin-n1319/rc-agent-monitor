@@ -234,6 +234,8 @@
       if (!s || !s.success) return;
       var list = Array.isArray(s.workspaces) ? s.workspaces : ['t1'];
       lsSet('rcWorkspaces', JSON.stringify(list));
+      // Batch 359: Adit Pay-only people use the Adit Pay page, not the T1 tool
+      if (list.indexOf('t1') < 0 && /^\/?$/.test(location.pathname)) { location.replace('/pay'); return; }
       init(list);
     }).catch(function () {});
     // The header can render after this script: place the switch once it exists.

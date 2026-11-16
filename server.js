@@ -1061,6 +1061,18 @@ async function sessionRoleFor(email) {
   return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true, workspaces: (settings && settings.workspaces) || ['t1'] };
 }
 
+// Batch 359: people whose access covers only the Adit Pay workspace (no T1) reach Pay home, Expert and the account
+// lookup Expert uses; every T1 page and its data is refused on the server, whatever the page in the browser asks for.
+const PAY_ONLY_ALLOW = /^\/api\/(aditpay\/|guides\/|client-lookup\/|logout\b|role-check\b)/;
+const _payOnly = new Map();
+async function isPayOnly(email) {
+  const k = String(email || '').toLowerCase(), hit = _payOnly.get(k);
+  if (hit && Date.now() - hit.at < 30000) return hit.v;
+  const st = await getRoleSettingsForEmail(k).catch(() => null);
+  const v = !!(st && Array.isArray(st.workspaces) && !st.workspaces.includes('t1'));
+  _payOnly.set(k, { at: Date.now(), v }); if (_payOnly.size > 500) _payOnly.delete(_payOnly.keys().next().value);
+  return v;
+}
 async function requireAuth(req, res, next) {
   try {
     const token = req.cookies[SESSION_COOKIE];
@@ -1075,6 +1087,7 @@ async function requireAuth(req, res, next) {
       if (await guides.isGuest(session.email)) return res.status(403).json({ success: false, guidesOnly: true, error: 'This account can only use the Support guides page.' });
       return res.status(403).json({ success: false, assessmentOnly: true, error: 'This account can only use the Assessments page.' });
     }
+    if (!PAY_ONLY_ALLOW.test(String(req.path || '')) && await isPayOnly(session.email)) return res.status(403).json({ success: false, payOnly: true, error: 'Your access covers the Adit Pay workspace only.' });
     next();
   } catch(e) { res.status(500).json({ success: false, error: 'Auth check failed' }); }
 }
@@ -1087,6 +1100,8 @@ async function requireAdmin(req, res, next) {
       if (!settings || settings.role !== 'admin') {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
+      // Batch 359: an Adit Pay-only admin is an admin of Pay home only, never of T1 settings, rules or Expert teaching
+      if (Array.isArray(settings.workspaces) && !settings.workspaces.includes('t1') && !String(req.path || '').startsWith('/api/aditpay/')) return res.status(403).json({ success: false, payOnly: true, error: 'Admin access required' });
       next();
     } catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
   });
@@ -2283,6 +2298,7 @@ app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname,
 // ── Batch 156: Support guides (VoIP, AI) with Ask AI ────────────────────
 // Tool members and the Support guides guest list (Access Control) can open /guides; guests see nothing else.
 app.get(['/guides', '/guides/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'guides.html')));
+app.get(['/pay', '/pay/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'pay.html'))); // Batch 359
 async function guideViewer(req) {
   const token = req.cookies && req.cookies[SESSION_COOKIE];
   if (!token) return null;
@@ -2328,7 +2344,8 @@ app.get('/api/guides/docs', requireAuth, async (req, res) => {
     const admin = member ? await isAdminSession(req).catch(() => false) : false;
     let assess = false;
     try { assess = (await assessments.accessFor(email, member)).allowed; } catch (e) {}
-    res.json({ success: true, docs: guides.docList(), me: { email, name: req.session.name || '', member, admin, assess }, ai: require('./lib/ai').anyConfigured() });
+    const payOnly = member ? await isPayOnly(email) : false; // Batch 359: no Live chats or T1 tool link for Adit Pay-only people
+    res.json({ success: true, docs: guides.docList(), me: { email, name: req.session.name || '', member: member && !payOnly, admin, assess, payOnly }, ai: require('./lib/ai').anyConfigured() });
   } catch (e) { res.status(500).json({ success: false, error: 'Could not load the guides' }); }
 });
 app.get('/api/guides/doc/:id', requireAuth, (req, res) => {
@@ -2874,7 +2891,7 @@ app.post('/api/assess/notifications/read', requireAuth, requireAssessAccess, rat
 
 // Session 68: tool-wide notification centre (main header bell)
 const noticeWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Notification centre error' }); } };
-const isAdminSession = async (req) => { const st = await getRoleSettingsForEmail(req.session.email).catch(() => null); return !!(st && st.role === 'admin'); };
+const isAdminSession = async (req) => { const st = await getRoleSettingsForEmail(req.session.email).catch(() => null); return !!(st && st.role === 'admin' && (!Array.isArray(st.workspaces) || st.workspaces.includes('t1'))); };
 app.get('/api/notices', requireAuth, rateLimit(120, 60000), noticeWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); const adm = await isAdminSession(req); res.json({ success: true, ...(await notices.listFor(req.session.email, adm)), admin: adm, build: assessments.BUILD_ID() }); }));
 app.post('/api/notices/read', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { const b = req.body || {}; await notices.markRead(req.session.email, Array.isArray(b.ids) ? b.ids : null, await isAdminSession(req)); res.json({ success: true }); }));
 app.put('/api/notices/prefs', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { res.json({ success: true, muted: await notices.setMuted(req.session.email, (req.body || {}).muted) }); }));
@@ -10293,7 +10310,10 @@ app.get('/api/aditpay/home', requireAuth, rateLimit(30, 60000), async (req, res)
   try {
     const s = await getRoleSettingsForEmail(req.session.email).catch(() => null);
     if (!s || !(s.workspaces || []).includes('aditpay')) return res.status(403).json({ success: false, error: 'The Adit Pay workspace is not turned on for you. Ask an admin in Team > Access Control.' });
-    res.json({ success: true, data: await require('./lib/aditpay-home').summary({ fresh: req.query.fresh === '1' }) });
+    let data = await require('./lib/aditpay-home').summary({ fresh: req.query.fresh === '1' });
+    // Batch 359: fees collected and network costs are company revenue figures, shown to admins only
+    if (s.role !== 'admin' && data && data.stripe && data.stripe.balance) data = Object.assign({}, data, { stripe: Object.assign({}, data.stripe, { balance: { refunds: data.stripe.balance.refunds } }) });
+    res.json({ success: true, data, admin: s.role === 'admin' });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
 });
 // Batch 358: admin check of the Stripe data in Zoho Analytics (aggregates only) before Pay home uses it.

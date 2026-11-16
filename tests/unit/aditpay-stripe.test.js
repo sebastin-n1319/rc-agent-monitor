@@ -32,4 +32,10 @@ describe('Adit Pay Stripe data (Batch 358)', () => {
     expect(rows).toEqual([{ n: '3' }]);
     expect(calls.length).toBe(3);
   });
+  it('reads only the practice names from the Stripe accounts table (Batch 359)', () => {
+    expect(() => st.checkSql(st.PROBES.top('2026-10-18 00:00:00'))).not.toThrow();
+    expect(() => st.checkSql('SELECT "Dob Year" FROM "Accounts (Stripe-Pozative)"')).toThrow();
+    expect(() => st.checkSql('SELECT "Personal Address line1" FROM "Accounts (Stripe-Pozative)"')).toThrow();
+    expect(() => st.checkSql('SELECT * FROM "Accounts (Stripe-Pozative)"')).toThrow();
+  });
 });

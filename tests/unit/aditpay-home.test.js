@@ -49,5 +49,6 @@ describe('Adit Pay home (Batch 355)', () => {
     expect(Math.round(s.revenue.cpShare * 100)).toBe(93);
     expect(s.terminals.vol30).toBe(24586879);
     expect(s.stripe.balance.refunds.n).toBe(1018);
+    expect(s.topSource).toBeUndefined();
   });
 });

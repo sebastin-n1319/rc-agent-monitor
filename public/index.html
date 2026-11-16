@@ -39,6 +39,7 @@
      (see session-guard.js) before every module downstream has to. -->
 <script src="/session-guard.js?v=1.0.4"></script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/guides'){ sessionStorage.setItem('rcNext','/guides'); } }catch(e){}</script>
+<script>try{ if(new URLSearchParams(location.search).get('next') === '/pay'){ sessionStorage.setItem('rcNext','/pay'); } }catch(e){}</script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/assess'){ sessionStorage.setItem('rcNext','/assess'); var _g=Number(sessionStorage.getItem('rcAssessGo')||0); /* sent here by /assess moments after we sent the person there: the saved sign-in is stale, so drop it and show the login instead of bouncing again */ if(_g && Date.now()-_g < 20000){ localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); ['rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled'].forEach(function(k){sessionStorage.removeItem(k);}); sessionStorage.removeItem('rcAssessGo'); } } }catch(e){}</script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.109" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
@@ -108,8 +109,8 @@
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
 <script src="/appraisal.js?v=1.3.0" defer></script>
 <script src="/app-header.js?v=1.3.0" defer></script>
-<script src="/workspace.js?v=1.1.0" defer></script>
-<script src="/aditpay-home.js?v=1.2.0" defer></script>
+<script src="/workspace.js?v=1.2.0" defer></script>
+<script src="/aditpay-home.js?v=1.3.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -4093,6 +4094,9 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   try{ if(sessionStorage.getItem('rcNext') === '/guides'){ sessionStorage.removeItem('rcNext'); goGuidesChecked(); return; } }catch(e){}
   if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} goAssessChecked(); return; }
   try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); goAssessChecked(); return; } }catch(e){}
+  // Batch 359: a sign-in that started from /pay goes back there, and Adit Pay-only people always open /pay
+  try{ if(sessionStorage.getItem('rcNext') === '/pay'){ sessionStorage.removeItem('rcNext'); window.location.replace('/pay'); return; } }catch(e){}
+  try{ var _ws=JSON.parse(localStorage.getItem('rcWorkspaces')||'null'); if(Array.isArray(_ws) && _ws.length && _ws.indexOf('t1')<0){ window.location.replace('/pay'); return; } }catch(e){}
   // DO NOT clear rcActiveView here, agents need it to restore their last page.
   // We only override it if the stored view doesn't match the user's role
   // (e.g. admin logged in, last session was agent view, keep admin default).

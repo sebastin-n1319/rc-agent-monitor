@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Adit Pay</title>
+<link rel="icon" href="/adit-icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides.css?v=1.5.2">
+<style>
+/* Batch 359: the Adit Pay workspace for people whose access covers Adit Pay only */
+body{font-family:'DM Sans',system-ui,sans-serif}
+.gd-top{border-bottom:2px solid #36AFB4}
+.gd-nav a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;color:inherit;text-decoration:none;font-weight:600;font-size:14px}
+.gd-nav a[aria-current="page"]{background:rgba(54,175,180,.14);color:#1F7F84}
+.pay-main{max-width:1280px;margin:0 auto;padding:18px 16px 40px}
+.pay-msg{padding:40px 16px;text-align:center;color:#4C6378}
+</style>
+</head>
+<body>
+<div class="gd-app">
+  <div class="gd-top" role="banner">
+    <a class="gd-brand" href="/pay"><img src="/adit-icon-32.png" alt="" width="26" height="26"><span>Adit Pay</span></a>
+    <nav class="gd-nav" aria-label="Adit Pay"><a href="/pay" aria-current="page">Pay home</a><a href="/guides#ask">Adit Expert</a></nav>
+    <div class="gd-user" id="pay-user"></div>
+  </div>
+  <main class="pay-main" id="pay-main" tabindex="-1"><div id="aph-root"><p class="pay-msg">Loading...</p></div></main>
+</div>
+<script src="/aditpay-home.js?v=1.3.0"></script>
+<script>
+(function () {
+  function forget() { try { localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); } catch (e) {} }
+  fetch('/api/session', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (s) {
+    if (!s || !s.success) { forget(); location.replace('/?next=/pay'); return; }
+    var ws = Array.isArray(s.workspaces) ? s.workspaces : ['t1'];
+    try { localStorage.setItem('rcWorkspaces', JSON.stringify(ws)); } catch (e) {}
+    var box = document.getElementById('pay-user');
+    var b = document.createElement('b'); b.textContent = s.name || s.email || ''; box.appendChild(b);
+    if (ws.indexOf('t1') >= 0) { var a = document.createElement('a'); a.className = 'gd-btn'; a.href = '/'; a.textContent = 'Open the tool'; box.appendChild(a); }
+    var out = document.createElement('button'); out.type = 'button'; out.className = 'gd-btn'; out.textContent = 'Sign out';
+    out.onclick = function () { fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }).finally(function () { forget(); location.replace('/?next=/pay'); }); };
+    box.appendChild(out);
+    if (ws.indexOf('aditpay') < 0) { document.getElementById('aph-root').innerHTML = '<p class="pay-msg">The Adit Pay workspace is not turned on for you. <a href="/">Open the tool</a></p>'; return; }
+    window.AditPayHome.mount(document.getElementById('aph-root'));
+  }).catch(function () { document.getElementById('aph-root').innerHTML = '<p class="pay-msg">Could not reach the server. Refresh to try again.</p>'; });
+})();
+</script>
+</body>
+</html>
