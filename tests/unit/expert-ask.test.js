@@ -262,3 +262,51 @@ describe('which account a ticket is about (Batch 332)', () => {
     expect(h['Any Escalation Ticket Open']).toBe('Yes - Tier 1 (ESC-6295)');
   });
 });
+
+describe('account details in the first note (Batch 357)', () => {
+  const ex = require('../../lib/expert');
+  const dn = require('../../lib/ticket-doc-note');
+  const accts = { '19105': { id: 'b1', name: 'Smiles Avenue' }, '96759': { id: 'b2', name: 'Adit Support' }, '87700': { id: 'b3', name: 'Shady Spring Dental Care' }, '18940': { id: 'b4', name: 'Overflow Of Customer Service' } };
+  const setup = () => ex.setDeps({ client: {
+    search: async (q) => { const n = String(q).replace(/^acct:/, ''); if (accts[n]) return { results: [{ accountId: accts[n].id }] }; if (/^#/.test(q)) return { results: [{ accountId: 'b4' }] }; if (q === 'deannesings@gmail.com') return { results: [{ accountId: 'b1' }] }; return { results: [] }; },
+    profile: async (id) => { const e = Object.entries(accts).find(([, v]) => v.id === id); return { available: true, accountId: id, header: { account: e[1].name, stage: 'CSM' }, account: { name: e[1].name, number: e[0] }, contacts: [{ name: 'DeAnne Taylor', email: 'deannesings@gmail.com', phone: '805-555-0100' }], detail: {} }; } } });
+  it('Adit\'s own account is never a candidate, so the client account wins (#429462)', async () => {
+    setup();
+    const r = await ex.resolveAccount('429462', { meta: { idents: { accts: [], noteAccts: [{ n: '19105', by: 'a1', name: 'Evan Cruz' }, { n: '96759', by: 'a1', name: 'Evan Cruz' }], emails: ['deannesings@gmail.com'], phones: [], names: [] } } });
+    expect(r.account.number).toBe('19105');
+    const h = dn.header({ ticketNumber: '429462', email: 'deannesings@gmail.com', contact: { firstName: 'DeAnne', lastName: 'Taylor' } }, r, null);
+    expect(h['Account Number']).toBe('19105');
+    expect(h['Callback Number']).toBe('(805) 555-0100');
+  });
+  it('the number in an agent note\'s "Account Number:" field beats one in the prose', async () => {
+    setup();
+    const r = await ex.resolveAccount('1', { meta: { idents: { accts: [], noteAccts: [{ n: '19105', by: 'a1', name: 'Evan', field: true }, { n: '87700', by: 'a1', name: 'Evan' }], emails: [], phones: [], names: [] } } });
+    expect(r.account.number).toBe('19105');
+  });
+  it('a RingCentral call with an unknown number gets empty account fields, not RingCentral\'s Desk account (#428732)', async () => {
+    setup();
+    const r = await ex.resolveAccount('428732', { meta: { idents: { system: true, accts: [], noteAccts: [], emails: [], phones: ['8059013572'], names: [] } } });
+    expect(r.blank).toBe(true);
+    const h = dn.header({ ticketNumber: '428732', email: 'notify@ringcentral.com', phone: '805 901-3572', contact: { lastName: 'RingCentral' } }, null, null);
+    expect(h).toMatchObject({ 'Client Name': '', 'Practice Name': '', 'Account Number': '', 'Deal Stage': '', 'Email': '', 'Any Escalation Ticket Open': '', 'Callback Number': '(805) 901-3572' });
+  });
+  it('a voicemail that says "my account number is 87700" uses that account (#428747)', async () => {
+    setup();
+    const r = await ex.resolveAccount('428747', { meta: { idents: { system: true, accts: ['87700'], noteAccts: [], emails: [], phones: ['7702963767'], names: [] } } });
+    expect(r.account.number).toBe('87700');
+    const h = dn.header({ ticketNumber: '428747', email: 'notify@ringcentral.com', phone: '770 296-3767', contact: { lastName: 'RingCentral' } }, r, null);
+    expect(h['Practice Name']).toBe('Shady Spring Dental Care');
+    expect(h['Client Name']).toBe('');
+    expect('my account number is 87700'.match(/\b(?:acct|account)\s*(?:no\.?|number|#)?\s*(?:is\s+)?[:#-]?\s*(\d{5})\b/i)[1]).toBe('87700');
+  });
+});
+
+describe('account numbers in a question (Batch 357)', () => {
+  const T = require('../../lib/expert-ticket');
+  it('"accnt # 20378" is an account, not a ticket', () => {
+    expect(T.detect('Hello, our accnt # 20378, Helen here. Online scheduling issue')).toBe(null);
+    expect(T.acctNums('Hello, our accnt # 20378, Helen here')).toEqual(['20378']);
+    expect(T.detectAll('account 20378, ticket #428732')).toEqual(['428732']);
+    expect(T.detect('#428732 how to handle')).toBe('428732');
+  });
+});
