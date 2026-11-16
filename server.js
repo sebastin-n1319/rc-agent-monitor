@@ -10425,6 +10425,36 @@ app.get('/api/aditpay/home', requireAuth, rateLimit(30, 60000), async (req, res)
     res.json({ success: true, data, admin: s.role === 'admin' });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
 });
+// Batch 362: the Adit Pay team's daily report (calls, demos and trainings from Avoma, new tickets and follow-ups), the
+// numbers they post in Chat each day. Always the Adit Pay team, whichever workspace the page is in.
+app.get('/api/aditpay/daily', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const s = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+    if (!s || !(s.workspaces || []).includes('aditpay')) return res.status(403).json({ success: false, error: 'The Adit Pay workspace is not turned on for you.' });
+    const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) && String(req.query.date) <= today ? String(req.query.date) : today;
+    const win = getDateWindow(day, tz), from = win.start.toISOString(), to = win.end.toISOString();
+    const data = await WSX.run('aditpay', async () => {
+      const roster = await deskLifecycleAgentRoster();
+      const m = await WSX.members(), emails = Array.from(new Set(roster.emails.concat(Array.from(m.emails)))).sort();
+      const [tk, calls, sess] = await Promise.all([
+        (async () => (await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q: null, agentNames: roster.agentNames, rosterNames: Object.values(roster.agentNames) })))().catch((e) => { console.warn('pay daily tickets:', e.message); return []; }),
+        callAndChatStatsForAgents(emails, from, to).catch(() => ({})),
+        require('./lib/aditpay-daily').sessions(day, emails).catch((e) => { console.warn('pay daily sessions:', e.message); return null; }),
+      ]);
+      const byT = {}; for (const r of tk || []) byT[String(r.email).toLowerCase()] = r;
+      const nameOf = (e) => roster.agentNames[e] || e.split('@')[0].split(/[._]/).map((x) => x.charAt(0).toUpperCase() + x.slice(1)).join(' ');
+      return { sessionsOk: !!sess, people: emails.map((e) => {
+        const c = (calls[e] && calls[e].callStats) || null, t = byT[e] || {}, ss = (sess && sess[e]) || { training: 0, demo: 0, meeting: 0, total: 0, list: [] };
+        return { email: e, name: nameOf(e), tracked: !!roster.agentNames[e],
+          calls: c ? { inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, total: c.totalCalls || 0, missed: c.missedCalls || 0 } : null,
+          tickets: { new: t.tickets_handled_new || 0, followup: t.tickets_handled_followup || 0 }, sessions: ss };
+      }) };
+    });
+    data.people.forEach((p) => { p.chat = require('./lib/aditpay-daily').chatText(p); });
+    res.json({ success: true, date: day, ...data });
+  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
+});
 // Batch 358: admin check of the Stripe data in Zoho Analytics (aggregates only) before Pay home uses it.
 app.get('/api/aditpay/stripe-probe', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { res.json({ success: true, data: await require('./lib/aditpay-stripe').probe({ query: req.query.q ? String(req.query.q).slice(0, 2000) : '' }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }

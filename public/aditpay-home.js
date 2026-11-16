@@ -31,6 +31,9 @@
     '.aph-stats label{display:block;font-size:11px;color:#6B849A}.aph-stats b{font-size:17px;color:#072B40}',
     '.aph-stats small{display:block;font-size:11px;color:#6B849A;margin-top:2px}',
     '.aph-t{width:100%;border-collapse:collapse;font-size:12.5px}',
+    '.aph-dh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.aph-date{font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid #E1E6EB;border-radius:8px}',
+    '.aph-t td small{display:block;color:#6B849A;font-size:11px;margin-top:2px}.aph-sub td{padding-top:0!important;border-top:0!important}.aph-sub ul{margin:0 0 6px 16px;padding:0;font-size:11.5px;color:#4C6378}',
+    '.aph-copy{font:inherit;font-size:11.5px;padding:4px 9px;border:1px solid #CFE9EA;background:#F2FAFA;color:#1F7F84;border-radius:7px;cursor:pointer;white-space:nowrap}',
     '.aph-t th{text-align:left;font-size:11px;color:#6B849A;font-weight:600;padding:6px 6px;border-bottom:1px solid #E6ECF4}',
     '.aph-t td{padding:8px 6px;border-bottom:1px solid #F0F2F5;vertical-align:top;color:#072B40}',
     '.aph-t td small{display:block;color:#6B849A;font-size:11px}',
@@ -123,6 +126,7 @@
       '</div>' + (t.readers.length ? '<p class="sub" style="margin:0">Delivered by reader: ' + t.readers.map(function (x) { return esc(x.type) + ' ' + n(x.n); }).join(' · ') + '</p>' : '')
       : '<div class="aph-stats"><div><label>Practices with a terminal</label><b>' + n(t.withTerminal) + '</b></div><div><label>Not using Pay</label><b>' + n(t.notUsing) + '</b></div></div><p class="aph-note">Terminal detail needs the CRM Stripe Terminal module, which the tool could not read just now.</p>') + '</div>';
     h += '</div>';
+    h += '<div class="aph-c" id="aph-daily" style="margin-bottom:14px"></div>'; // Batch 362: team daily report
     h += stripeCard(d.stripe);
     if (d.topPractices && d.topPractices.length) h += '<div class="aph-c" style="margin-bottom:14px"><h3>Top practices by volume</h3><p class="sub">Last 30 days, ' + (d.topSource === 'stripe' ? 'from Stripe (each practice\'s Stripe account name)' : 'from the CRM Adit Pay module') + '</p><table class="aph-t"><thead><tr><th>Practice</th><th>Volume</th><th>Terminal share</th><th>' + (d.topSource === 'stripe' ? 'Payments' : 'Transactions') + '</th>' + (d.topSource === 'stripe' ? '' : '<th>Terminals</th><th>Last payment</th>') + '</tr></thead><tbody>' + d.topPractices.map(function (x) {
       return '<tr><td>' + esc(x.practice) + '</td><td>' + money(x.vol30) + '</td><td>' + (x.vol30 ? Math.round(100 * (x.cp30 || 0) / x.vol30) + '%' : '-') + '</td><td>' + n(x.txns30) + '</td>' + (d.topSource === 'stripe' ? '' : '<td>' + n(x.terminals) + '</td><td>' + esc(ago(x.last)) + '</td>') + '</tr>';
@@ -134,7 +138,37 @@
     }).join('') + '</tbody></table>' : '<div class="aph-empty">No open tickets.</div>') + '</div>';
     h += '</div>';
     root.innerHTML = h;
+    loadDaily(root.querySelector('#aph-daily'), null);
     var b = root.querySelector('[data-aph="refresh"]'); if (b) b.onclick = function () { load(root, true); };
+  }
+
+  // Batch 362: the daily numbers the team posts in Chat: calls, demos and trainings (Avoma), new tickets and follow-ups
+  var dailyDate = null;
+  function loadDaily(box, day) {
+    if (!box) return;
+    var today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    dailyDate = day || dailyDate || today;
+    box.innerHTML = '<h3>Team daily report</h3><p class="sub">Loading ' + esc(dailyDate) + '...</p>';
+    fetch('/api/aditpay/daily?date=' + encodeURIComponent(dailyDate), { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.success) { box.innerHTML = '<h3>Team daily report</h3><p class="aph-note">' + esc(j.error || 'Could not load the daily report.') + '</p>'; return; }
+      var KL = { training: 'Training / walkthrough', demo: 'Demo / sign-up', meeting: 'Calendar meeting' };
+      var rows = j.people.map(function (p, i) {
+        var c = p.calls, s = p.sessions || {};
+        var list = (s.list || []).map(function (m) { var t = new Date(m.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); return '<li>' + esc(t) + ' CT · ' + esc(KL[m.kind] || m.kind) + (m.onCall ? ' (call)' : '') + ': ' + esc(m.title || 'Meeting') + (m.practice ? ' · ' + esc(m.practice) : '') + (m.minutes ? ' · ' + m.minutes + ' min' : '') + '</li>'; }).join('');
+        return '<tr><td><b>' + esc(p.name) + '</b>' + (p.tracked ? '' : '<small>Not in Manage Agents yet, so no calls</small>') + '</td>' +
+          '<td>' + (c ? n(c.total) + '<small>' + n(c.inbound) + ' in · ' + n(c.outbound) + ' out</small>' : '-') + '</td>' +
+          '<td>' + n(s.total || 0) + (s.total ? '<small>' + [s.training ? s.training + ' training' : '', s.demo ? s.demo + ' demo' : '', s.meeting ? s.meeting + ' other' : ''].filter(Boolean).join(' · ') + '</small>' : '') + '</td>' +
+          '<td>' + n(p.tickets.new) + '</td><td>' + n(p.tickets.followup) + '</td>' +
+          '<td><button type="button" class="aph-copy" data-i="' + i + '">Copy for Chat</button></td></tr>' +
+          (list ? '<tr class="aph-sub"><td colspan="6"><ul>' + list + '</ul></td></tr>' : '');
+      }).join('');
+      box.innerHTML = '<div class="aph-dh"><div><h3>Team daily report</h3><p class="sub">Calls from RingCentral, sessions from Avoma (Google Calendar, Calendly bookings and recorded calls), tickets from Ticket Lifecycle</p></div>' +
+        '<input type="date" class="aph-date" max="' + today + '" value="' + esc(j.date) + '" aria-label="Report date"></div>' +
+        (j.sessionsOk ? '' : '<p class="aph-note">Avoma meetings could not be read just now, so sessions show 0.</p>') +
+        (j.people.length ? '<table class="aph-t"><thead><tr><th>Person</th><th>Calls handled</th><th>Demos / training</th><th>New tickets</th><th>Follow-ups</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' : '<div class="aph-empty">No Adit Pay people yet. Add them in Manage Agents and Access Control.</div>');
+      var inp = box.querySelector('.aph-date'); if (inp) inp.onchange = function () { if (inp.value) loadDaily(box, inp.value); };
+      box.querySelectorAll('.aph-copy').forEach(function (b) { b.onclick = function () { var p = j.people[Number(b.dataset.i)]; try { navigator.clipboard.writeText(p.chat.replace(/^\*[^*]+\*\n/, '')); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy for Chat'; }, 1500); } catch (e) { b.textContent = 'Copy failed'; } }; });
+    }).catch(function () { box.innerHTML = '<h3>Team daily report</h3><p class="aph-note">Could not load the daily report.</p>'; });
   }
 
   function load(root, fresh) {
