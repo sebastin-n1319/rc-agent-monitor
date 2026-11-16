@@ -10288,6 +10288,14 @@ app.post('/api/ticket-hygiene/chat', requireAuth, requireAuditAccess, rateLimit(
 }));
 // Batch 263: Ask AI about tickets (any team). Admins and SPOCs; read-only.
 // Batch 287: the outage banner (everyone signed in sees an active alert) and admin controls.
+// Batch 355: Adit Pay workspace home (queue, revenue, terminals, adoption), for people with the Adit Pay workspace.
+app.get('/api/aditpay/home', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const s = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+    if (!s || !(s.workspaces || []).includes('aditpay')) return res.status(403).json({ success: false, error: 'The Adit Pay workspace is not turned on for you. Ask an admin in Team > Access Control.' });
+    res.json({ success: true, data: await require('./lib/aditpay-home').summary({ fresh: req.query.fresh === '1' }) });
+  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
+});
 app.get('/api/outage-watch', requireAuth, async (req, res) => { try { const a = await require('./lib/outage-watch').current().catch(() => null); res.json({ success: true, alert: a || await require('./lib/issue-watch').current().catch(() => null) }); } catch (e) { res.json({ success: true, alert: null }); } });
 // Batch 351: repeated-issue watch admin controls (check now, recent alerts and the last run, close).
 app.post('/api/issue-watch/check', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, result: await require('./lib/issue-watch').check({ force: true }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); } });

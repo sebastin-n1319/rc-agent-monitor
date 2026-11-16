@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var KEEP_STYLE_IDS = { 'auth-gate-css': true, 'ui-engine-css': true, 'a11y-css': true, 'rx-injected-css': true, 'brain-injected-css': true, 'expert-widget-css': true, 'ob-css2': true, 'ws-css': true }; // Batch 352: outage banner styles are kept
+  var KEEP_STYLE_IDS = { 'auth-gate-css': true, 'ui-engine-css': true, 'a11y-css': true, 'rx-injected-css': true, 'brain-injected-css': true, 'expert-widget-css': true, 'ob-css2': true, 'ws-css': true, 'aph-css': true }; // Batch 352: outage banner styles are kept
   var KEEP_HREF_FRAGMENTS = [
     'fonts.googleapis.com',
     'fonts.gstatic.com',

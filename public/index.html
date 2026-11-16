@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.131"></script>
+<script src="/adit-reset.js?v=1.19.132"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -81,7 +81,7 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.28.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.5.3">
+<link rel="stylesheet" href="/access-control.css?v=1.6.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
@@ -108,7 +108,8 @@
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
 <script src="/appraisal.js?v=1.3.0" defer></script>
 <script src="/app-header.js?v=1.3.0" defer></script>
-<script src="/workspace.js?v=1.0.0" defer></script>
+<script src="/workspace.js?v=1.1.0" defer></script>
+<script src="/aditpay-home.js?v=1.0.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -737,6 +738,11 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
 <!-- ADMIN SIDEBAR: 70px dark navy, icon-only navigation -->
 <nav class="adit-sidebar" id="adit-admin-sidebar">
+  <!-- Batch 355: shown only in the Adit Pay workspace -->
+  <div class="sb-item" id="sb-aditpay" title="Adit Pay home" style="display:none" onclick="sbAdmin('aditpay',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18"/><path class="du" d="M7 15h3"/></svg>
+    <span class="sb-label">Pay home</span>
+  </div>
   <div class="sb-item active" id="sb-live" title="Live Dashboard"
        onclick="sbAdmin('live',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle class="du" cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6"/><path class="nx-wave" d="M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg>
@@ -965,6 +971,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 <div id="adminView">
   <div class="nav">
     <button class="nav-tab active" data-tab="live" onclick="switchTab('live',this)">Live Dashboard</button>
+    <button class="nav-tab" data-tab="aditpay" onclick="switchTab('aditpay',this)">Adit Pay home</button>
     <button class="nav-tab" data-tab="agents" onclick="switchTab('agents',this)">Manage Agents</button>
     <button class="nav-tab" data-tab="access" onclick="switchTab('access',this)">Access Control</button>
     <button class="nav-tab" data-tab="loginlogs" onclick="switchTab('loginlogs',this)">Login Logs</button>
@@ -989,6 +996,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   </div>
 
   <!-- LIVE -->
+  <!-- Batch 355: Adit Pay workspace home -->
+  <div class="page" id="tab-aditpay"><div id="aph-root"></div></div>
   <div class="page active" id="tab-live">
 
     <!-- ── Command Strip ───────────────────────────────────────────────── -->
@@ -1359,6 +1368,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
       <section class="acx-card acx-board" aria-labelledby="acx-board-h">
         <div class="acx-card-hd"><h3 id="acx-board-h">People</h3><span class="acx-chip" id="roleCount">0 people</span></div>
+        <div class="acx-wtiles" id="acxWsTiles" role="group" aria-label="Filter by workspace"></div>
         <div class="acx-toolbar">
           <input type="search" class="acx-search" id="roleSearchInput" placeholder="Search name or email" aria-label="Search people" oninput="handleRoleSearchInput(this.value)">
           <div class="acx-seg" role="group" aria-label="Filter people">
@@ -1370,7 +1380,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         </div>
         <div class="acx-table-wrap">
           <table class="acx-table">
-            <thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Pages</th><th scope="col">Added by</th><th scope="col" class="acx-right">Actions</th></tr></thead>
+            <thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Workspace</th><th scope="col">Pages</th><th scope="col" class="acx-right"><span class="sr-only">Open</span></th></tr></thead>
             <tbody id="roleGrid"><tr><td colspan="5" class="acx-empty">Loading...</td></tr></tbody>
           </table>
         </div>
@@ -9198,6 +9208,7 @@ function switchTab(tab,el){
   if(tab==='alerts-missed' && typeof window.openAlertMissed==='function') window.openAlertMissed();
   if(tab==='cf1025' && typeof window.openCf1025==='function') window.openCf1025();
   if(tab==='debug') loadDebugPanel();
+  if(tab==='aditpay' && window.AditPayHome) window.AditPayHome.mount(document.getElementById('aph-root'));
   // Remember the active tab and restore its saved scroll position
   try{
     localStorage.setItem('rcActiveTab', tab);
@@ -10970,6 +10981,7 @@ function getFilteredRoles(){
   if(roleFilterMode==='admin') rows=rows.filter(r=>r.role==='admin');
   if(roleFilterMode==='agent') rows=rows.filter(r=>r.role!=='admin');
   if(roleFilterMode==='custom') rows=rows.filter(acxIsCustom);
+  if(typeof acxWsFilter!=='undefined' && acxWsFilter!=='all') rows=rows.filter(r=>{ const w=acxWsOf(r); return acxWsFilter==='both'?w.length>1:(w.length===1&&w[0]===acxWsFilter); });
   if(roleSearchTerm){
     const needle=roleSearchTerm.toLowerCase();
     rows=rows.filter(r=>String(r.email||'').toLowerCase().includes(needle)||String(r.added_by||'').toLowerCase().includes(needle)||deriveRoleName(r.email).toLowerCase().includes(needle));
@@ -10999,6 +11011,9 @@ function acxEditorRow(r){
   return '<tr class="acx-pe-row"><td colspan="5"><div class="acx-pe"><div class="acx-pe-hd"><strong>Pages for '+esc(deriveRoleName(r.email))+'</strong><span>'+(r.role==='qa'?'QA defaults: Teach AI, Call QA, Adit Expert and Tests on, the rest off. Home is never shown.':'Default follows the Agent pages switches.')+' Show or Hide applies to this person only.</span><button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="resetPersonPages(this)">Reset to default</button></div><div class="acx-pe-grid">'+items+'</div></div></td></tr>';
 }
 
+function acxWsOf(r){ const v=String(r.workspaces||'t1').split(',').filter(Boolean); return v.length?v:['t1']; }
+function acxInitials(email){ const n=deriveRoleName(email).split(/\s+/).filter(Boolean); return ((n[0]||'?')[0]+(n.length>1?n[n.length-1][0]:'')).toUpperCase(); }
+// Batch 355: compact people list. Click a person to open their card (role, workspace, pages, remove).
 function renderRoleRows(){
   const roleGrid=document.getElementById('roleGrid');
   const roleCount=document.getElementById('roleCount');
@@ -11006,28 +11021,63 @@ function renderRoleRows(){
   const rows=getFilteredRoles();
   const total=roleDirectory.length;
   if(roleCount) roleCount.textContent=rows.length===total?total+' people':rows.length+' of '+total+' people';
-  if(!rows.length){ roleGrid.innerHTML='<tr><td colspan="5" class="acx-empty">No people match this view.</td></tr>'; return; }
+  acxRenderWsTiles();
+  if(!rows.length){ roleGrid.innerHTML='<tr><td colspan="5" class="acx-empty">No people match this view.</td></tr>'; acxRefreshCard(); return; }
   roleGrid.innerHTML=rows.map(r=>{
     const email=String(r.email||'');
-    const isCore=email.toLowerCase()===ACX_OWNER;
     const isSelf=currentEmail && email.toLowerCase()===String(currentEmail||'').toLowerCase();
-    const isAdmin=r.role==='admin';
-    const open=acxOpenEmail===email.toLowerCase();
-    const roleSel='<select class="acx-role-sel" data-email="'+esc(email)+'" aria-label="Role for '+esc(email)+'" onchange="setRoleInline(this)"'+(isCore||isSelf?' disabled title="'+(isCore?'Owner':'Your own role')+'"':'')+'>'+
-      '<option value="agent"'+(isAdmin||r.role==='qa'?'':' selected')+'>Agent</option><option value="qa"'+(r.role==='qa'?' selected':'')+'>QA</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
-    const wsv=String(r.workspaces||'t1').split(',').filter(Boolean).sort().join(',')||'t1';
-    const wsSel='<select class="acx-role-sel acx-ws-sel" data-email="'+esc(email)+'" aria-label="Workspace for '+esc(email)+'" title="Workspace" onchange="setWorkspaceInline(this)">'+
-      '<option value="t1"'+(wsv==='t1'?' selected':'')+'>T1 CS</option><option value="aditpay"'+(wsv==='aditpay'?' selected':'')+'>Adit Pay</option><option value="aditpay,t1"'+(wsv==='aditpay,t1'?' selected':'')+'>Both</option></select>';
-    const pagesBtn=isAdmin?'':'<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" aria-expanded="'+open+'" data-email="'+esc(email)+'" onclick="togglePersonPages(this)">'+(open?'Close':'Pages')+'</button>';
-    const removeBtn=isCore?'<span class="acx-muted" title="The owner account cannot be removed">Owner</span>':(isSelf?'<span class="acx-muted" title="You cannot remove your own access">You</span>':'<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(email)+'" data-role="'+esc(r.role)+'" onclick="deleteRoleBtn(this)">Remove</button>');
-    return '<tr class="'+(open?'is-open':'')+'">'+
-      '<td><div class="acx-person"><span class="acx-name">'+esc(deriveRoleName(email))+(isSelf?' <span class="acx-tag">You</span>':'')+'</span><span class="acx-email" title="'+esc(email)+'">'+esc(email)+'</span></div></td>'+
-      '<td><div class="acx-role-pair">'+roleSel+wsSel+'</div></td>'+
+    const isCore=email.toLowerCase()===ACX_OWNER;
+    const ws=acxWsOf(r), both=ws.length>1, pay=ws[0]==='aditpay'&&!both;
+    const av='acx-av '+(both?'is-both':pay?'is-pay':'is-t1');
+    const roleTxt=r.role==='admin'?'Admin':r.role==='qa'?'QA':'Agent';
+    const wsTxt=both?'T1 CS + Adit Pay':pay?'Adit Pay':'T1 CS';
+    return '<tr class="acx-prow" tabindex="0" role="button" data-email="'+esc(email)+'" onclick="acxOpenCard(this.dataset.email)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();acxOpenCard(this.dataset.email)}" aria-label="Open '+esc(deriveRoleName(email))+'">'+
+      '<td><div class="acx-person"><span class="'+av+'" aria-hidden="true">'+esc(acxInitials(email))+'</span><span class="acx-pn"><span class="acx-name">'+esc(deriveRoleName(email))+(isSelf?' <span class="acx-tag">You</span>':'')+(isCore?' <span class="acx-tag">Owner</span>':'')+'</span><span class="acx-email" title="'+esc(email)+'">'+esc(email)+'</span></span></div></td>'+
+      '<td><span class="acx-rp acx-rp-'+esc(r.role||'agent')+'">'+roleTxt+'</span></td>'+
+      '<td><span class="acx-wsp '+(both?'is-both':pay?'is-pay':'is-t1')+'">'+wsTxt+'</span></td>'+
       '<td><div class="acx-tags">'+acxPagesSummary(r)+'</div></td>'+
-      '<td><span class="acx-muted acx-by" title="'+esc(r.added_by||'system')+'">'+esc(r.added_by||'system')+'</span></td>'+
-      '<td class="acx-right"><div class="acx-actions">'+pagesBtn+removeBtn+'</div></td>'+
-    '</tr>'+(open?acxEditorRow(r):'');
+      '<td class="acx-right"><span class="acx-chev" aria-hidden="true">›</span></td>'+
+    '</tr>';
   }).join('');
+  acxRefreshCard();
+}
+
+let acxCardEmail=null, acxWsFilter='all';
+function acxRenderWsTiles(){
+  const box=document.getElementById('acxWsTiles'); if(!box) return;
+  const c={all:roleDirectory.length,t1:0,aditpay:0,both:0};
+  roleDirectory.forEach(r=>{ const w=acxWsOf(r); if(w.length>1) c.both++; else if(w[0]==='aditpay') c.aditpay++; else c.t1++; });
+  const t=[['all','Everyone'],['t1','T1 CS only'],['aditpay','Adit Pay only'],['both','Both workspaces']];
+  box.innerHTML=t.map(([k,l])=>'<button type="button" class="acx-wt acx-wt-'+k+(acxWsFilter===k?' is-on':'')+'" aria-pressed="'+(acxWsFilter===k)+'" onclick="acxSetWsFilter(\''+k+'\')"><b>'+c[k]+'</b><span>'+l+'</span></button>').join('');
+}
+function acxSetWsFilter(k){ acxWsFilter=k; renderRoleRows(); }
+
+function acxOpenCard(email){ acxCardEmail=String(email||'').toLowerCase(); acxRefreshCard(true); }
+function acxCloseCard(){ acxCardEmail=null; const m=document.getElementById('acxCard'); if(m) m.remove(); }
+function acxRefreshCard(open){
+  if(!acxCardEmail) return;
+  const r=roleDirectory.find(x=>String(x.email).toLowerCase()===acxCardEmail);
+  let m=document.getElementById('acxCard');
+  if(!r){ if(m) m.remove(); acxCardEmail=null; return; }
+  if(!m){ if(!open) return; m=document.createElement('div'); m.id='acxCard'; m.className='acx-modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.onclick=e=>{ if(e.target===m) acxCloseCard(); }; m.onkeydown=e=>{ if(e.key==='Escape') acxCloseCard(); }; document.body.appendChild(m); }
+  const email=String(r.email||'');
+  const isCore=email.toLowerCase()===ACX_OWNER;
+  const isSelf=currentEmail && email.toLowerCase()===String(currentEmail||'').toLowerCase();
+  const isAdmin=r.role==='admin';
+  const ws=acxWsOf(r), wsv=ws.slice().sort().join(',');
+  const roleSel='<select class="acx-role-sel" data-email="'+esc(email)+'" aria-label="Role" onchange="setRoleInline(this)"'+(isCore||isSelf?' disabled title="'+(isCore?'Owner':'Your own role')+'"':'')+'><option value="agent"'+(isAdmin||r.role==='qa'?'':' selected')+'>Agent</option><option value="qa"'+(r.role==='qa'?' selected':'')+'>QA</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
+  const wsSel='<select class="acx-role-sel acx-ws-sel" data-email="'+esc(email)+'" aria-label="Workspace" onchange="setWorkspaceInline(this)"><option value="t1"'+(wsv==='t1'?' selected':'')+'>T1 CS</option><option value="aditpay"'+(wsv==='aditpay'?' selected':'')+'>Adit Pay</option><option value="aditpay,t1"'+(wsv==='aditpay,t1'?' selected':'')+'>Both</option></select>';
+  let pages='<p class="acx-note">Admins see every page.</p>';
+  if(!isAdmin){ const row=acxEditorRow(r); const a=row.indexOf('<div class="acx-pe">'); const b=row.lastIndexOf('</td>'); pages=a>=0&&b>a?row.slice(a,b):row; }
+  const remove=isCore?'<span class="acx-muted">The owner account cannot be removed</span>':(isSelf?'<span class="acx-muted">You cannot remove your own access</span>':'<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(email)+'" data-role="'+esc(r.role)+'" onclick="deleteRoleBtn(this)">Remove access</button>');
+  const ws2=ws.length>1?'is-both':ws[0]==='aditpay'?'is-pay':'is-t1';
+  const focusId=document.activeElement&&m.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
+  m.innerHTML='<div class="acx-mc"><div class="acx-mh"><span class="acx-av lg '+ws2+'" aria-hidden="true">'+esc(acxInitials(email))+'</span><div class="acx-mt"><strong>'+esc(deriveRoleName(email))+'</strong><span>'+esc(email)+'</span><small>Added by '+esc(r.added_by||'system')+'</small></div><button type="button" class="acx-x" aria-label="Close" onclick="acxCloseCard()">×</button></div>'+
+    '<div class="acx-mg"><label class="acx-field"><span>Role</span>'+roleSel+'</label><label class="acx-field"><span>Workspace</span>'+wsSel+'</label></div>'+
+    '<div class="acx-msec"><h4>Pages</h4>'+pages+'</div>'+
+    '<div class="acx-mf">'+remove+'<button type="button" class="acx-btn acx-btn-sm" onclick="acxCloseCard()">Done</button></div></div>';
+  if(open){ const x=m.querySelector('.acx-x'); if(x) x.focus(); }
+  else if(focusId){ const el=m.querySelector('[aria-label="'+focusId+'"]'); if(el) el.focus(); }
 }
 
 function togglePersonPages(btn){

@@ -190,9 +190,19 @@
     try { window.dispatchEvent(new CustomEvent('workspace-change', { detail: { workspace: state.current } })); } catch (e) {}
   }
 
+  // Batch 355: the Adit Pay workspace has its own home page in the sidebar.
+  function syncNav(go) {
+    var sb = document.getElementById('sb-aditpay');
+    if (sb) sb.style.display = state.current === 'aditpay' ? '' : 'none';
+    var onPay = document.getElementById('tab-aditpay') && document.getElementById('tab-aditpay').classList.contains('active');
+    if (typeof window.sbAdmin !== 'function') return;
+    if (state.current === 'aditpay' && go && sb) window.sbAdmin('aditpay', sb);
+    else if (state.current !== 'aditpay' && onPay) window.sbAdmin('live', document.getElementById('sb-live'));
+  }
+
   function set(ws) {
     if (state.list.indexOf(ws) < 0) return;
-    state.current = ws; lsSet(KEY, ws); apply();
+    state.current = ws; lsSet(KEY, ws); apply(); syncNav(true);
   }
 
   function init(list) {
@@ -200,7 +210,7 @@
     if (!state.list.length) state.list = ['t1'];
     var saved = lsGet(KEY);
     state.current = state.list.indexOf(saved) >= 0 ? saved : state.list[0];
-    apply();
+    apply(); syncNav(false);
   }
 
   window.Workspace = { get: function () { return state.current; }, list: function () { return state.list.slice(); }, set: set };
@@ -227,7 +237,7 @@
       init(list);
     }).catch(function () {});
     // The header can render after this script: place the switch once it exists.
-    var tries = 0, iv = setInterval(function () { tries++; if (document.querySelector('.hm-brand')) { renderSwitch(); clearInterval(iv); } else if (tries > 40) clearInterval(iv); }, 250);
+    var tries = 0, iv = setInterval(function () { tries++; if (document.querySelector('.hm-brand')) { renderSwitch(); syncNav(false); clearInterval(iv); } else if (tries > 40) clearInterval(iv); }, 250);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
