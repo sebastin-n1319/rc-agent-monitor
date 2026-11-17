@@ -8654,6 +8654,17 @@ async function runTicketActivitySync() {
   const DAY = 24 * 3600 * 1000;
   try {
     const allowedEmails = new Set((await getMonitoredAgents()).map(a => (a.email || '').toLowerCase()).filter(Boolean));
+    // Batch 372: people with Adit Pay access count too, before they are added in Manage Agents. When someone new
+    // appears, the backfill walks the past 120 days again so their history fills in (rows already there are kept).
+    try { for (const e of (await WSX.members()).emails) allowedEmails.add(String(e).toLowerCase()); } catch (e) { /* monitored agents only */ }
+    try {
+      const seen = new Set(JSON.parse((await deskLifecycle.getSyncState('activity_emails_seen')) || '[]'));
+      const fresh = [...allowedEmails].filter((e) => !seen.has(e));
+      if (fresh.length) {
+        if (seen.size) { await deskLifecycle.setSyncState('activity_backfill_complete', '0'); await deskLifecycle.setSyncState('activity_backfill_cursor_ms', null); console.log('🧾 Ticket activity: new people ' + fresh.length + ', backfilling again'); }
+        await deskLifecycle.setSyncState('activity_emails_seen', JSON.stringify([...allowedEmails]));
+      }
+    } catch (e) { /* the trailing window still runs */ }
     // Steady-state trailing window first, so today's numbers are always current.
     const trailingFrom = new Date(Date.now() - ACTIVITY_TRAILING_DAYS * DAY).toISOString();
     const recent = await syncActivityWindow(trailingFrom, null, allowedEmails);
