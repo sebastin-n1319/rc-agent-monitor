@@ -32,3 +32,21 @@ describe('who is online in the tool (Batch 391)', () => {
     expect(P.list(1).map((x) => x.name)).toEqual(['Zed', 'Ann']);
   });
 });
+
+describe('an escalation tag counts as an open escalation (Batch 392)', () => {
+  const dn = require('../../lib/ticket-doc-note');
+  it('reads escalated-tier-1 and escalated-tier-2 from the ticket tags, in any tag shape', async () => {
+    dn.setDeps({ deskRead: async () => ({ data: [{ name: 'Elicia' }, { name: 'escalated-tier-1' }] }) });
+    expect(await dn._tierTag({ id: '1' })).toEqual({ tier: '1', id: '' });
+    dn.setDeps({ deskRead: async () => ({ data: ['escalated-tier-1', 'escalated-tier-2'] }) });
+    expect((await dn._tierTag({ id: '1' })).tier).toBe('2');
+    dn.setDeps({ deskRead: async () => ({ data: [{ name: 'Elicia' }] }) });
+    expect(await dn._tierTag({ id: '1' })).toBe(null);
+    dn.setDeps({ deskRead: async () => { throw new Error('x'); } });
+    expect(await dn._tierTag({ id: '1' })).toBe(null);
+  });
+  it('the note then says Yes with the tier, with no alert comment', () => {
+    const h = dn.header({ ticketNumber: '1', contact: {} }, { header: {}, facts: { escalation: 'Never escalated' }, account: { name: 'X', number: '1' }, escAlert: { tier: '2', id: '' } }, null);
+    expect(h['Any Escalation Ticket Open']).toBe('Yes - Tier 2');
+  });
+});
