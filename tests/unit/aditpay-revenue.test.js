@@ -32,6 +32,6 @@ describe('Adit Pay revenue forecast from the whole history (Batch 376)', () => {
     expect(dec.days).toHaveLength(31); expect(Math.round(dec.days.reduce((s, x) => s + x.volume, 0))).toBe(Math.round(o.forecast[0].volume));
     const nov = o.grid.find((g) => g.month === '2026-11');
     expect(nov.days[0].expected).toBe(false); expect(nov.days[20].expected).toBe(true);
-    expect(o.method).toHaveLength(7);
+    expect(o.method).toHaveLength(8);
   });
 });
