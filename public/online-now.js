@@ -66,11 +66,18 @@
       drawButton(); if (open) drawList();
     }).catch(function () {});
   }
+  // The header clips anything below it, so the list is fixed to the window and placed under the button.
+  function place() {
+    var b = $('onBtn'), pop = $('onPop'); if (!b || !pop) return;
+    var r = b.getBoundingClientRect();
+    pop.style.top = Math.round(r.bottom + 8) + 'px';
+    pop.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + 'px';
+  }
   function toggle(force) {
     var pop = $('onPop'), b = $('onBtn'); if (!pop || !b) return;
     open = typeof force === 'boolean' ? force : !open;
     pop.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) { drawList(); load(); }
+    if (open) { place(); drawList(); load(); }
   }
 
   function start() {
@@ -86,6 +93,7 @@
     document.addEventListener('keydown', function (e) { if (open && e.key === 'Escape') { toggle(false); var bb = $('onBtn'); if (bb) bb.focus(); } });
     document.addEventListener('visibilitychange', function () { beat(); if (document.visibilityState === 'visible') load(); });
     window.addEventListener('pagehide', bye);
+    window.addEventListener('resize', function () { if (open) place(); });
     if (signedIn()) start();
     new MutationObserver(function () {
       if (signedIn()) start();

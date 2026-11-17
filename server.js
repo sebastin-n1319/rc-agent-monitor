@@ -9447,6 +9447,12 @@ app.get('/api/aditpay/tasks', requireAuth, async (req, res) => {
 });
 // Batch 391: who has the tool open right now. Everyone's open tab sends a beat; only admins (leads) see the list,
 // and only the people of the workspace they are in.
+// Batch 394: open tabs ask for the version of the shipped pages and refresh themselves after an update.
+let _appVer = null;
+app.get('/api/app-version', (req, res) => {
+  if (!_appVer) { try { _appVer = (require('fs').readFileSync(path.join(__dirname, 'public', 'sw.js'), 'utf8').match(/CACHE_VERSION\s*=\s*'([^']+)'/) || [])[1] || 'dev'; } catch (e) { _appVer = 'dev'; } }
+  res.set('Cache-Control', 'no-store').json({ version: _appVer });
+});
 app.post('/api/presence/beat', requireAuth, (req, res) => {
   try { require('./lib/presence').beat(req.session, req.body || {}); } catch (e) { /* presence is best effort */ }
   res.json({ success: true });
