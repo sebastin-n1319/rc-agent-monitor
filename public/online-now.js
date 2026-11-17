@@ -88,8 +88,10 @@
   }
   function init() {
     var b = $('onBtn');
+    // The header clips and blurs everything inside it, so the list is moved onto the page itself.
+    var pp = $('onPop'); if (pp && pp.parentNode !== document.body) document.body.appendChild(pp);
     if (b) b.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
-    document.addEventListener('mousedown', function (e) { var w = $('onWrap'); if (open && w && !w.contains(e.target)) toggle(false); });
+    document.addEventListener('mousedown', function (e) { var w = $('onWrap'), pop = $('onPop'); if (open && w && !w.contains(e.target) && !(pop && pop.contains(e.target))) toggle(false); });
     document.addEventListener('keydown', function (e) { if (open && e.key === 'Escape') { toggle(false); var bb = $('onBtn'); if (bb) bb.focus(); } });
     document.addEventListener('visibilitychange', function () { beat(); if (document.visibilityState === 'visible') load(); });
     window.addEventListener('pagehide', bye);
