@@ -1,0 +1,1619 @@
+<h1 id="ai-agent">AI Agent knowledge (AI Front Desk master documents)</h1><p>How the Adit AI Agent works: the three agents, prerequisites, credits, every Getting Started setting (Configure Agent, Custom Messages, Practice Details, Booking Settings), how the agent handles each kind of call, what to check when it gets something wrong, and how interactions are labelled. From the AI Agent Master Document and its redraft (FAQ). Prices, credits and dates in these documents may have changed: do not quote them to a client without checking the client's package and the latest from the AI team. The AI support runbook says what T1 finishes and what goes to the AI Support Team.</p>
+<h2 id="ai-agent-diff">Where the two documents differ (check before quoting)</h2><ul><li><b>Full-Time plan credits:</b> The Master Document says 1,000 credits a month with $0.50 per extra credit (and that 99.5% of customers will not pay overages); the redraft says 400 credits. Both say After-Hours Only has 200 credits at $1 per extra credit and 1 credit = 1 call minute or 10 SMS threads.</li><li><b>Release dates:</b> The Master Document gives AI Front Desk with SMS in April 2026 and AI Care Coordinator and AI Web Chat in June 2026; the redraft gives March and May 2026.</li><li><b>Languages:</b> The Master Document lists 19 languages (English, Spanish, French, German, Portuguese, Japanese, Italian, Dutch, Korean, Vietnamese, French (Canada), Chinese (Simplified), Portuguese (Brazil), Russian, Turkish, Polish, Arabic, Persian, Hebrew) with Hindi on demand; the redraft lists 10, Hindi included.</li><li><b>Insurance check:</b> Both documents say the agent cannot yet check whether a patient's insurance is accepted and that this was planned for March 2026. Whether it is live now is not in either document.</li><li><b>Eaglesoft:</b> The Master Document says rescheduling and cancellation are not supported for Eaglesoft, and also lists Eaglesoft among the EHRs where a cancellation deletes the appointment instead of cancelling it.</li></ul>
+<h2 id="ai-agent-m0">AI Agent: Intro to Adit AI Agent</h2>
+<p>Adit AI Agent is a full suite of AI solutions that can automate,
+enhance and streamline the operations of the practice. The AI Agent
+suite comprises 3 different agents which are independent of each other
+and can be deployed on its own to solve for a specific use case or
+together for maximum benefits.</p>
+<p>The three agents are -</p>
+<p>AI Front Desk - Capable of handling all incoming communication to
+practice (calls and texts)</p>
+<p>AI Care Coordinator - Capable of planning and handling all relevant
+outgoing communication (calls and texts)</p>
+<p>AI Web Chat - Capable of engaging and converting visitors to the
+practice’s website via an embedded chat widget</p>
+<p>Every communication handled by the agent is fully documented,
+transcribed and analysed for easy consumption for the practice. Each
+complete communication handled by the agent is called an Interaction in
+Adit AI module. An Interaction can mean a full completed call or a
+thread of texts which constitutes a single completed conversation from a
+patient or a thread of web chats which constitutes a complete
+conversation.</p>
+<p>Every interaction will provide the following information -</p>
+<ul>
+<li>Summary</li>
+<li>Transcript</li>
+<li>Interaction Type</li>
+<li>Outcome</li>
+<li>Customer Sentiment</li>
+<li>Reason for Visit</li>
+<li>Reason for Not Booking</li>
+<li>Revenue Potential</li>
+<li>Patient Name</li>
+<li>Patient Type</li>
+<li>Follow Up Tasks</li>
+</ul>
+<p>How it Works</p>
+<p>As part of the getting started process, practices will provide their
+preference with regards to the agent identity (name, voice etc), agent
+behaviour (handle all types of calls or only handle scheduling and
+emergency and don’t handle rescheduling etc) agent knowledge (practice
+details, business hours, direction reach, parking availability etc),
+booking preferences (accepted insurances, allowed services,
+provider-service mapping, availability rules, booking buffer etc), task
+handling, call handover preferences etc.</p>
+<p>On finishing getting started, the agent gets instantly created with
+the preferences of the practice. This is a dedicated agent created just
+for that practice and it only handles the calls and texts of that
+practice. Practice will set up the call forwarding criteria in call flow
+(only send after-hour calls to the agent or send all calls to the agent
+etc) sms forwarding criteria in AI agent preferences (engage only
+after-hour SMS, engage all SMS etc)</p>
+<p>Based on the preferences of the practice, respective calls and texts
+are redirected to the agent. The agent engages based on its context and
+handles the calls and texts completely or partially based on the agent
+behaviour settings.</p>
+<p>Preference can be updated anytime by the practice and the agent will
+get instantly updated based on the updated preferences.</p>
+<p>Capabilities</p>
+<p>AI Front Desk - AI Front Desk is capable of fully handling all sorts
+of scheduling calls (emergency, single-patient, multi-patient etc),
+rescheduling calls, insurance acceptance confirmations and appointment
+confirmation calls. The agent can partially handle the calls related to
+billing, product order tracking (braces, specs, lens etc), callbacks
+from patients and can create a follow up task for the practice or do a
+warm transfer as required. The agent is also capable of gate-keeping
+marketing and other soliciting calls from going to the practice and
+wasting their time. The same capabilities are applicable for texting as
+well.</p>
+<p>AI Front Desk cannot do outbound calls and hence won’t be able to
+handle outbound calls for payment collection, recall due, outbound
+appointment confirmation etc.</p>
+<p>AI Care Coordinator - Full capabilities of this agent will be
+finalized close to the release date, but this agent will be able to
+proactively engage patients with broken and unscheduled appointments,
+recall due patients, patients unscheduled for a long time, payment
+overdue, appointment confirmation etc.</p>
+<p>AI Web Chat - Full capabilities of this agent will be finalized close
+to the release date, but this agent will be able to answer any practice
+or booking related questions the web site visitors have along with
+trying to proactively outbound engage website visitors to try and
+convert them into patients.</p>
+<p>Underlying Models</p>
+<p>A variety of providers are used for STT (Speech to Text), LLM (Large
+Language Model) and TTS (Text to Speech) based on the context and use
+case with Deepgram for STT, GPT for LLM and Elevenlabs for TTS being the
+predominant providers</p>
+<p>Supported Languages</p>
+<p>Adit AI Agent can interact in almost all major languages and handle
+multiple accents. For Non-English interactions, the transcript and
+threads will be shown in the original language, but the interaction
+summary and analysis will be in English</p>
+<p><em>List of Languages Supported</em></p>
+<p>English, Spanish, French, German, Portuguese, Japanese, Italian,
+Dutch, Korean, Vietnamese, French (Canada), Chinese (Simplified),
+Portuguese (Brazil), Russian, Turkish, Polish, Arabic, Persian,
+Hebrew</p>
+<p>Hindi is available on demand</p>
+<p>Pre-requisites</p>
+<p>Customers are NOT required to be using our phones to use the agent.
+They will have to purchase a tracking number from us which we will be
+using to forward the calls to their original phone provider if the agent
+has to do a warm transfer. <strong>Having said that, we are not selling
+the agent yet to customers who are not on our phones.</strong></p>
+<p>In addition to this, they will have to enable and set up online
+scheduling (although they do not have to use our booking links if they
+don’t want to) as well. AI agent will work perfectly well with the AI
+agent module, OS, CRM (Patients Module), Tasks Module and then a call
+flow to handle warm transfer.</p>
+<p>If a practice wants the agents to handle SMS as well, then they will
+have to enable Engage and port in their number (if they want the
+communication to go out from their established practice phone number) or
+purchase a new number if they are okay with the agent sending SMS to
+patients from a new phone number.</p>
+<p>Product Release Timelines</p>
+<ul>
+<li>AI Front Desk without SMS functionality - Feb 2026</li>
+<li>AI Front Desk with SMS functionality - Apr 2026</li>
+<li>AI Care Coordinator with SMS functionality - Jun 2026</li>
+<li>AI Web Chat - Jun 2026</li>
+</ul>
+<p>Usage Limits</p>
+<p>Customers have the option to sign up for 2 variants of the AI Front
+Desk. Usage is measured in credits for the AI agent</p>
+<p>1 Credit = 1 Call Minute or 10 SMS threads</p>
+<p>After-hours only - Agent which will handle the calls and texts
+outside the business hours of the practice. This agent comes with a
+standard 200 credits as part of subscription. Any usage beyond that will
+be charged at an overage of $1 per additional credit.</p>
+<p>Full-time - This agent can handle overflow and missed calls during
+business hours in addition to after-hour calls. This agent comes with a
+standard 1000 credits as part of subscription. Any usage beyond that
+will be charged at an overage of $0.5 per additional credit. 99.5% of
+the customers using this product will not face any overages</p>
+<p>Usage limits for AI Care Coordinator and AI Web Chat will be
+finalised closer to the release timelines.</p>
+<p>Module Set Up in Platform</p>
+<p>AI Agent is a new module in Adit and this will get auto-enabled for
+Get Started as soon as the customer signs up.</p>
+<p>Syncing Data with EHR</p>
+<p>AI Agent will sync patients and appointments back to all EHRs along
+with the interaction summary. For the following EHRs, we cannot write
+interaction summary back to EHR as of now - PracticeWork, OfficeMate and
+Cloud9. If in doubt, check the Adit EHR Integration Rulebook. Wherever
+Adv OS is not live with full functionalities, AI agent cannot function
+properly.</p>
+<p>EHRs which are allowed to cancel/mark as broken Appointments:</p>
+<p>“Open Dental”, “PracticeWeb”, “Revolution”, “DentrixAscend”,“Cloud9”,
+“ChiroTouchCloud”, “CrystalPM”, “ChiroTouch”, “CurveDental”, “Denticon”,
+“Eyefinity”</p>
+<p>EHRs which are not allowed to cancel the Appointments (In this case
+only Appt gets deleted):</p>
+<p>“Eaglesoft”, “Dentrix”, “AbelDent”, “Dentrix(H)”, “ClearDent”,
+“OfficeMate”, “Tracker”</p>
+<p>Test the Agent</p>
+<p>You can talk to the front desk agent by calling the below numbers</p>
+<ul>
+<li>Dental - +1 832-590-3388</li>
+<li>Opto - +1 832-399-3691</li>
+<li>Chiro - +1 832-743-6380</li>
+</ul>
+
+<h2 id="ai-agent-m2">AI Agent: AI Front Desk - Switch Factors</h2><ol type="1">
+<li><strong>**The “Zero Missed Call” Standard**</strong></li>
+</ol>
+<p><em>How many potential new patients are you losing simply because
+your lines are busy or the office is closed? If a new patient calls and
+goes to voicemail, how likely are they to leave a message versus hanging
+up and calling the next practice on Google?</em></p>
+<p>With the AI Front Desk, your practice achieves a 100% answer rate
+instantly. Whether it is 2 PM during a lunch rush or 2 AM on a Sunday,
+every single caller is greeted immediately. The AI captures the intent,
+answers questions, or schedules the appointment on the spot, ensuring
+you never lose a patient to a competitor simply because no one picked up
+the phone..</p>
+<ol type="1">
+<li><strong>**After-Hours Revenue Capture**</strong></li>
+</ol>
+<p><em>Your doors close at 5 PM, but your patients’ lives don’t. How
+many scheduling opportunities are trapped in your voicemail box the next
+morning? How much time does your staff spend playing “phone tag” trying
+to call those voicemails back the next day?</em></p>
+<p>The AI Front Desk turns your after-hours voicemail into an active
+booking engine. Instead of leaving a message, patients can schedule,
+reschedule, or confirm appointments directly with the AI. You wake up to
+a filled calendar rather than a list of callbacks, allowing your
+practice to generate revenue even when the lights are off.</p>
+<ol type="1">
+<li><strong>**Eliminating “Hold Time” Frustration**</strong></li>
+</ol>
+<p><em>When your front desk is overwhelmed with in-office patients, do
+they put callers on hold? How often do those callers hang up after
+waiting too long?</em></p>
+<p>The AI acts as an infinite overflow valve. When your front desk is
+tied up, the AI picks up the slack instantly. It handles the routine
+requests-scheduling hygiene, confirming times, answering FAQs-so your
+patients never experience a busy signal or hold music. If the issue
+requires a human touch, the AI can perform a warm transfer once your
+staff is free, or create a prioritized task for a callback.</p>
+<ol type="1">
+<li><strong>**Staff Productivity &amp; Burnout
+Prevention**</strong></li>
+</ol>
+<p><em>Is your highly trained front desk staff bogged down by
+repetitive, low-value calls like “Are you open on Fridays?” or “I need
+to reschedule my cleaning”? Does this distract them from checking in
+patients or presenting treatment plans?</em></p>
+<p>By offloading the repetitive scheduling and confirmation tasks to the
+AI, you free your staff to operate at the “top of their license.” They
+can focus on high-value interactions-like treatment presentation and
+in-person patient hospitality-while the AI handles the administrative
+noise. This reduces burnout and improves the in-office experience.</p>
+<ol type="1">
+<li><strong>**Accuracy of Message Taking**</strong></li>
+</ol>
+<p><em>How often do handwritten notes or hurried messages get lost or
+misinterpreted? Have you ever had a patient claim they called to cancel,
+but there is no record of it?</em></p>
+<p>The AI Front Desk eliminates human error in message taking. Every
+interaction is transcribed, categorized, and summarized automatically.
+If the AI cannot handle a specific complex request, it notes down the
+exact reason for the call and creates a specific task for your practice
+to follow up. This creates an unshakeable audit trail and ensures that
+“I forgot to tell the doctor” never happens again</p>
+<ol type="1">
+<li><strong>**The “Warm Hand-off” Experience**</strong></li>
+</ol>
+<p><em>Are you worried that an AI will feel robotic or disconnect the
+patient from your practice’s personal touch?</em></p>
+<p>Our solution bridges the gap between automation and personal care.
+The AI is intelligent enough to recognize when a caller is distressed or
+has a complex clinical question. In these scenarios, it doesn’t just
+block the caller; it initiates a “warm transfer,” passing the caller to
+your staff along with a summary of the conversation so far. This ensures
+the patient feels heard, and your staff picks up the conversation
+exactly where the AI left off.</p>
+<ol type="1">
+<li><strong>**Operational Continuity (Sick Days &amp; Staffing
+Shortages)**</strong></li>
+</ol>
+<p><em>What happens to your phone lines when your receptionist calls in
+sick or goes on vacation? Do you have to scramble to find coverage or
+let service levels drop?</em></p>
+<p>The AI Front Desk provides instant operational redundancy. It is the
+employee that never gets sick, never takes a vacation, and never has a
+bad day. During staffing shortages, you can dial up the AI’s involvement
+to handle a larger volume of calls, ensuring your practice runs smoothly
+regardless of who is physically at the desk.</p>
+<ol type="1">
+<li><strong>**The Self-Improving Front Desk**</strong></li>
+</ol>
+<p><em>How do you ensure your AI doesn’t make the same mistakes your
+humans might?</em></p>
+<p>While your staff’s performance is being monitored only sporadically
+for the calls coming to your practice(unless you have a Call
+Intelligence solution to continuously track and guide on performance
+improvement), the AI agent is being continuously monitored across 100s
+of practices and 1000s of calls daily by a sophisticated set of
+algorithms, other AI agents and a set of AI domain experts making daily
+improvements. While it is really good out-of-the-box, it just keeps
+getting better everyday.</p>
+
+<h2 id="ai-agent-m3">AI Agent: Why do we have overages</h2>
+<ol type="1">
+<li>We use enterprise-grade, state-of-the-art models for each of the
+components that goes into building the agent - the same technology
+powering the most advanced AI systems in the world. These aren’t basic,
+commodity services; they’re premium models that deliver:</li>
+</ol>
+<!-- end list -->
+<ul>
+<li><p>Natural, human-like conversations</p></li>
+<li><p>High accuracy in understanding patient needs</p></li>
+<li><p>Fast, reliable responses every time</p>
+<p>Most competitors will be using lower tier models which saves cost but
+impact performance</p></li>
+</ul>
+<ol type="1">
+<li><p>We waited for the technology to evolve so we could perfect it. We
+could have gone to the market much earlier with a product that cost much
+lower, but we made a conscious decision not to do that since we did not
+want to compromise on the quality. We know all the permutations and
+combinations we can do in order to reduce cost, but decided against that
+since it affected quality every single time. The product we have now is
+the result of more than 1.5 yrs of R&amp;D of a dedicated team focussed
+on just making the agent the best sounding, best performing
+product.</p></li>
+<li><p>AI is resource intensive so if there is lack of consistent
+availability of processing resources, performance quality of the agent
+can fluctuate. In order to avoid that we maintain dedicated computing
+resources (not shared with other customers during peak times) for each
+agent (each customer). Most providers will not reserve computing
+resources as it is expensive</p></li>
+<li><p>We can keep a higher entry price for all customers and offer
+unlimited minutes, but once again 90% of practices will just end up
+paying extra for something they don’t need and will not use. So we chose
+to keep the entry price low so most customers can benefit and those with
+very high usage can still take advantage of a superior product at a
+modest overage</p></li>
+</ol>
+<p><strong>The Bottom Line</strong>:</p>
+<p>The credits we provide for the plans we have covers typical practice
+usage generously. 90% of the practices will never cross the overage
+limit.</p>
+<p>But if a practice receives exceptionally high call volumes, we need
+to cover the real costs of:</p>
+<ul>
+<li>Premium AI model usage</li>
+<li>Dedicated infrastructure to ensure your patients always get instant,
+reliable service</li>
+</ul>
+<p>We keep our overage rates transparent and fair-you only pay for what
+you actually use beyond your plan, and every dollar goes toward
+maintaining the premium experience your patients expect.</p>
+<p><strong>Afterthought (Okay, I get it. You guys are the best, but it
+is still a lot of money)</strong>:</p>
+<p>If your usage is heavy and if it hits overages, it would mean that
+the agent has booked that many appointments for you and has handled a
+heavy volume of your patients.</p>
+<p>On an average we have seen that agent is able to book an appointment
+for 20 minutes it spends talking to patients (This includes all types of
+calls including scheduling, rescheduling, confirmation, cancellation,
+billing, insurance, sales calls etc)</p>
+<p>If you hit an overage of 200 credits (200 minutes) it would mean that
+the agent has spent an additional 200 minutes talking to your patients
+and will have booked around 10 additional appointments.</p>
+<p>Considering $200 per appointment, that is an additional revenue of
+$2000 (over and above the 20 appointments worth $4000 the agent booked
+in the first 400 minutes) the agent has generated against an overage of
+$100</p>
+
+<h2 id="ai-agent-m5">AI Agent: Getting Started: Configure Agent</h2>
+<p>Configure Agent allows you to set up the basic identities for the
+agent like its name, voice and capabilities</p>
+<p><strong>Agent Name</strong> - This will be the name the agent uses
+when it is answering calls</p>
+<p><strong>Practice Name</strong> - This will be how the agent will
+communicate the name of the practice with the caller. The reason why it
+is kept as a setting here is because many times the practice name is
+updated as just the location/city name in location settings in Adit.
+Using the information directly from there might end up having the agent
+communicate the practice name as Houston instead of ABC Practice</p>
+<p><strong>Agent Voice</strong> - This will allow the practice to listen
+to a selection of voices to go with what they like. Agent Voice is not
+just about the voice but covers the entire dimension of communication
+like tone, timbre, cadence, rhythm, pitch, pacing, volume and
+accent.</p>
+<p><strong>Agent Capabilities</strong> - This will allow the practice to
+decide what all things they want the agent to handle end to end.</p>
+<ol type="1">
+<li>Scheduling - Set to ‘Yes’ means the agent will collect all relevant
+information, look up relevant slots and will always try to book the
+appointment. There could be some scenarios where the agent is not able
+to book because slots are not available on the preferred day etc., but
+the agent’s instruction is to book an appointment if possible. Set to
+‘No’ means the agent’s instruction is not to book an appointment by
+itself. It will collect relevant information from the caller and will
+create a task for the practice to follow up</li>
+<li>Rescheduling - Set to ‘Yes’ means the agent will always try to
+reschedule the appointment provided the appointment falls outside the
+rescheduling window. There could be some scenarios where the agent is
+not able to reschedule because slots are not available on the preferred
+day etc., but the agent’s instruction is to reschedule the appointment
+if possible. Set to ‘No’ means the agent’s instruction is not to
+reschedule an appointment by itself. It will collect relevant
+information from the caller and will create a task for the practice to
+follow up</li>
+<li>Cancellation - Set to ‘Yes’ means the agent will always try to
+reschedule the appointment for a cancellation call provided the
+appointment falls outside the rescheduling window and if not possible
+then cancel that appointment if it falls within the cancellation window.
+The agent’s instruction is to try and reschedule the appointment if
+possible or else cancel it. Set to ‘No’ means the agent’s instruction is
+not to cancel an appointment by itself. It will collect relevant
+information from the caller and will create a task for the practice to
+follow up</li>
+</ol>
+<p>For all the other types of calls, the agent will collect relevant
+information from the caller by default and do a warm transfer to the
+practice or create a task as per the practice preferences</p>
+
+<h2 id="ai-agent-m6">AI Agent: Getting Started: Custom Messages</h2>
+<p>Custom Messages section allows practices to set up the welcome
+message and AI Disclosure preferences</p>
+<p><strong>Welcome Message</strong> - This is what the agent will say
+first as soon as it picks up the call</p>
+<p><strong>AI Disclosure</strong> - Enabling this will overwrite the
+welcome message to communicate to the caller that they are speaking with
+an AI. This will be default set to No.</p>
+
+<h2 id="ai-agent-m7">AI Agent: Getting Started: Practice Details</h2>
+<p>Practice Details page houses all the relevant information regarding
+the practice like their address, time zone, GMB page, map link, business
+hours etc. The Agent will use this information as and when required when
+communicating with the practice’s callers. Most of the information in
+this page is auto-updated from Location Settings and Online Scheduling
+Settings.</p>
+<p><strong>Practice Address</strong> - This is the address of the
+location which is picked from the location settings. This can’t be
+directly edited in the Ai Agent preferences. Clicking on Edit will open
+the Location Settings and the user can modify the address there if
+required</p>
+<p><strong>Time Zone</strong> - This is the time zone of the practice
+picked up from location settings. This can’t be directly edited in the
+Ai Agent preferences. Clicking on Edit will open the Location Settings
+and the user can modify the timezone there if required</p>
+<p><strong>Google Business Page</strong> - This is the GMB link picked
+up from the business pages section in settings. This can’t be directly
+edited in the Ai Agent preferences. Clicking on Edit will open the
+Business Pages Settings and the user can modify the GMB link there if
+required</p>
+<p><strong>Business Hours</strong> - This is the scheduling availability
+hours picked up from online scheduling. This can’t be directly edited in
+the Ai Agent preferences. Clicking on Edit will open the OS Settings and
+the user can modify the availability there if required</p>
+<p><strong>Practice Website</strong> - This is the website of the
+practice picked up from location settings. This can’t be directly edited
+in the Ai Agent preferences. Clicking on Edit will open the Location
+Settings and the user can modify the website there if required</p>
+<p><strong>Parking Availability</strong> - Practice can use this space
+to update the agent about the parking availability in front of or near
+their practice</p>
+<p><strong>Google Maps Link</strong> - If updated, Agent will use this
+link to send a message to new patients who ask for directions to the
+practice.</p>
+<p><strong>Directions to Reach</strong> - Practice can use this space to
+provide the agent with more information about how to reach and identity
+the practice</p>
+
+<h2 id="ai-agent-m8">AI Agent: Getting Started: Booking Settings</h2>
+<p>Booking Settings is arguably the most important preference page in Ai
+Agent. This page allows practice to configure what services the agent
+should book, what payment options are accepted, minimum notice period
+for rescheduling and cancellations etc.</p>
+<p><strong>Payment Options</strong> - In this section, practice can
+mention if they allow Medicaid, Medicare, Care Credit, Credit Cards, FSA
+and In-house financing. If they accept in-house financing, the practice
+will have the option to expand on the details as well so the agent can
+communicate the same clearly to patients who call and inquire about the
+same. There is one more free-form field in this section for practice to
+mention any other payment options they accept as well</p>
+<p><strong>Accepted Insurances</strong> - This section holds the
+insurance information picked from online scheduling. This cannot be
+directly edited from Ai Agent preference. If the edit button is clicked,
+it will open up Insurance settings in Online Scheduling.</p>
+<p>As of now the agent does not have the capability to verify if the
+insurance mentioned by the patient is part of the accepted list. Because
+of that there is no option for the agent to reject a patient from
+booking an appointment based on their insurance provider. The agent just
+collects the insurance info and proceeds to book as of now. If the
+caller wants clarity on if their insurance is accepted, then the agent
+will communicate that someone from the practice will call them back and
+will proceed to create a task for the practice to follow up. It will
+still proceed to book the appointment unless the caller is insistent
+that they don’t want to book unless they get a confirmation on their
+insurance acceptance.</p>
+<p>The functionality to check insurance providers and to communicate if
+that is accepted is being built out and should be available by the end
+of March 2026.</p>
+<p><strong>Services Offered</strong> - This is the main section that
+needs to be carefully updated for the agent to function properly. The
+agent by default will not be able to book for all the services set up in
+the OS settings. More context has to be provided on this to the agent.
+It is being done this way for two reasons -</p>
+<ol type="1">
+<li><p>Practices will not want to book some types of appointments for
+new patients or for existing patients as well just based on a phone
+call. For eg. a person who is calling to do a root canal will not be set
+up as a root canal service. It is usually set up as a New Patient Exam
+where the doctor can do an initial exam and recommend next steps. In
+this scenario it is very important for the agent to understand if the
+practice has New Patient Exam and Root Canal as services and a new
+person calls for Root Canal, which service should be booked</p></li>
+<li><p>In many cases, practices will set up service names in such a way
+it won’t be obvious what it means. Providing just the names of those
+services will not give enough clarity to the agent regarding what
+service needs to be booked</p></li>
+</ol>
+<p>The way this section works is a combination of OS (Online Scheduling)
+setting and Ai Agent setting. If the practice wants to add a new service
+then, they have to do it in OS. The edit button next to the services
+offered opens up that page in the OS.</p>
+<p>Under Services for New Patients, all the OS services set up for new
+patients will be available. Once a service is selected, it has to be
+defined to that clarity to the agent so that there is no confusion. The
+explanation can be manually typed or the ai button to the right of the
+explanation text box can be clicked to auto-generate an explanation.
+Services offered can’t be saved without the explanation.</p>
+<p>Only the services selected and explained here are available for the
+agent. Appointments will be booked only based on these services. Hence,
+it is imperative that this list is populated with all the services
+patients can book by just calling their office.</p>
+<p><strong>Availability Settings</strong> - This is the availability
+formula set up in online scheduling. This decides how the agent looks
+for availability. This cannot be edited directly from the Ai Agent
+setting and will have been updated in Online Scheduling if required. The
+edit button will redirect to the corresponding OS page</p>
+<p><strong>Max Booking Window</strong> - This decides how far out the
+agent can book an appointment. For example if this is set as 7 days and
+some caller is looking for an appointment 2 weeks from now, the agent
+will not book an appointment.</p>
+<p><strong>Cancellation Window</strong> - This decides the minimum
+notice period required for canceling an appointment. If this is set a
+blank, the agent will cancel the appointment regardless of when the
+appointment is scheduled for. If this is updated for, let’s say 48
+hours, and a patient calls to cancel an appointment for tomorrow, the
+agent will not cancel it directly. It will communicate about the
+cancellation policy and will confirm that someone from the practice will
+call the patient back. Then the agent will create a task for the
+practice to follow up.</p>
+<p>As a best practice, we don’t recommend keeping this window longer
+than 12 to 24 hours. If a practice wants to set this up for a longer
+window during onboarding it would be good to check with them how would a
+human handle if someone is calling to cancel an appointment for today
+due to a personal emergency and wouldn’t they want the agent also to do
+the same. The reason we suggest this is because if there is a delay from
+the practice to follow up on the cancellation task created by the agent,
+this can result in poor coordination and communication. The patient will
+not have clarity on if the appointment is cancelled or not and the
+practice might end up wondering why the patient did not show</p>
+<p><strong>Rescheduling Window</strong> - This decides the minimum
+notice period required for rescheduling an appointment. If this is set a
+blank, the agent will cancel the appointment regardless of when the
+appointment is scheduled for. If this is updated for, let’s say 24
+hours, and a patient calls to reschedule an appointment for today, the
+agent will not reschedule it directly. It will communicate that someone
+from the practice will call the patient back. Then the agent will create
+a task for the practice to follow up.</p>
+<p>As a best practice, we don’t recommend keeping this window longer
+than 12 to 24 hours.</p>
+<p><strong>Appointment Schedule Text Confirmation</strong> - Enabling
+this means the agent will communicate to the patient that they will be
+getting an appointment confirmation text at the end of appointment
+booking. This is just a communication the agent is doing. The text will
+go out from Engage as part of Scheduled Confirmation.</p>
+<p><strong>Price Sheet</strong> - Practice can use this section to give
+the agent knowledge about their treatment costs. If this is kept as
+blank and someone asks the agent about the cost of a particular
+treatment, the agent will communicate that it will depend on the
+prognosis provided by the doctor and the patient’s insurance coverage
+for that particular treatment option. If price is provided, then the
+agent will communicate the same if the caller inquires about the
+same.</p>
+<p><strong>Age Limitation</strong> - This section can be used by the
+practice to define the age range of patients accepted. For example if it
+is pediatric only dentistry and set up the max age to be 18, the agent
+will not book appointments for anyone older than that</p>
+<p><strong>Walk-ins</strong> - This is just additional information that
+can be provided to the agent which it can use if a caller asks the
+question - “Do you accept walk-ins?”</p>
+
+<h2 id="ai-agent-m9">AI Agent: Agent Architecture &amp; Flow</h2>
+<p>This section covers how the agentic flow is designed based on the
+type of conversation it is handling. Whenever a call is sent to the
+agent, the agent will already have following information provided the
+practice is using our phones - Phone Number and Caller Id (If available)
+if a New Patient; and for existing patients Phone Number, First Name,
+Last Name, DOB, Family File, Upcoming appointments for self and
+family</p>
+<p><strong>New Patient Scheduling</strong> - When the caller mentions
+that they are looking to book an appointment, the agent will ask if the
+appointment is for someone who has visited the practice before or for a
+new patient. The reason why we ask this question even though we get the
+caller id information is because sometimes existing patients can call
+from other numbers and new patients (like the spouse of a patient) can
+call from existing patient numbers. If the caller answers they are a new
+patient, then this flow is triggered. The agent will collect the
+required information - First Name, Last Name, DOB and Insurance provider
+- and will then proceed to create a new patient record in Adit. At this
+point the application will check if we already have a patient record
+with the same First Name, Last Name, DOB and Phone Number. If so, no
+duplicate patient record is created and the patient record id of the
+existing patient is sent to the agent. If no duplicate is found, then
+the new patient record is created and the patient record id is sent to
+the agent.</p>
+<p>Once the agent gets the patient record, it once again double checks
+the appointment history to verify if they are actually a new patient or
+not. This is important as this defines which services are the agent
+allowed to book for the caller. If verified as a new patient, then the
+agent will proceed to ask for the reason for visit and the preferred
+date and time. The reason for visit mentioned by the patient is
+converted into appropriate service type based on the allowed options and
+the service explanations. For eg. If a new patient calls to check if
+they do invisalign and invisalign is not part of the approved services
+to be booked for new patients, the agent will proceed to book the
+generic service the practice has mentioned as a catch all</p>
+<p>Based on the service and date - it will map the provider / operatory
+or availability set by the practice and ask if they prefer morning or
+afternoon slots and then the agent will call OS API which will return 2
+available slots. Based on the returned slots, the agent communicates the
+options and ask if any of those options are acceptable to the patient
+then it will book the appointment. If not acceptable the agent will call
+OS APIs for alternate days and will present other options to the
+patient. If none of the options are acceptable (for eg the earliest
+slots available are only after 5 days and it is an emergency situation
+for the patient), then the agent will do a warm transfer to the practice
+if the call is within business hours (based on practice settings) or
+will create a task for the practice and communicates with the patient
+that someone from practice will call them back ASAP. At any point in
+time, a maximum of 4 APIs calls are done and if it is not able to do
+booking / register patient / fetch patient details then it will create a
+task irrespective.</p>
+<p>Mandatory Preference Requirements :</p>
+<ul>
+<li>Configure Agent &gt; Agent Capabilities &gt; Scheduling should be
+turned on</li>
+</ul>
+<p><strong>Existing Patient Scheduling</strong> - When the caller
+mentions that they are an existing patient, then this flow is triggered.
+As part of verifying the identity of the patient, the agent will ask for
+the date of birth, first name and last name. If the date of birth plus
+phone number plus First Name and Last Name matches the information
+received along with the call it will proceed with the reason for
+visit.</p>
+<p>We ask for the name just to be HIPAA compliant because you need to
+request for multiple identifying information to verify the authenticity
+of the caller before revealing any information like their appointment
+details. If the DOB does not match the record the agent has, then it
+will confirm if they might have provided another phone number rather
+than the one they are calling from. With the updated phone number DOB
+and First and Last Name data, it will fetch the patient record.</p>
+<p>Once the correct patient record is identified, the agent will proceed
+with the reason for visit. The reason for visit mentioned by the patient
+is converted into appropriate service type based on the allowed options
+for existing patients and the service explanations</p>
+<p>Based on the service and date - it will map the provider / operatory
+or availability set by the practice and ask if they prefer morning or
+afternoon slots and then the agent will call OS API which will return 2
+available slots. Based on the returned slots, the agent communicates a
+few options and if any of those options are acceptable to the patient
+then it will book the appointment. If not acceptable the agent will call
+OS APIs for alternate days and will present other options to the
+patient. If none of the options are acceptable (for eg the earliest
+slots available are only after 5 days and it is an emergency situation
+for the patient), then the agent will do a warm transfer to the practice
+if the call is within business hours (based on practice settings) or
+will create a task for the practice and communicates with the patient
+that someone from practice will call them back ASAP. At any point in
+time, a maximum of 4 APIs calls are done and if it is not able to do
+booking / register patient / fetch patient details then it will create a
+task irrespective.</p>
+<p>Mandatory Preference Requirements :</p>
+<ul>
+<li>Configure Agent &gt; Agent Capabilities &gt; Scheduling should be
+turned on</li>
+</ul>
+<p><strong>Rescheduling</strong> - When the caller mentions that they
+are looking to reschedule an appointment, the agent will check if the
+Registered number is the number they are calling from and then ask for
+the DOB and name to verify the caller and to fetch/confirm the patient
+record. Once the patient record is confirmed, upcoming appointments
+against the patient are fetched. The agent will then communicate the
+upcoming appointment dates and check which appointment they are planning
+to reschedule.Once the appointment to reschedule is identified the agent
+proceeds with asking for a preferred date and time to reschedule. Once
+the patient selects one of the options provided, the agent will proceed
+to reschedule the appointment.</p>
+<p>If the appointment the patient wants to reschedule falls within the
+Rescheduling Window (Min Notice Period), then the agent will communicate
+that someone from practice will call them back to help with this and
+will create a task for the practice.</p>
+<p>Rescheduling is not supported for Eaglesoft EHR</p>
+<p>For Rescheduling - we check Service + Operatory + Provider and then
+suggest availability, if Appt was booked via EHR and then either Service
+/ Operatory / Provider is not listed in Adit APP then no slots will be
+fetched.</p>
+<p>Mandatory Preference Requirements :</p>
+<ul>
+<li>Configure Agent &gt; Agent Capabilities &gt; Rescheduling should be
+turned on</li>
+</ul>
+<p><strong>Cancellation</strong> - When the caller mentions that they
+are looking to cancel an appointment, the agent will ask for the DOB and
+name to verify the caller and to fetch/confirm the patient record. Once
+the patient record is confirmed, upcoming appointments against the
+patient are fetched. The agent will then communicate the upcoming
+appointment dates and check which appointment they are planning to
+cancel. Once the appointment to cancel is identified the agent will
+check if they would like to reschedule instead of cancellation. If the
+patient agrees to reschedule, then the agent will initiate the
+rescheduling flow. If they insist on cancelling, the agent will ask if
+they would like to share the reason for cancellation without being
+pushy. If they share the reason, that will be available to the practice
+under Reason for Not Booking in Call Analysis. Once the reason is
+shared, the agent will then proceed to cancel the appointment.</p>
+<p>If the appointment the patient wants to cancel falls within the
+Cancellation Window (Min Notice Period), then the agent will communicate
+that someone from practice will call them back to help with this and
+will create a task for the practice.</p>
+<p>Cancellation is not supported for Eaglesoft EHR</p>
+<p>Mandatory Preference Requirements :</p>
+<ul>
+<li>Configure Agent &gt; Agent Capabilities &gt; Cancellation should be
+turned on</li>
+</ul>
+<p><strong>Confirmation</strong> - When the caller calls in to check the
+details of their upcoming appointment, the agent will ask for DOB and
+name to verify the caller and to fetch the correct patient record and
+upcoming appointment details. The agent will then communicate the
+details of the upcoming appointment.</p>
+<p><strong>Other Patient Call Types</strong> - When a patient calls for
+any other reason other than the cases mentioned above, the agent will
+communicate that someone from the practice will call back to help them
+and will create a task with the relevant details for the practice to
+follow up with the patient</p>
+
+<h2 id="ai-agent-m10">AI Agent: Possible Error Scenarios</h2>
+<p>This section covers some issues the agent might run into and an
+explanation for why that happens and how to troubleshoot it. Before we
+get into that, just quickly re-summarising the technology behind the
+product. It has 3 core parts -</p>
+<p>STT (Speech to Text) - This converts what the caller says into text
+transcript the agent can understand</p>
+<p>LLM (Large Language Model) - Based of the transcript generated by the
+STT, the LLM will generate a response based on the prompts provided
+(Prompts define how the agent should behave for every scenarios it
+encounters)</p>
+<p>TTS (Text To Speech) - This converts the text response generated by
+the LLM into audible speech</p>
+<p>In addition to this, the agent will also use a lot of APIs to handle
+scheduling related things</p>
+<p>For an agent to do a perfect call, all the 4 things - STT, LLM, TTS
+&amp; APIs - should work well. Issue happens when one of these or
+multiple of these falters. Among these, APIs are the only thing we can
+control to be close to 100% accurate all the time. It is the inherent
+non-deterministic nature of STTs and LLMs which makes it difficult to
+control the accuracy of what the agent says and does sometimes. While
+TTS is also non-deterministic, it does not usually result in the agent
+saying the wrong thing, but can cause sudden fluctuations in volume and
+tone when it misbehaves.</p>
+<p><strong>Possible Issues</strong></p>
+<ol type="1">
+<li><p>Agent is not Scheduling/Rescheduling/Cancelling appointments by
+itself and just keeps creating tasks - This could be because the Agent
+Capabilities in preferences have been set to No for
+Scheduling/Rescheduling/Cancellation. If this is set to “Yes” and the
+agent still does handle scheduling related things on its own then it
+needs to be looked into by the Ai Support Team</p></li>
+<li><p>Appointment booked for the incorrect service - Like we have
+covered before, AI will only have access to the services set up in the
+Ai Agent preferences. The first check is to see if all the relevant
+services are set up correctly. If all required services are mentioned,
+then the next check should be to see if the explanation is provided
+correctly and makes sense as to how that particular practice book and
+appointment for that type of service. If all these settings are correct,
+then it has to be sent to the Ai Support team to troubleshoot</p></li>
+<li><p>Communicating no slots are available when slots are actually
+available or vice-versa - This could happen because of 2 reasons. The
+most common reason would be an API failure. If the transcript clearly
+captures the date correctly and if the practice’s OS shows availability
+on those days for that service and the agent was not able to fetch the
+slots, then it is clearly an API issue and needs to be troubleshooted by
+the Ai Team. Another reason for this could be a transcription error
+where the AI transcribes the date as an incorrect one compared to the
+one the caller asked for. If that is the case, then it can be identified
+by quickly checking the transcript and listening to the call</p></li>
+<li><p>Triggering existing patient flow for new patients and vice versa
+- This can happen if there is a transcription error in STT. STT models
+we use are state-of-the art which could mostly mean the issue is arising
+from call quality or the accent/pronunciation of the caller where most
+human recipients might also get confused. One example error scenario
+here is that “I’m a new patient” when spoken fast and with a particular
+accent can sometimes get transcribed as “I’m your patient” which can
+effectively trigger the existing patient flow. To tackle this we frame
+the questions the agent asks in such a way that the answers are not easy
+to get confused with regardless of call quality or pronunciation. But in
+rare cases, this might still happen. To identify if the issue is because
+of this, you can quickly check the transcript of the call in the Adit
+App to understand if the agent got confused because of the transcription
+issue. Also you can listen to that part of the call to understand if it
+was actually confusing. If the audio was clear or the transcription did
+not have any errors, then this has to be troubleshooted by the Ai
+Team</p></li>
+<li><p>Answering for a different question than what the caller asks/says
+- This is also usually a case of transcription error in STT, but once
+again to be clear - more often than not it will be due to call quality
+or pronunciation issues. We do denoising (a process of removing unwanted
+noise and background speech) and optimize the STT for accuracy to reduce
+instances like these as much as possible, but it can still happen. Once
+again, to identify if the issue is because of this, you can quickly
+check the transcript of the call in the Adit App to understand if the
+agent got confused because of the transcription issue. Also you can
+listen to that part of the call to understand if it was actually
+confusing. If the audio was clear or the transcription did not have any
+errors, then this has to be troubleshooted by the Ai Team</p></li>
+<li><p>Switching to another language even when the caller does not -
+This is another instance of STT transcription issue. Since the STT is
+trained on more than 30 languages, the unclear audio of a supposed
+English word transcribed incorrectly can mean a proper word in another
+language the agent speaks. This triggers the auto-language switch
+functionality of the agent and immediately in the middle of the
+conversation it will start speaking in another language even though the
+caller did not. The agent will immediately switch back to English / or
+the original language of the conversation as soon as the caller replies
+back in English / original language. But it can still sound very jarring
+for the caller and they will feel like the agent just switched language
+for no reason. Once again, to identify if the issue is because of this,
+you can quickly check the transcript of the call in the Adit App to
+understand if the agent got confused because of the transcription issue.
+Also you can listen to that part of the call to understand if it was
+actually confusing. If the audio was clear or the transcription did not
+have any errors, then this has to be troubleshooted by the Ai
+Team</p></li>
+<li><p>Not able to verify existing patients - This could happen because
+of 2 reasons. One reason is again a transcription error when the AI
+collects the DOB or Phone Number. In this scenario the agent will try to
+fetch the patient record with the incorrect DOB or Phone Number. The
+second reason is that the patient is not able to correctly recollect the
+phone number or DOB which was provided earlier resulting in the agent
+not being able to pull up the correct record. If it is the first issue.
+once again transcript + call recording recording will be able to
+identify it. If it is the second issue, we can go to the location and
+search for that patient record just using the name and compare the DOB/
+Phone Number present in the record compared to the info given by the
+caller.</p></li>
+<li><p>Adit App shows as Existing Patient even when the caller clearly
+says New Patient and vice versa -</p></li>
+<li><p>Booked appointment for unaccepted Insurance - As of now, the
+functionality is not available to check if the insurance provided by the
+user is part of the accepted list or not, so the agents default
+behaviour is book the appointment if the patient is a PPO insurance
+holder. If the caller specifically asks if their insurance is accepted,
+the agent will communicate that mostly all PPOs are accepted but we will
+have someone from the practice double check and call you back and will
+create a task for the practice. The functionality to check if a
+particular insurance is accepted or not is being built out should be
+available by the mid of March 2026.</p></li>
+</ol>
+
+<h2 id="ai-agent-m11">AI Agent: Interaction Type</h2>
+<p>Interaction Type will be updated for all calls</p>
+<ul>
+<li>Scheduling - If the patient is calling the practice looking to book
+an appointment</li>
+<li>Recheduling - If the patient or the practice is calling to cancel an
+appointment or to reschedule an appointment</li>
+<li>Confirmation - If the patient is calling to confirm or clarify the
+time of the appointment or if the practice is calling the patient to
+confirm their participation</li>
+<li>Emergency - If the patient is looking to book an appointment on an
+emergency basis due to severe pain, accident or for some other
+unforeseen reason</li>
+<li>Recare - If the practice is reaching out to the patient to get them
+to book an appointment because they missed their appointment or if some
+of their treatment is due or just trying to bring them back because it
+has been sometime since their last visit</li>
+<li>Clinical - If the patient or the practice is calling to check on
+general care, treatment care, treatment recovery, instructions,
+prescriptions or medicines</li>
+<li>Billing - If the conversation is between the patient (or guardian)
+and the practice regarding outstanding payments, billing clarifications
+or payment plans and benefits</li>
+<li>Insurance - If the conversation is between the patient (or guardian)
+and the practice regarding insurance acceptance, insurance rejection or
+claim follow ups</li>
+<li>Verifications: Calls made by the practice to an insurance company or
+provider on behalf of a patient to check eligibility, claims, benefits,
+or status</li>
+<li>Product Order - If the call is related to tracking the order or
+confirming the arrival of products like crowns, braces, veneers, specs,
+lenses etc</li>
+<li>Vendor - If the call is between the practice and a vendor other than
+the insurance provider regarding the orders placed by the practice to
+the vendor or regarding diagnostics done with the vendor</li>
+<li>Others - If the completed call does not fall into any of the above
+categories, then it will get categorised as others</li>
+<li>Incomplete - If the call gets terminated very early without a proper
+conversation between the practice and the patient, then it will get
+marked as “Incomplete”</li>
+<li>Missed - If it is a missed call</li>
+</ul>
+
+<h2 id="ai-agent-m12">AI Agent: Outcome</h2>
+<p>All calls other than Others, Incomplete and Missed Calls will get
+categorised with this</p>
+<ul>
+<li>Booked - If the call type is Rescheduling, Scheduling, Emergency or
+Recare and an appointment has been booked. An appointment should be
+considered Booked if the practice schedules it and will follow up only
+if there is an issue, even if insurance verification is pending.</li>
+<li>Cancelled - If the call type is Rescheduling and the appointment has
+been cancelled without rescheduling</li>
+<li>Not Booked - If the call type is Scheduling, Emergency or Recare and
+an appointment has not been booked.Only mark as Not Booked if the
+patient actively leaves without an appointment or if no appointment was
+scheduled</li>
+<li>Resolved - If the call type is Confirmation, Clinical, Billing,
+Insurance, Verifications, Vendor, Product Order or Others and call has
+been fully resolved with no further action required for now</li>
+<li>Not Resolved - If the call type is Confirmation, Clinical, Billing,
+Insurance, Verifications, Vendor, Product Order or Others and call has
+not been fully resolved and will require further action</li>
+</ul>
+
+<h2 id="ai-agent-m13">AI Agent: Reason for Visit</h2>
+<p>Reason for visit will be updated only for Scheduling, Emergency,
+Rescheduling and Recare Calls. Reason for Visit will be different based
+on the vertical</p>
+<p><strong>Dental/Ortho</strong></p>
+<ul>
+<li>General Checkup - If booking a routine hygiene checkup or a general
+check up</li>
+<li>Tooth Pain - If the patient is looking to book an appointment due to
+tooth pain or tooth ache without any apparent reason or from previous
+appointments or processes.</li>
+<li>Cracked Tooth - If the patient is looking to book an appointment due
+to a crack or a fracture or a split in the tooth</li>
+<li>Cleaning - If Cleaning or Dental Cleaning or Teeth Cleaning or
+Prophy or Prophylaxis is mentioned as the treatment patient is looking
+to book</li>
+<li>Teeth Whitening - If the patient is looking for teeth
+whitening/bleaching/brightening</li>
+<li>Fillings - If the patient is looking to for tooth filling/cavity
+filling</li>
+<li>Root Canal - If the patient is looking for root canal/endodontic
+treatment</li>
+<li>Crowns - If the patient is looking for dental crowns/caps</li>
+<li>Implants - If the patient is looking for dental
+fixtures/implants</li>
+<li>Dentures - If the patient is looking for dentures/false
+teeth/artificial teeth/dental plates</li>
+<li>Bridges - If the patient is looking for dental
+bridges/bridgework</li>
+<li>Extraction - If Tooth removal or Tooth Extraction or Exodontia or
+Tooth pulling is mentioned as the treatment patient is looking for</li>
+<li>Flouride Treatment - If the patient is looking for fluoride gel
+treatment</li>
+<li>Sealants - If the patient is looking for applying sealants</li>
+<li>Veneers - If the patient is looking for dental veneers/porcelain
+veneers/dental porcelain laminates</li>
+<li>Retainers - If the patient is looking for retainers</li>
+<li>Braces - If the patient is looking for dental braces or orthodontic
+braces</li>
+<li>Invisalign - If the patient is looking for Invisalign/clear
+aligners/invisible braces/removable aligners</li>
+<li>Bonding - If the patient is looking for composite bonding/teeth
+bonding</li>
+<li>Gum Contouring - If the patient is looking for Gum
+contouring/gingival sculpting/gingivoplasty/gum reshaping</li>
+<li>Deep Cleaning - If the patient is looking for deep
+cleaning/scaling/root planing/periodontal therapy</li>
+<li>Gum Grafting - If the patient is looking for gum grafting/gingival
+grafting/periodontal plastic surgery</li>
+<li>Inlays / Onlays - If the patient is looking for
+inlays/onlays/partial crowns/indirect fillings</li>
+<li>Pulpotomy - If the patient is looking for pulpotomy/vital pulp
+therapy</li>
+<li>Space Maintainers - If the patient is looking for dental
+spacers/space maintainers</li>
+<li>Appliance Placement - Used when the caller is scheduling placement
+or adjustment of other orthodontic appliances such as palatal expanders,
+Herbst appliances,or habit breakers</li>
+<li>Interceptive Treatment - Used when the caller is inquiring about
+orthodontic evaluation or treatment for young children (Phase I
+treatment), typically to address developmental issues early, such as jaw
+growth guidance or space management.</li>
+<li>Orthognathic Consultation - Used when the caller is discussing
+surgical orthodontic treatment, usually in cases involving jaw
+discrepancies that require combined orthodontic and surgical
+planning</li>
+<li>Appliance Removal - Used when the caller is scheduling the removal
+of braces or other fixed orthodontic appliances, usually toward the end
+of treatment.</li>
+<li>Follow Up Exam - If the patient is looking for a follow up for a
+previous procedure or appointment</li>
+<li>Others - If it is a scheduling/emergency call and Appointment type
+is not any of the above</li>
+</ul>
+<p><strong>Optometry</strong></p>
+<ul>
+<li>Pediatric Eye Exam - For parents or guardians scheduling routine or
+comprehensive eye exams for children or adolescents. This includes
+first-time exams, annual vision checks, or assessments for visual
+development issues in patients under 18.</li>
+<li>School Vision Screening - For parents scheduling vision checks
+required by schools or requesting screenings for school forms. These are
+typically brief, standardized vision assessments to meet educational or
+state requirements</li>
+<li>Amblyopia / Strabismus - For children with conditions like lazy eye
+(amblyopia) or eye misalignment (strabismus), including evaluations,
+patching therapy, or referrals for vision therapy. These calls often
+come from parents noticing eye turning or vision differences</li>
+<li>Pediatric Myopia Control - For parents exploring options to slow
+down the progression of nearsightedness in their children. This may
+involve discussions of orthokeratology lenses, atropine therapy, or
+specialized myopia control spectacle lenses</li>
+<li>General Eye Exam - For patients scheduling their regular annual or
+routine eye checkup. This includes vision testing, prescription updates
+if needed, and a general ocular health evaluation, without any acute
+medical complaints or specialty concerns.</li>
+<li>Prescription Update - For patients specifically seeking to update or
+verify their existing glasses or contact lens prescription due to
+changes in vision or clarity. This visit is focused on refraction and
+determining the correct new prescription rather than a full
+comprehensive exam.</li>
+<li>Blurred Vision - When the caller reports experiencing unclear, hazy,
+or unfocused vision that may affect one or both eyes</li>
+<li>Vision Loss - When the caller reports sudden or noticeable loss of
+vision, partial or complete, in one or both eyes</li>
+<li>Eye Pain - When the caller reports sudden, severe, or intense eye
+pain requiring urgent attention</li>
+<li>Eye Injuries - When the caller describes trauma or injury to the eye
+area, including accidents, blunt force, or cuts.</li>
+<li>Foreign Bodies in the Eye - When the caller reports something stuck
+in the eye such as dust, debris, or any object causing irritation</li>
+<li>Red Eye/Infection - For patients reporting symptoms of acute
+irritation, infection, or inflammation of the eye such as redness,
+discharge, swelling, or discomfort. These calls often relate to
+conditions like conjunctivitis, minor infections, or surface
+inflammation</li>
+<li>Allergy Eye Care - For patients experiencing eye symptoms caused by
+seasonal or environmental allergies, such as itchiness, watering, or
+irritation that occurs during allergy seasons. The focus is on allergy
+evaluation and treatment, not infection.</li>
+<li>Dry Eye - For patients dealing with chronic dry eye symptoms
+including burning, grittiness, frequent irritation, or dryness.</li>
+<li>Contact Lens Exam - For patients scheduling appointments to be
+fitted with contact lenses for the first time or evaluated for new types
+of lenses.</li>
+<li>Occupational / Driver Vision Test - For patients scheduling vision
+tests required for work, licensing, or regulatory compliance (e.g.,
+commercial driver’s license, DMV requirements, or job-specific vision
+checks).</li>
+<li>Eyeglass Purchase - For patients interested in selecting and
+purchasing eyeglass frames or lenses.</li>
+<li>Eyeglass Repairs - For patients calling about repairing or adjusting
+their existing eyeglasses due to damage, loose hinges, misalignment, or
+discomfort.</li>
+<li>Cataract Evaluation - For patients experiencing cataract symptoms
+who are seeking an evaluation to determine cataract presence and discuss
+treatment options, often before a surgical referral is made.</li>
+<li>Diabetic Eye Exam - For patients with diabetes scheduling their
+routine or specialized eye examinations.</li>
+<li>Glaucoma - For patients undergoing or initiating monitoring and
+treatment for glaucoma</li>
+<li>Macular Degeneration Screening - For patients being screened or
+monitored for age-related macular degeneration (AMD), often due to
+family history, existing early signs, or visual changes affecting
+central vision. These calls typically involve specialized retinal
+imaging and follow-up planning</li>
+<li>LASIK - For patients seeking consultations, pre-operative
+evaluations, or post-operative follow-ups related to laser vision
+correction procedures such as LASIK, PRK, or SMILE. These calls often
+involve patients interested in reducing dependence on glasses or
+contacts through surgery, or existing surgical patients checking</li>
+<li>Migraine / Neurology Consultation - When the caller is seeking
+evaluation or treatment for recurrent headaches, migraines, or related
+neurological symptoms</li>
+<li>Follow Up Exam - If the patient is looking for a follow up for a
+previous procedure or appointment</li>
+<li>Others - If it is a scheduling/emergency call and Appointment type
+is not any of the above</li>
+</ul>
+<p><strong>Chiro</strong></p>
+<ul>
+<li>General Consultation - Used when the caller is seeking advice or
+evaluation for musculoskeletal concerns, posture issues, or wellness
+guidance without having an immediate acute problem. This may include
+discussion of treatment options, exercise recommendations, or preventive
+care</li>
+<li>Pediatric Consultation - Used when the caller is scheduling
+chiropractic evaluation or treatment for children, including posture
+guidance, growth-related musculoskeletal assessment, or pediatric
+wellness care.</li>
+<li>Scoliosis - When the caller is seeking assessment or ongoing care
+for abnormal spine curvature or scoliosis-related symptoms</li>
+<li>Spinal Adjustments - Used when the caller specifically wants
+chiropractic adjustments, manipulations, or spinal realignment sessions,
+either as part of a treatment plan or a single session</li>
+<li>Soft Tissue Therapy - Used when the caller is requesting soft tissue
+treatment such as therapeutic massage, myofascial release, or other soft
+tissue therapies provided by the clinic</li>
+<li>Pain Management - Used when the caller is focused on managing pain,
+stiffness, or other symptoms without specifying a particular type of
+treatment. This may include chronic back pain, neck pain, headaches, or
+joint discomfort</li>
+<li>Physical Therapy - Used when the caller is seeking physical therapy,
+rehabilitation exercises, or guided therapeutic sessions for injury
+recovery, mobility improvement, or post-surgical rehabilitation.</li>
+<li>Performance Therapy - Used when the caller is seeking chiropractic
+care to enhance athletic performance, prevent injury, or receive
+specialized treatment for sports-related musculoskeletal issues.</li>
+<li>Prenatal Care - Used when the caller is seeking chiropractic
+services tailored to pregnancy, such as spinal alignment, pelvic
+balancing, and relief from pregnancy-related back or joint
+discomfort.</li>
+<li>Ergonomic Evaluation - Used when the caller wants assessment or
+advice on posture, ergonomic setup, workplace adjustments, or lifestyle
+modifications to prevent musculoskeletal issues</li>
+<li>Preventive Care - Used when the caller is seeking routine or
+preventive chiropractic care for overall wellness, health maintenance,
+or ongoing spinal health, without a specific injury or pain
+complaint.</li>
+<li>Diagnostics - Used when the caller is requesting diagnostic services
+such as X-rays, MRI referrals, posture analysis, or musculoskeletal
+imaging as part of evaluation or treatment planning</li>
+<li>Follow Up Exam - If the patient is looking for a follow up for a
+previous procedure or appointment</li>
+<li>Others - If it is a scheduling/emergency call and Appointment type
+is not any of the above</li>
+</ul>
+
+<h2 id="ai-agent-m14">AI Agent: Reason for Not Booking</h2>
+<p>Reason for Not Booking will be updated only for Scheduling,
+Emergency, Rescheduling and Recare Calls if the call outcome is Not
+Booked or Cancelled.</p>
+<ul>
+<li>Price Enquiry - Patient enquire about the pricing/financing options
+of treatments and is not ready to decide yet or will call back</li>
+<li>Availability Enquiry - Patient enquire about the available slots and
+is not ready to decide yet or will call back</li>
+<li>Preferred Financing Not Accepted - Practice do not the accept the
+type of financing option the patient is looking for</li>
+<li>Preferred Slot Not Available - Practice is not able to offer a slot
+that is acceptable to the patient</li>
+<li>Preferred Service Not Available - Practice do not provide the
+service/treatment the patient is looking for</li>
+<li>Preferred Location Not Available - Preferred slots are not available
+for a specific location the patient wants</li>
+<li>Preferred Provider Not Available - Acceptable slots are not
+available for the specific doctor/provider the patient is looking
+for</li>
+<li>Call Missed - Call Missed by practice but a voicemail is left by the
+patient looking to book an appointment</li>
+<li>Left Voicemail - Patient missed the call and the practice left a
+voicemail</li>
+<li>Medicaid Not Accepted - Patient has Medicare and practice do not
+accept it</li>
+<li>Medicare Not Accepted - Patient has Medicaid and practice do not
+accept it</li>
+<li>Insurance Not Accepted - Practice does not accept the insurance the
+patient has. This does not include those scenarios where patient has
+Medicare or Medicaid</li>
+<li>Personal Emergency - When a rescheduling call goes cancelled due to
+personal emergency</li>
+<li>Cash Patients Not Accepted - Practice do not accept cash patients
+for those cases where patients are willing to pay cash because their
+insurance is not accepted or they don’t have insurance</li>
+<li>Language Barrier - Patient looking for specific language speaking
+staff to book an appointment. For eg. a Spanish only speaking patient
+checking if someone in the practice can speak Spanish</li>
+<li>Not Interested Right Now - If the call type is Recare and the
+patient declines to book at this time or indicates they are not ready to
+schedule, and does not provide a specific callback time</li>
+<li>Call Back Later - If the call type is Recare and the patient
+mentioned the practice to call back later at a specific time or time
+period to get them scheduled. Only mark as <strong>Call Back
+Later</strong> if the patient explicitly mentions a specific time, day,
+or period for the practice to call back to schedule. Any vague
+statements like ‘maybe later’ or ‘not now’ should <strong>not</strong>
+be considered Call Back Later</li>
+<li>Outstanding Balance - If an appointment is not booked due to an
+outstanding balance or collections</li>
+<li>Others - If a scheduling/emergency call goes Not Booked and reasons
+do not fall within any of the above</li>
+</ul>
+
+<h2 id="ai-agent-m15">AI Agent: Revenue Potential</h2>
+<p>$ for low revenue potential, <span
+class="math display"><em>f</em><em>o</em><em>r</em><em>m</em><em>e</em><em>d</em><em>i</em><em>u</em><em>m</em><em>r</em><em>e</em><em>v</em><em>e</em><em>n</em><em>u</em><em>e</em><em>p</em><em>o</em><em>t</em><em>e</em><em>n</em><em>t</em><em>i</em><em>a</em><em>l</em><em>a</em><em>n</em><em>d</em></span>$
+for high revenue potential</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Vertical</td>
+<td style="text-align: center;">Reason for Visit / Treatment</td>
+<td style="text-align: center;">Bucket</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">General Checkup</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Cleaning</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Tooth Pain</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Cracked Tooth</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Teeth Whitening</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>F</em><em>i</em><em>l</em><em>l</em><em>i</em><em>n</em><em>g</em><em>s</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Root Canal</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>C</em><em>r</em><em>o</em><em>w</em><em>n</em><em>s</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Implants</td>
+<td style="text-align: center;"><span class="math display">$$$ |
+| Dental / Ortho | Dentures | $$</span>$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Bridges</td>
+<td style="text-align: center;"><span class="math display">$$$ |
+| Dental / Ortho | Extraction | $$</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Fluoride Treatment</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Sealants</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Veneers</td>
+<td style="text-align: center;"><span class="math display">$$$ |
+| Dental / Ortho | Retainers | $$</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Braces</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>I</em><em>n</em><em>v</em><em>i</em><em>s</em><em>a</em><em>l</em><em>i</em><em>g</em><em>n</em>|</span>$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Bonding</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>G</em><em>u</em><em>m</em><em>C</em><em>o</em><em>n</em><em>t</em><em>o</em><em>u</em><em>r</em><em>i</em><em>n</em><em>g</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Deep Cleaning</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>G</em><em>u</em><em>m</em><em>G</em><em>r</em><em>a</em><em>f</em><em>t</em><em>i</em><em>n</em><em>g</em>|</span>$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Inlays / Onlays</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>P</em><em>u</em><em>l</em><em>p</em><em>o</em><em>t</em><em>o</em><em>m</em><em>y</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Space Maintainers</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>A</em><em>p</em><em>p</em><em>l</em><em>i</em><em>a</em><em>n</em><em>c</em><em>e</em><em>P</em><em>l</em><em>a</em><em>c</em><em>e</em><em>m</em><em>e</em><em>n</em><em>t</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Interceptive Treatment</td>
+<td style="text-align: center;"><span
+class="math display">||<em>D</em><em>e</em><em>n</em><em>t</em><em>a</em><em>l</em>/<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em>|<em>O</em><em>r</em><em>t</em><em>h</em><em>o</em><em>g</em><em>n</em><em>a</em><em>t</em><em>h</em><em>i</em><em>c</em><em>C</em><em>o</em><em>n</em><em>s</em><em>u</em><em>l</em><em>t</em><em>a</em><em>t</em><em>i</em><em>o</em><em>n</em>|</span>$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Appliance Removal</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Follow-Up Exam</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Dental / Ortho</td>
+<td style="text-align: center;">Others</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Pediatric Eye Exam</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">School Vision Screening</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Amblyopia / Strabismus</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>P</em><em>e</em><em>d</em><em>i</em><em>a</em><em>t</em><em>r</em><em>i</em><em>c</em><em>M</em><em>y</em><em>o</em><em>p</em><em>i</em><em>a</em><em>C</em><em>o</em><em>n</em><em>t</em><em>r</em><em>o</em><em>l</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">General Eye Exam</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Prescription Update</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Blurred Vision</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>V</em><em>i</em><em>s</em><em>i</em><em>o</em><em>n</em><em>L</em><em>o</em><em>s</em><em>s</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Eye Pain</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>E</em><em>y</em><em>e</em><em>I</em><em>n</em><em>j</em><em>u</em><em>r</em><em>i</em><em>e</em><em>s</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Foreign Body Removal</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>R</em><em>e</em><em>d</em><em>E</em><em>y</em><em>e</em>/<em>I</em><em>n</em><em>f</em><em>e</em><em>c</em><em>t</em><em>i</em><em>o</em><em>n</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Allergy Eye Care</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>D</em><em>r</em><em>y</em><em>E</em><em>y</em><em>e</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Contact Lens Exam</td>
+<td style="text-align: center;"><span class="math display">$$ |
+| Opto | Occupational / Driver Vision Test | $ |
+| Opto | Eyeglass Purchase | $$</span>$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Eyeglass Repairs</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Cataract Evaluation</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>D</em><em>i</em><em>a</em><em>b</em><em>e</em><em>t</em><em>i</em><em>c</em><em>E</em><em>y</em><em>e</em><em>E</em><em>x</em><em>a</em><em>m</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Glaucoma</td>
+<td style="text-align: center;"><span
+class="math display">||<em>O</em><em>p</em><em>t</em><em>o</em>|<em>M</em><em>a</em><em>c</em><em>u</em><em>l</em><em>a</em><em>r</em><em>D</em><em>e</em><em>g</em><em>e</em><em>n</em><em>e</em><em>r</em><em>a</em><em>t</em><em>i</em><em>o</em><em>n</em><em>S</em><em>c</em><em>r</em><em>e</em><em>e</em><em>n</em><em>i</em><em>n</em><em>g</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">LASIK</td>
+<td style="text-align: center;"><span class="math display">$$$ |
+| Opto | Migraine / Neurology Consult | $$</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Follow Up Exam</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Opto</td>
+<td style="text-align: center;">Others</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">General Consultation</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Pediatric Consultation</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Scoliosis</td>
+<td style="text-align: center;"><span
+class="math display">||<em>C</em><em>h</em><em>i</em><em>r</em><em>o</em>|<em>S</em><em>p</em><em>i</em><em>n</em><em>a</em><em>l</em><em>A</em><em>d</em><em>j</em><em>u</em><em>s</em><em>t</em><em>m</em><em>e</em><em>n</em><em>t</em><em>s</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Soft Tissue Therapy</td>
+<td style="text-align: center;"><span
+class="math display">||<em>C</em><em>h</em><em>i</em><em>r</em><em>o</em>|<em>P</em><em>a</em><em>i</em><em>n</em><em>M</em><em>a</em><em>n</em><em>a</em><em>g</em><em>e</em><em>m</em><em>e</em><em>n</em><em>t</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Physical Therapy</td>
+<td style="text-align: center;"><span
+class="math display">||<em>C</em><em>h</em><em>i</em><em>r</em><em>o</em>|<em>P</em><em>e</em><em>r</em><em>f</em><em>o</em><em>r</em><em>m</em><em>a</em><em>n</em><em>c</em><em>e</em><em>T</em><em>h</em><em>e</em><em>r</em><em>a</em><em>p</em><em>y</em>|</span></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Prenatal care</td>
+<td style="text-align: center;"><span
+class="math display">||<em>C</em><em>h</em><em>i</em><em>r</em><em>o</em>|<em>E</em><em>r</em><em>g</em><em>o</em><em>n</em><em>o</em><em>m</em><em>i</em><em>c</em><em>E</em><em>v</em><em>a</em><em>l</em><em>u</em><em>a</em><em>t</em><em>i</em><em>o</em><em>n</em>|</span></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Preventive Care</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Diagnostics</td>
+<td style="text-align: center;">$$</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Follow Up Exam</td>
+<td style="text-align: center;">$</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Chiro</td>
+<td style="text-align: center;">Others</td>
+<td style="text-align: center;">$</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="ai-agent-faq1">AI Agent FAQ: General</h2><p><strong>Q: What exactly is Adit AI Agent and what does it
+do?</strong></p>
+<p>A: Adit AI Agent is a suite of AI-powered solutions that handles
+incoming and outgoing communication for your practice - including phone
+calls and text messages. It can schedule, reschedule, confirm, and
+cancel appointments; answer common patient questions; and create
+follow-up tasks for your team when human intervention is needed. Think
+of it as a front desk team member that is always available, never on
+hold, and never calls in sick.</p>
+<p><strong>Q: Do we need to be on Adit Phones to use the AI
+Agent?</strong></p>
+<p>A: Currently, yes. The AI Agent is being sold exclusively to
+practices that use Adit Phones. You do not need to use Adit’s booking
+links, but you will need to purchase a tracking number from Adit for
+warm-transfer call forwarding. If you use SMS handling, you will also
+need to enable Engage and either port in your existing number or
+purchase a new one.</p>
+<p><strong>Q: Will the AI Agent work with our existing EHR
+system?</strong></p>
+<p>A: Yes. The agent syncs patient records and appointments back to all
+supported EHRs. However, interaction summary write-back is not currently
+supported for PracticeWork, OfficeMate, and Cloud9. If you are unsure
+about your specific EHR, refer to the Adit EHR Integration Rulebook or
+check with your onboarding specialist.</p>
+<p><strong>Q: How quickly can the agent be set up and go
+live?</strong></p>
+<p>A: Once you complete the Getting Started configuration - including
+Agent Setup, Practice Details, and Booking Settings - the agent is
+created instantly and is ready to handle calls. There is no waiting
+period after onboarding is complete.</p>
+<p><strong>Q: Can we update the agent’s settings after it goes
+live?</strong></p>
+<p>A: Yes. All preferences can be updated at any time from within the AI
+Agent module, and the agent reflects those changes immediately.</p>
+
+<h2 id="ai-agent-faq3">AI Agent FAQ: Calls and Call Handling</h2><p><strong>Q: What happens when a patient calls - do they know they’re
+speaking to an AI?</strong></p>
+<p>A: By default, the agent does not announce that it is an AI. If your
+practice prefers full transparency, you can enable the AI Disclosure
+setting, which overrides the welcome message to inform callers they are
+speaking with an AI.</p>
+<p><strong>Q: What if the AI cannot resolve a caller’s
+request?</strong></p>
+<p>A: If the agent cannot handle a request on its own, it will either
+perform a warm transfer to your staff (during business hours, if warm
+transfer is enabled) or create a follow-up task and inform the caller
+that someone from the practice will be in touch. The agent never simply
+disconnects a caller without attempting to help.</p>
+<p><strong>Q: Can the agent handle calls in languages other than
+English?</strong></p>
+<p>A: Yes. The agent supports English, Spanish, French, German, Hindi,
+Russian, Portuguese, Japanese, Italian, and Dutch, and can handle a wide
+range of accents. For non-English calls, transcripts are shown in the
+original language, while interaction summaries and analysis are provided
+in English.</p>
+<p><strong>Q: What happens to sales and solicitation calls?</strong></p>
+<p>A: The agent screens marketing and vendor calls before they reach
+your team. It informs the caller that no one is available and creates a
+Vendor Calls task in the system. Your staff can review and respond to
+these tasks at their discretion.</p>
+<p><strong>Q: Can the agent handle multiple family members booking in a
+single call?</strong></p>
+<p>A: Yes. The agent supports multi-patient booking within a single
+call, subject to the services and availability settings configured for
+your practice.</p>
+
+<h2 id="ai-agent-faq5">AI Agent FAQ: Scheduling and Bookings</h2><p><strong>Q: Will the agent book appointments for all of our
+services?</strong></p>
+<p>A: Only services that are explicitly configured in the Booking
+Settings section will be available for the agent to book. Each service
+must include a clear explanation so the agent can accurately match
+patient requests to the correct appointment type. Services that are not
+listed will not be booked by the agent.</p>
+<p><strong>Q: Can the agent book appointments for new
+patients?</strong></p>
+<p>A: Yes, provided the relevant services are enabled for new patients
+in Booking Settings. The agent collects the patient’s name, date of
+birth, and insurance information, creates a patient record in Adit, and
+proceeds to find and book the appropriate appointment.</p>
+<p><strong>Q: What happens if no suitable slot is available for a
+patient?</strong></p>
+<p>A: If no acceptable slot is found - for example, in an emergency
+situation where the patient cannot wait - the agent performs a warm
+transfer to your staff during business hours, or creates a priority
+callback task and informs the patient that someone will call them back
+as soon as possible.</p>
+<p><strong>Q: Can we limit how far in advance the agent can book
+appointments?</strong></p>
+<p>A: Yes. The Max Booking Window setting in Booking Settings controls
+how far out the agent can schedule. If a caller requests a date beyond
+this window, the agent will not book the appointment.</p>
+<p><strong>Q: Can the agent handle rescheduling and
+cancellations?</strong></p>
+<p>A: Yes, both are supported. Rescheduling and cancellation handling
+can be enabled or disabled independently in Agent Capabilities. Minimum
+notice period windows (Rescheduling Window and Cancellation Window) can
+be configured to define how close to the appointment the agent is
+allowed to act independently versus creating a task for staff.</p>
+
+<h2 id="ai-agent-faq7">AI Agent FAQ: Insurance and Billing</h2><p><strong>Q: Can the agent verify if a patient’s insurance is
+accepted?</strong></p>
+<p>A: Not yet. The agent currently collects the patient’s insurance
+information and proceeds to book the appointment. If a patient
+specifically asks whether their insurance is accepted, the agent will
+note that a staff member will follow up and creates a task accordingly.
+Full insurance verification functionality is expected to be available by
+the end of March 2026.</p>
+<p><strong>Q: What if a patient asks about treatment costs?</strong></p>
+<p>A: If a price sheet has been configured in Booking Settings, the
+agent will share the relevant cost information when asked. If no prices
+are configured, the agent will explain that costs depend on clinical
+prognosis and the patient’s insurance coverage, and that someone from
+the practice can provide more detail.</p>
+
+<h2 id="ai-agent-faq9">AI Agent FAQ: Tasks and Follow-Ups</h2><p><strong>Q: How does the agent create tasks for our team?</strong></p>
+<p>A: Whenever the agent cannot fully resolve a caller’s request -
+whether due to a complex inquiry, a call outside business hours, or a
+scheduling constraint - it automatically creates a structured follow-up
+task in the Adit Tasks module. Each task includes the reason for the
+call, relevant caller details, and any other context captured during the
+interaction.</p>
+<p><strong>Q: Can we customise the tasks the agent creates?</strong></p>
+<p>A: Yes. Tasks can be configured with call links, auto-populated
+custom fields, and specific task types to match your team’s
+workflow.</p>
+
+<h2 id="ai-agent-faq11">AI Agent FAQ: Performance and Reliability</h2><p><strong>Q: How accurate is the AI? What if it makes a
+mistake?</strong></p>
+<p>A: The agent uses enterprise-grade Speech-to-Text (STT), Large
+Language Model (LLM), and Text-to-Speech (TTS) components. While these
+are state-of-the-art, they are not 100% infallible - occasional errors
+can occur, particularly with poor call quality or unusual accents. Every
+interaction is fully transcribed and recorded, so your team can review
+any call and identify the root cause of an issue. The agent is
+continuously monitored and improved based on data across all
+practices.</p>
+<p><strong>Q: What if the agent books an appointment
+incorrectly?</strong></p>
+<p>A: First, verify that the relevant services are correctly configured
+and explained in Booking Settings. If the settings are accurate and the
+issue persists, the interaction transcript and call recording should be
+reviewed to determine whether a transcription error occurred. If neither
+resolves the issue, it should be escalated to the Adit AI Support
+Team.</p>
+<p><strong>Q: What happens during a staffing shortage or if our
+receptionist is unavailable?</strong></p>
+<p>A: The agent continues to operate normally regardless of your
+staffing situation. You can also increase the agent’s involvement - for
+example, routing all calls to the agent instead of only overflow or
+after-hours calls - during periods of short staffing.</p>
+
+<h2 id="ai-agent-faq13">AI Agent FAQ: Pricing and Usage</h2><p><strong>Q: How are credits calculated?</strong></p>
+<p>A: 1 credit equals 1 call minute or 10 SMS threads. The After-Hours
+Only plan includes 200 credits per subscription period; the Full-Time
+plan includes 400 credits. Usage beyond these limits is billed as
+overage.</p>
+<p><strong>Q: What are the overage charges?</strong></p>
+<p>A: After-Hours Only plan: $1 per additional credit. Full-Time plan:
+$0.50 per additional credit. You only pay for what you use beyond your
+plan.</p>
+<p><strong>Q: Will we regularly hit overages?</strong></p>
+<p>A: Unlikely for most practices. The included credits are sized to
+cover typical usage generously - 90% of practices will not exceed their
+allocation. Overages are most relevant for practices with very high
+inbound call volumes.</p>
+<p><strong>Q: If we do hit overages, is it worth it?</strong></p>
+<p>A: In most cases, yes. Overages indicate the agent has been actively
+handling patient calls and booking appointments. On average, the agent
+books one appointment for every 20 minutes of conversation. A 200-credit
+overage on the Full-Time plan ($100 in overage charges) typically
+corresponds to approximately 10 additional booked appointments -
+generating significantly more revenue than the cost incurred.</p>
+
+<h2 id="ai-agent-faq15">AI Agent FAQ: Data and Privacy</h2><p><strong>Q: Is patient data kept secure?</strong></p>
+<p>A: Yes. All interactions are processed in compliance with HIPAA
+requirements. The agent requests multiple identifying data points (name
+and date of birth) before accessing or disclosing any patient-specific
+appointment information, in line with HIPAA verification standards.</p>
+<p><strong>Q: Are calls recorded?</strong></p>
+<p>A: Yes. Every call is transcribed and the recording is stored and
+accessible through the Adit AI module. This enables your team to review
+any interaction in full at any time.</p>
+<p><strong>Q: Who can see the interaction data?</strong></p>
+<p>A: Interaction data - including transcripts, summaries, sentiment
+analysis, and task details - is accessible to authorised users within
+your practice’s Adit platform. Data is not shared with other
+practices.</p>
+
