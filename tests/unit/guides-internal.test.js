@@ -9,6 +9,10 @@ describe('internal Expert guides (Batch 354)', () => {
     expect(d.ehr.chunks.length).toBeGreaterThan(100);
     expect(d.aditpay.chunks.length).toBeGreaterThan(10);
     expect(d.app.chunks.length).toBeGreaterThan(10);
+    // Batch 383: Practice Analytics knowledge, with the draft warning at the top.
+    expect(d.pa.chunks.length).toBeGreaterThan(100);
+    expect(d.pa.html).toContain('Needs confirmation');
+    expect(d.pa.html).not.toMatch(/app\.avoma\.com/);
     // Batch 380: the EHR library has a section for every EHR in the Integration Rulebook.
     expect(d.ehrlib.chunks.length).toBeGreaterThan(200);
     // Screenshot sections carry their images, served from the signed-in image route.
