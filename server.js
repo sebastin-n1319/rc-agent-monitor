@@ -10478,6 +10478,15 @@ app.get('/api/aditpay/home', requireAuth, rateLimit(30, 60000), async (req, res)
     res.json({ success: true, data, admin: s.role === 'admin' });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
 });
+// Batch 374: Adit Pay revenue analytics (Pay home > Revenue), for admins with the Adit Pay workspace.
+app.get('/api/aditpay/revenue', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const s = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+    if (!s || s.role !== 'admin' || !(s.workspaces || []).includes('aditpay')) return res.status(403).json({ success: false, error: 'Revenue is for Adit Pay admins.' });
+    const data = await require('./lib/aditpay-revenue').summary({ fresh: req.query.fresh === '1' });
+    res.json({ success: true, data });
+  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
+});
 // Batch 362: the Adit Pay team's daily report (calls, demos and trainings from Avoma, new tickets and follow-ups), the
 // numbers they post in Chat each day. Always the Adit Pay team, whichever workspace the page is in.
 app.get('/api/aditpay/daily', requireAuth, rateLimit(30, 60000), async (req, res) => {
