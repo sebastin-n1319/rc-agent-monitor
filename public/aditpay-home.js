@@ -48,6 +48,8 @@
     '.aph-chart{width:100%;height:auto;display:block}.aph-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#4C6378;margin:6px 0 0}.aph-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}',
     '.aph-t td.r,.aph-t th.r{text-align:right}.aph-t tr.fc td{color:#4C6378}.aph-t tr.cur td{background:#F7FBFB}.aph-how li{margin:0 0 6px;font-size:12px;color:#3A5068}',
     '.aph-tip{position:fixed;pointer-events:none;background:#072B40;color:#fff;font-size:11.5px;padding:6px 8px;border-radius:8px;z-index:50;white-space:nowrap}',
+    '.aph-sec{margin-bottom:14px}.aph-grid{font-size:11.5px;min-width:1100px}.aph-grid th small{display:block;font-weight:500;color:#9BAFC0}.aph-grid td{padding:4px 6px;white-space:nowrap}.aph-grid td.ex{background:#F2FAFA;color:#4C6378;font-style:italic}.aph-grid tr.tot td{font-weight:700;border-top:2px solid #E6ECF4}.aph-grid th.fc{color:#1F7F84}',
+    '@media print{body *{visibility:hidden}.aph-rev,.aph-rev *{visibility:visible}.aph-rev{position:absolute;left:0;top:0;width:100%}.aph-rev .aph-seg,.aph-rev .aph-nav{display:none}.aph-c{break-inside:avoid}}',
     '@media(max-width:900px){.aph-kpis{grid-template-columns:repeat(2,1fr)}.aph-g2{grid-template-columns:1fr}}'
   ].join('\n');
 
@@ -191,82 +193,146 @@
     }).catch(function () { root.innerHTML = '<div class="aph"><p class="aph-empty">Could not load Adit Pay home. Check the connection and try Refresh.</p></div>'; });
   }
 
-  // ── Batch 374: Revenue (admins): past six months, this month and a six month forecast, with the day-wise split ──
-  var view = 'overview', last = null, rv = { metric: 'revenue', month: null, data: null };
+  // ── Batch 374/376: Revenue (admins): the whole history since day one, a six month forecast, charts and the day by month grid ──
+  var view = 'overview', rv = { metric: 'volume', span: '36', gmetric: 'volume', showAll: false, data: null };
   function navHtml(d) { return d && d._admin ? '<span class="aph-nav" role="group" aria-label="Adit Pay home view"><button type="button" data-view="overview" aria-pressed="' + (view === 'overview') + '">Overview</button><button type="button" data-view="revenue" aria-pressed="' + (view === 'revenue') + '">Revenue</button></span>' : ''; }
   function wireNav(root, d) { root.querySelectorAll('[data-view]').forEach(function (b) { b.onclick = function () { view = b.dataset.view; if (view === 'revenue') renderRevenue(root, d); else render(root, d); }; }); }
-  var LBL = { revenue: 'Revenue', net: 'Net revenue', volume: 'Volume', costs: 'Costs' };
-  function monthName(m) { var p = m.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, 15)).toLocaleDateString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }); }
-  function tip(el, text) { var t = document.getElementById('aph-tip'); if (!t) { t = document.createElement('div'); t.id = 'aph-tip'; t.className = 'aph-tip'; document.body.appendChild(t); } el.addEventListener('mousemove', function (e) { t.textContent = text; t.style.display = 'block'; t.style.left = (e.clientX + 12) + 'px'; t.style.top = (e.clientY + 12) + 'px'; }); el.addEventListener('mouseleave', function () { t.style.display = 'none'; }); }
-  function monthChart(R, k) {
-    var bars = R.past.map(function (p) { return { m: p.month, v: p[k], kind: 'a' }; });
-    var cur = R.current, cp = cur.projected || {};
-    bars.push({ m: cur.month, v: k === 'revenue' || k === 'volume' ? cur.toDate[k] : null, p: cp[k], kind: 'c' });
-    R.forecast.forEach(function (f) { bars.push({ m: f.month, v: f[k], lo: f[k + 'Low'], hi: f[k + 'High'], kind: 'f' }); });
-    var max = Math.max.apply(null, bars.map(function (b) { return Math.max(b.v || 0, b.p || 0, b.hi || 0); })) || 1;
-    var W = 760, H = 220, L = 54, B = 26, T = 10, bw = (W - L - 10) / bars.length, y = function (v) { return T + (H - T - B) * (1 - v / max); };
-    var g = '';
-    for (var i = 0; i <= 4; i++) { var v = max * i / 4; g += '<line x1="' + L + '" x2="' + (W - 6) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#EEF1F5"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="10" fill="#6B849A">' + money(v, true) + '</text>'; }
-    bars.forEach(function (b, i) {
-      var x = L + i * bw + 5, w = bw - 10;
-      if (b.kind === 'a') g += '<rect data-tip="' + esc(monthName(b.m) + ': ' + money(b.v) + ' (actual)') + '" x="' + x + '" y="' + y(b.v) + '" width="' + w + '" height="' + (y(0) - y(b.v)) + '" rx="4" fill="#2A9FA4"/>';
-      else if (b.kind === 'c') { if (b.p) g += '<rect data-tip="' + esc(monthName(b.m) + ': ' + money(b.p) + ' projected') + '" x="' + x + '" y="' + y(b.p) + '" width="' + w + '" height="' + (y(0) - y(b.p)) + '" rx="4" fill="#BFE6E7"/>'; if (b.v != null) g += '<rect data-tip="' + esc(monthName(b.m) + ': ' + money(b.v) + ' so far') + '" x="' + x + '" y="' + y(b.v) + '" width="' + w + '" height="' + (y(0) - y(b.v)) + '" rx="4" fill="#2A9FA4"/>'; }
-      else { g += '<rect data-tip="' + esc(monthName(b.m) + ': ' + money(b.v) + ' forecast (' + money(b.lo, true) + ' to ' + money(b.hi, true) + ')') + '" x="' + x + '" y="' + y(b.v) + '" width="' + w + '" height="' + (y(0) - y(b.v)) + '" rx="4" fill="#DDEFF0" stroke="#7FC7CA" stroke-dasharray="3 2"/>'; g += '<line x1="' + (x + w / 2) + '" x2="' + (x + w / 2) + '" y1="' + y(b.hi) + '" y2="' + y(b.lo) + '" stroke="#4C6378" stroke-width="1.5"/>'; }
-      g += '<text x="' + (x + w / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" fill="#6B849A">' + esc(monthName(b.m)) + '</text>';
+  var LBL = { volume: 'Volume', revenue: 'Revenue', net: 'Net revenue', costs: 'Costs' };
+  var COL = { a: '#2A9FA4', f: '#7FC7CA', band: 'rgba(54,175,180,.14)', grid: '#EEF1F5', ink: '#6B849A', cost: '#F4A259', net: '#072B40' };
+  var YC = ['#B8C4D0', '#9BAFC0', '#7FC7CA', '#21AAE0', '#2A9FA4', '#F4891F', '#072B40'];
+  function mn(m, long) { var p = m.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, 15)).toLocaleDateString('en-US', { month: long ? 'long' : 'short', year: long ? 'numeric' : '2-digit', timeZone: 'UTC' }); }
+  function pct(v, dp) { return v == null ? '-' : (v * 100).toFixed(dp == null ? 1 : dp) + '%'; }
+  function tip(el, text) { var t = document.getElementById('aph-tip'); if (!t) { t = document.createElement('div'); t.id = 'aph-tip'; t.className = 'aph-tip'; document.body.appendChild(t); } el.addEventListener('mousemove', function (e) { t.textContent = text; t.style.display = 'block'; t.style.left = Math.min(window.innerWidth - 260, e.clientX + 12) + 'px'; t.style.top = (e.clientY + 12) + 'px'; }); el.addEventListener('mouseleave', function () { t.style.display = 'none'; }); }
+  function axis(W, L, T, Hp, max, fmt) { var g = ''; for (var i = 0; i <= 4; i++) { var v = max * i / 4, y = T + Hp * (1 - i / 4); g += '<line x1="' + L + '" x2="' + (W - 8) + '" y1="' + y + '" y2="' + y + '" stroke="' + COL.grid + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="10" fill="' + COL.ink + '">' + (fmt || function (x) { return money(x, true); })(v) + '</text>'; } return g; }
+  function niceMax(v) { if (!(v > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+  // history and forecast: monthly line with the forecast dashed inside its likely range
+  function trendChart(R, k, span) {
+    var hist = R.history.filter(function (h) { return h[k] != null; }); if (span !== 'all') hist = hist.slice(-Number(span));
+    var pts = hist.map(function (h) { return { m: h.month, v: h[k], kind: 'a' }; });
+    var cv = R.current[k], fc = R.forecast.map(function (f) { return { m: f.month, v: f[k], lo: k === 'volume' ? f.low : k === 'revenue' ? f.revenueLow : f[k] * (1 - R.model.band / 100), hi: k === 'volume' ? f.high : k === 'revenue' ? f.revenueHigh : f[k] * (1 + R.model.band / 100), kind: 'f' }; });
+    var all = pts.concat([{ m: R.current.month, v: cv, kind: 'c' }], fc);
+    var W = 900, H = 280, L = 64, T = 12, B = 30, Hp = H - T - B, max = niceMax(Math.max.apply(null, all.map(function (p) { return Math.max(p.v || 0, p.hi || 0); })));
+    var x = function (i) { return L + i * (W - L - 16) / Math.max(1, all.length - 1); }, y = function (v) { return T + Hp * (1 - v / max); };
+    var g = axis(W, L, T, Hp, max), nA = pts.length, fi = nA;
+    var band = fc.map(function (p, i) { return x(fi + 1 + i) + ',' + y(p.hi); }).join(' ') + ' ' + fc.slice().reverse().map(function (p, i) { return x(fi + fc.length - i) + ',' + y(p.lo); }).join(' ');
+    g += '<polygon points="' + x(fi) + ',' + y(cv) + ' ' + band + '" fill="' + COL.band + '"/>';
+    g += '<polyline fill="none" stroke="' + COL.a + '" stroke-width="2.4" points="' + pts.map(function (p, i) { return x(i) + ',' + y(p.v); }).join(' ') + '"/>';
+    g += '<polyline fill="none" stroke="' + COL.a + '" stroke-width="2.4" stroke-dasharray="6 4" points="' + (nA ? x(nA - 1) + ',' + y(pts[nA - 1].v) + ' ' : '') + x(fi) + ',' + y(cv) + ' ' + fc.map(function (p, i) { return x(fi + 1 + i) + ',' + y(p.v); }).join(' ') + '"/>';
+    var every = Math.ceil(all.length / 14);
+    all.forEach(function (p, i) {
+      var lab = mn(p.m) + ': ' + money(p.v) + (p.kind === 'f' ? ' forecast (' + money(p.lo, true) + ' to ' + money(p.hi, true) + ')' : p.kind === 'c' ? ' projected' : '');
+      g += '<circle data-tip="' + esc(lab) + '" cx="' + x(i) + '" cy="' + y(p.v) + '" r="' + (p.kind === 'a' ? 3 : 4) + '" fill="' + (p.kind === 'a' ? COL.a : '#fff') + '" stroke="' + COL.a + '" stroke-width="2"/>';
+      if (i % every === 0 || i === all.length - 1) g += '<text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="' + COL.ink + '">' + esc(mn(p.m)) + '</text>';
     });
-    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(LBL[k]) + ' by month, actual and forecast">' + g + '</svg>' +
-      '<div class="aph-legend"><span><i style="background:#2A9FA4"></i>Actual</span><span><i style="background:#BFE6E7"></i>This month, projected</span><span><i style="background:#DDEFF0;border:1px dashed #7FC7CA"></i>Forecast (line: likely range)</span></div>';
+    g += '<line x1="' + x(fi) + '" x2="' + x(fi) + '" y1="' + T + '" y2="' + (T + Hp) + '" stroke="#C9D3DD" stroke-dasharray="3 3"/><text x="' + (x(fi) + 4) + '" y="' + (T + 10) + '" font-size="10" fill="' + COL.ink + '">Today</text>';
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(LBL[k]) + ' by month, history and forecast">' + g + '</svg><div class="aph-legend"><span><i style="background:' + COL.a + '"></i>Actual</span><span><i style="background:#fff;border:2px dashed ' + COL.a + '"></i>Projected and forecast</span><span><i style="background:' + COL.band + '"></i>Likely range (' + R.model.band + '%)</span></div>';
   }
-  function dayChart(R, k) {
-    var ds = R.daily.slice(-186), max = Math.max.apply(null, ds.map(function (d) { return d[k]; })) || 1;
-    var W = 760, H = 150, L = 54, B = 20, T = 8, bw = (W - L - 6) / Math.max(1, ds.length), y = function (v) { return T + (H - T - B) * (1 - v / max); };
-    var g = '';
-    for (var i = 0; i <= 3; i++) { var v = max * i / 3; g += '<line x1="' + L + '" x2="' + (W - 4) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#EEF1F5"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="10" fill="#6B849A">' + money(v, true) + '</text>'; }
-    ds.forEach(function (d, i) { var x = L + i * bw; g += '<rect data-tip="' + esc(new Date(d.date + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) + ': ' + money(d[k])) + '" x="' + x + '" y="' + y(d[k]) + '" width="' + Math.max(1, bw - 1) + '" height="' + (y(0) - y(d[k])) + '" fill="#36AFB4"/>'; if (d.date.slice(8) === '01') g += '<text x="' + x + '" y="' + (H - 5) + '" font-size="10" fill="#6B849A">' + esc(monthName(d.date.slice(0, 7))) + '</text>'; });
-    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Daily ' + esc(LBL[k]) + ', last six months">' + g + '</svg>';
+  // year over year: one line per year, January to December
+  function yoyChart(R) {
+    var ys = Object.keys(R.years).sort(), W = 440, H = 240, L = 56, T = 12, B = 28, Hp = H - T - B;
+    var max = niceMax(Math.max.apply(null, ys.map(function (y) { return Math.max.apply(null, Object.values(R.years[y]).map(Number)); })));
+    var x = function (m) { return L + (m - 1) * (W - L - 12) / 11; }, yy = function (v) { return T + Hp * (1 - v / max); }, g = axis(W, L, T, Hp, max);
+    ys.forEach(function (yr, i) { var c = YC[Math.max(0, YC.length - ys.length + i)], o = R.years[yr], ms = Object.keys(o).map(Number).sort(function (a, b) { return a - b; });
+      g += '<polyline fill="none" stroke="' + c + '" stroke-width="' + (i === ys.length - 1 ? 3 : 2) + '" points="' + ms.map(function (m) { return x(m) + ',' + yy(o[m]); }).join(' ') + '"/>';
+      ms.forEach(function (m) { g += '<circle data-tip="' + esc(yr + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1] + ': ' + money(o[m])) + '" cx="' + x(m) + '" cy="' + yy(o[m]) + '" r="3" fill="' + c + '"/>'; }); });
+    ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].forEach(function (l, i) { g += '<text x="' + x(i + 1) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="10" fill="' + COL.ink + '">' + l + '</text>'; });
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Volume by year">' + g + '</svg><div class="aph-legend">' + ys.map(function (yr, i) { return '<span><i style="background:' + YC[Math.max(0, YC.length - ys.length + i)] + '"></i>' + yr + '</span>'; }).join('') + '</div>';
   }
+  function barsChart(items, valKey, labKey, fmt, W, ref) {
+    W = W || 440; var H = 200, L = 40, T = 12, B = 26, Hp = H - T - B, max = Math.max(1.3, Math.max.apply(null, items.map(function (i) { return i[valKey]; })) * 1.1);
+    var bw = (W - L - 8) / items.length, y = function (v) { return T + Hp * (1 - v / max); }, g = '';
+    [0, 0.5, 1].forEach(function (v) { g += '<line x1="' + L + '" x2="' + (W - 6) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 1 ? '#C9D3DD' : COL.grid) + '"' + (v === 1 ? ' stroke-dasharray="3 3"' : '') + '/><text x="' + (L - 5) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="10" fill="' + COL.ink + '">' + v.toFixed(1) + 'x</text>'; });
+    items.forEach(function (it, i) { var v = it[valKey], x0 = L + i * bw + 4; g += '<rect data-tip="' + esc(it[labKey] + ': ' + fmt(v)) + '" x="' + x0 + '" y="' + y(v) + '" width="' + (bw - 8) + '" height="' + (y(0) - y(v)) + '" rx="4" fill="' + (v >= 1 ? COL.a : '#9BAFC0') + '"/><text x="' + (x0 + (bw - 8) / 2) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="10" fill="' + COL.ink + '">' + esc(it[labKey]) + '</text>'; });
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(ref || '') + '">' + g + '</svg>';
+  }
+  // revenue split into costs and net, with the take rate
+  function profitChart(R) {
+    var rows = R.history.filter(function (h) { return h.revenue != null; }).slice(-12).concat([R.current], R.forecast);
+    var W = 900, H = 260, L = 64, T = 12, B = 30, Hp = H - T - B, max = niceMax(Math.max.apply(null, rows.map(function (r) { return r.revenue || 0; })));
+    var bw = (W - L - 12) / rows.length, y = function (v) { return T + Hp * (1 - v / max); }, g = axis(W, L, T, Hp, max);
+    rows.forEach(function (r, i) { var x0 = L + i * bw + 5, w = bw - 10, f = r.kind !== 'actual', op = f ? ' fill-opacity=".45"' : '';
+      g += '<rect data-tip="' + esc(mn(r.month) + (f ? ' (' + (r.kind === 'current' ? 'projected' : 'forecast') + ')' : '') + ': revenue ' + money(r.revenue) + ', costs ' + money(r.costs) + ', net ' + money(r.net) + ', take rate ' + pct(r.takeRate, 2)) + '" x="' + x0 + '" y="' + y(r.revenue) + '" width="' + w + '" height="' + (y(0) - y(r.revenue)) + '" rx="3" fill="' + COL.cost + '"' + op + '/>';
+      g += '<rect x="' + x0 + '" y="' + y(r.net) + '" width="' + w + '" height="' + (y(0) - y(r.net)) + '" rx="3" fill="' + COL.net + '"' + op + ' pointer-events="none"/>';
+      if (i % 2 === 0 || i === rows.length - 1) g += '<text x="' + (x0 + w / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="' + COL.ink + '">' + esc(mn(r.month)) + '</text>'; });
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Revenue, costs and net by month">' + g + '</svg><div class="aph-legend"><span><i style="background:' + COL.net + '"></i>Net</span><span><i style="background:' + COL.cost + '"></i>Costs (bar top is revenue)</span><span><i style="background:' + COL.cost + ';opacity:.45"></i>Projected or forecast</span></div>';
+  }
+  // the accuracy test: what the method would have said six months ago, against what happened
+  function testChart(R) {
+    var t = R.model.test, W = 440, H = 220, L = 56, T = 12, B = 28, Hp = H - T - B, max = niceMax(Math.max.apply(null, t.map(function (x) { return Math.max(x.actual, x.predicted); })));
+    var bw = (W - L - 8) / t.length, y = function (v) { return T + Hp * (1 - v / max); }, g = axis(W, L, T, Hp, max);
+    t.forEach(function (r, i) { var x0 = L + i * bw + 6, w = (bw - 12) / 2, miss = r.actual ? (r.predicted - r.actual) / r.actual : 0;
+      g += '<rect data-tip="' + esc(mn(r.month) + ': actual ' + money(r.actual) + ', forecast ' + money(r.predicted) + ' (' + (miss >= 0 ? '+' : '') + pct(miss) + ')') + '" x="' + x0 + '" y="' + y(r.actual) + '" width="' + w + '" height="' + (y(0) - y(r.actual)) + '" rx="3" fill="' + COL.a + '"/>';
+      g += '<rect x="' + (x0 + w) + '" y="' + y(r.predicted) + '" width="' + w + '" height="' + (y(0) - y(r.predicted)) + '" rx="3" fill="#DDEFF0" stroke="' + COL.f + '" stroke-dasharray="3 2" pointer-events="none"/>';
+      g += '<text x="' + (x0 + w) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="10" fill="' + COL.ink + '">' + esc(mn(r.month)) + '</text>'; });
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Forecast test">' + g + '</svg><div class="aph-legend"><span><i style="background:' + COL.a + '"></i>Actual</span><span><i style="background:#DDEFF0;border:1px dashed ' + COL.f + '"></i>What the forecast said</span></div>';
+  }
+  function dailyChart(R, k) {
+    var ds = R.daily.filter(function (d) { return d[k] != null; }), W = 900, H = 200, L = 64, T = 10, B = 24, Hp = H - T - B;
+    var max = niceMax(Math.max.apply(null, ds.map(function (d) { return d[k]; }))), bw = (W - L - 8) / Math.max(1, ds.length), y = function (v) { return T + Hp * (1 - v / max); }, g = axis(W, L, T, Hp, max);
+    var avg = ds.map(function (d, i) { var s = ds.slice(Math.max(0, i - 6), i + 1); return s.reduce(function (a, b) { return a + b[k]; }, 0) / s.length; });
+    ds.forEach(function (d, i) { var x0 = L + i * bw; g += '<rect data-tip="' + esc(new Date(d.date + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + ': ' + money(d[k]) + ' (7-day average ' + money(avg[i]) + ')') + '" x="' + x0 + '" y="' + y(d[k]) + '" width="' + Math.max(1, bw - 1) + '" height="' + (y(0) - y(d[k])) + '" fill="#BFE6E7"/>'; if (d.date.slice(8) === '01') g += '<text x="' + x0 + '" y="' + (H - 6) + '" font-size="10" fill="' + COL.ink + '">' + esc(mn(d.date.slice(0, 7))) + '</text>'; });
+    g += '<polyline fill="none" stroke="' + COL.a + '" stroke-width="2" points="' + avg.map(function (v, i) { return (L + i * bw + bw / 2) + ',' + y(v); }).join(' ') + '" pointer-events="none"/>';
+    return '<svg class="aph-chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Daily ' + esc(LBL[k]) + '">' + g + '</svg><div class="aph-legend"><span><i style="background:#BFE6E7"></i>Each day</span><span><i style="background:' + COL.a + '"></i>7-day average</span></div>';
+  }
+  // day by month, like the Daily Volume report: days down, months across, totals at the bottom
+  function gridHtml(R, k) {
+    var G = R.grid, h = '<div style="overflow:auto"><table class="aph-t aph-grid"><thead><tr><th>Day</th>' + G.map(function (g) { return '<th class="r' + (g.kind !== 'actual' ? ' fc' : '') + '">' + esc(mn(g.month)) + (g.kind === 'forecast' ? '<small>forecast</small>' : g.kind === 'current' ? '<small>this month</small>' : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
+    for (var i = 1; i <= 31; i++) h += '<tr><td>' + i + '</td>' + G.map(function (g) { var x = g.days[i - 1]; return '<td class="r' + (x && x.expected ? ' ex' : '') + '">' + (x && x[k] != null ? money(x[k]) : '') + '</td>'; }).join('') + '</tr>';
+    h += '<tr class="tot"><td>Total</td>' + G.map(function (g) { return '<td class="r">' + money(g.days.reduce(function (s, x) { return s + (x[k] || 0); }, 0)) + '</td>'; }).join('') + '</tr></tbody></table></div>';
+    return h;
+  }
+  function csv(rows) { return rows.map(function (r) { return r.map(function (c) { c = c == null ? '' : String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n'); }
+  function download(name, text) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  function gridCsv(R, k) { var G = R.grid, rows = [['Day'].concat(G.map(function (g) { return mn(g.month) + (g.kind === 'forecast' ? ' (forecast)' : g.kind === 'current' ? ' (this month)' : ''); }))]; for (var i = 1; i <= 31; i++) rows.push([i].concat(G.map(function (g) { var x = g.days[i - 1]; return x && x[k] != null ? x[k] : ''; }))); rows.push(['Total'].concat(G.map(function (g) { return Math.round(g.days.reduce(function (s, x) { return s + (x[k] || 0); }, 0) * 100) / 100; }))); return csv(rows); }
+  function monthCsv(R) { var rows = [['Month', 'Type', 'Volume', 'Revenue', 'Costs', 'Net', 'Take rate %', 'Low', 'High']]; R.history.concat([R.current], R.forecast).forEach(function (r) { rows.push([r.month, r.kind, r.volume, r.revenue, r.costs, r.net, r.takeRate == null ? '' : (r.takeRate * 100).toFixed(3), r.low || '', r.high || '']); }); return csv(rows); }
   function revHtml(R, d) {
-    var k = rv.metric, T = R.totals, cur = R.current, months = [cur.month].concat(R.forecast.map(function (f) { return f.month; }));
-    if (!rv.month || months.indexOf(rv.month) < 0) rv.month = R.forecast[0].month;
-    var h = '<div class="aph"><div class="aph-hd"><div><h2>Adit Pay home' + navHtml(d) + '</h2><p>Revenue from Stripe · admins only · updated ' + esc(new Date(R.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })) + ' CT</p></div><button type="button" data-rv="refresh">Refresh</button></div>';
+    var M = R.model, T = R.totals, cur = R.current, k = rv.metric, yoy = T.prior12.volume ? T.last12.volume / T.prior12.volume - 1 : null;
+    var h = '<div class="aph aph-rev"><div class="aph-hd"><div><h2>Adit Pay home' + navHtml(d) + '</h2><p>Revenue analytics · since ' + esc(mn(R.firstMonth, true)) + ' · admins only · updated ' + esc(new Date(R.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })) + ' CT</p></div><span class="aph-seg"><button type="button" data-rv="print">Print or save as PDF</button><button type="button" data-rv="csv-month">Monthly CSV</button><button type="button" data-rv="refresh">Refresh</button></span></div>';
     h += '<div class="aph-kpis">' +
-      '<div class="aph-k"><label>Revenue, last 6 months</label><b>' + money(T.past6.revenue, true) + '</b><small>Net ' + money(T.past6.net, true) + ' after ' + money(T.past6.costs, true) + ' costs</small></div>' +
-      '<div class="aph-k c2"><label>Volume, last 6 months</label><b>' + money(T.past6.volume, true) + '</b><small>Take rate ' + (T.past6.volume ? (T.past6.revenue / T.past6.volume * 100).toFixed(2) + '%' : '-') + '</small></div>' +
-      '<div class="aph-k c3"><label>' + esc(monthName(cur.month)) + ' so far</label><b>' + money(cur.toDate.revenue, true) + '</b><small>Projected ' + money(cur.projected.revenue, true) + ' for the month</small></div>' +
-      '<div class="aph-k c4"><label>Forecast revenue, next 6 months</label><b>' + money(T.next6.revenue, true) + '</b><small>Net ' + money(T.next6.net, true) + '</small></div>' +
-      '<div class="aph-k c5"><label>Forecast volume, next 6 months</label><b>' + money(T.next6.volume, true) + '</b><small>Trend ' + (R.method.trend.revenue.perMonth >= 0 ? '+' : '') + money(R.method.trend.revenue.perMonth, true) + ' revenue a month</small></div></div>';
-    h += '<div class="aph-c" style="margin-bottom:14px"><div class="aph-dh"><div><h3>By month</h3><p class="sub">Six months of actuals, this month so far and projected, and the next six months forecast</p></div><span class="aph-seg" role="group" aria-label="Metric">' + ['revenue', 'net', 'volume'].map(function (m) { return '<button type="button" data-metric="' + m + '" aria-pressed="' + (k === m) + '">' + LBL[m] + '</button>'; }).join('') + '</span></div>' + monthChart(R, k) + '</div>';
-    var row = function (p, cls, type) { return '<tr class="' + cls + '"><td>' + esc(monthName(p.month)) + '</td><td>' + type + '</td><td class="r">' + money(p.volume) + '</td><td class="r">' + money(p.revenue) + '</td><td class="r">' + money(p.costs) + '</td><td class="r"><b>' + money(p.net) + '</b></td><td class="r">' + (p.volume ? (p.revenue / p.volume * 100).toFixed(2) + '%' : '-') + '</td></tr>'; };
-    var cp = Object.assign({ month: cur.month }, cur.projected);
-    h += '<div class="aph-c" style="margin-bottom:14px"><h3>Monthly figures</h3><p class="sub">Revenue = Adit\'s application fees less fee refunds. Costs = Stripe fees and card network costs. Net = revenue less costs.</p><table class="aph-t"><thead><tr><th>Month</th><th>Type</th><th class="r">Volume</th><th class="r">Revenue</th><th class="r">Costs</th><th class="r">Net</th><th class="r">Take rate</th></tr></thead><tbody>' +
-      R.past.map(function (p) { return row(p, '', 'Actual'); }).join('') + row(cp, 'cur', 'This month (' + money(cur.toDate.revenue, true) + ' so far, day ' + cur.toDate.throughDay + ' of ' + cur.toDate.daysInMonth + ')') +
-      R.forecast.map(function (f) { return row(f, 'fc', 'Forecast <small>' + money(f.revenueLow, true) + ' to ' + money(f.revenueHigh, true) + ' revenue</small>'); }).join('') + '</tbody></table></div>';
-    h += '<div class="aph-c" style="margin-bottom:14px"><h3>Day by day, last six months</h3><p class="sub">' + esc(LBL[k === 'volume' ? 'volume' : 'revenue']) + ' per day. Hover a day for the amount.</p>' + dayChart(R, k === 'volume' ? 'volume' : 'revenue') + '</div>';
-    var sel = '<select class="aph-date" data-month aria-label="Month">' + months.map(function (m) { return '<option value="' + m + '"' + (m === rv.month ? ' selected' : '') + '>' + monthName(m) + (m === cur.month ? ' (this month)' : '') + '</option>'; }).join('') + '</select>';
-    var days = rv.month === cur.month ? R.curDays : (R.forecast.find(function (f) { return f.month === rv.month; }) || { days: [] }).days;
-    var todayStr = R.today;
-    h += '<div class="aph-g2"><div class="aph-c"><div class="aph-dh"><div><h3>Day-wise split</h3><p class="sub">Each day\'s expected amount; past days of this month show the actual</p></div>' + sel + '</div><table class="aph-t"><thead><tr><th>Day</th><th class="r">Revenue</th><th class="r">Volume</th></tr></thead><tbody>' +
-      days.map(function (x) { var past = rv.month === cur.month && x.date < todayStr; var wd = new Date(x.date + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); return '<tr' + (past ? '' : ' class="fc"') + '><td>' + esc(wd) + (past ? ' <small>actual</small>' : '') + '</td><td class="r">' + money(past ? x.actual : x.amount) + '</td><td class="r">' + money(past ? x.actualVolume : x.volume) + '</td></tr>'; }).join('') + '</tbody></table></div>';
-    h += '<div class="aph-c aph-how"><h3>How the numbers are worked out</h3><ol>' + R.method.text.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol><p class="aph-note">Trend per month: revenue ' + money(R.method.trend.revenue.perMonth) + ', volume ' + money(R.method.trend.volume.perMonth) + ', net ' + money(R.method.trend.net.perMonth) + '. Typical miss: revenue ' + money(R.method.trend.revenue.miss) + '. Weekday pattern from ' + esc(R.method.weekday.from) + ' to ' + esc(R.method.weekday.to) + '.</p></div></div></div>';
+      '<div class="aph-k"><label>Volume, last 12 months</label><b>' + money(T.last12.volume, true) + '</b><small>' + (yoy == null ? '' : (yoy >= 0 ? '+' : '') + pct(yoy) + ' on the 12 months before') + '</small></div>' +
+      '<div class="aph-k c2"><label>Revenue, last 12 months</label><b>' + money(T.last12.revenue, true) + '</b><small>Net ' + money(T.last12.net, true) + ' · take rate ' + pct(M.takeRate, 2) + '</small></div>' +
+      '<div class="aph-k c3"><label>' + esc(mn(cur.month, true)) + '</label><b>' + money(cur.volume, true) + '</b><small>Projected volume · ' + money(cur.toDate.volume, true) + ' so far · revenue ' + money(cur.revenue, true) + '</small></div>' +
+      '<div class="aph-k c4"><label>Next 6 months, forecast</label><b>' + money(T.next6.volume, true) + '</b><small>Revenue ' + money(T.next6.revenue, true) + ' · net ' + money(T.next6.net, true) + '</small></div>' +
+      '<div class="aph-k c5"><label>Growth and accuracy</label><b>' + (M.growthPerMonth >= 0 ? '+' : '') + M.growthPerMonth + '%/mo</b><small>' + M.growthPerYear + '% a year · forecast test missed by ' + M.mape + '%</small></div></div>';
+    h += '<div class="aph-c aph-sec"><div class="aph-dh"><div><h3>History and forecast</h3><p class="sub">Every month since ' + esc(mn(R.firstMonth, true)) + ', this month projected and the next six months forecast with the likely range</p></div><span class="aph-seg">' + ['volume', 'revenue', 'net'].map(function (m) { return '<button type="button" data-metric="' + m + '" aria-pressed="' + (k === m) + '">' + LBL[m] + '</button>'; }).join('') + '<span style="width:8px"></span>' + [['12', '1 yr'], ['36', '3 yrs'], ['all', 'All']].map(function (s) { return '<button type="button" data-span="' + s[0] + '" aria-pressed="' + (rv.span === s[0]) + '">' + s[1] + '</button>'; }).join('') + '</span></div>' + trendChart(R, k, rv.span) + '</div>';
+    h += '<div class="aph-g2 aph-sec"><div class="aph-c"><h3>Year over year</h3><p class="sub">Monthly volume, one line per year (this year includes this month projected)</p>' + yoyChart(R) + '</div>' +
+      '<div class="aph-c"><h3>How accurate is the forecast</h3><p class="sub">Run as if it were six months ago: average miss ' + M.mape + '%</p>' + testChart(R) + '</div></div>';
+    h += '<div class="aph-c aph-sec"><h3>Revenue, costs and net</h3><p class="sub">Last 12 months, this month and the forecast. Revenue = Adit\'s application fees less refunds; costs = Stripe fees and card network costs; net = revenue less costs. Hover a bar for the take rate.</p>' + profitChart(R) + '</div>';
+    h += '<div class="aph-g2 aph-sec"><div class="aph-c"><h3>Seasonality</h3><p class="sub">Each calendar month against an average month, from ' + M.seasonYears + ' years of history</p>' + barsChart(M.seasonality, 'index', 'month', function (v) { return v.toFixed(2) + 'x an average month'; }, 440, 'Seasonality') + '</div>' +
+      '<div class="aph-c"><h3>Weekday pattern</h3><p class="sub">Each weekday against an average day, last eight weeks (from ' + esc(M.weekdayFrom) + ')</p>' + barsChart(M.weekday, 'volume', 'day', function (v) { return v.toFixed(2) + 'x an average day'; }, 440, 'Weekday pattern') + '</div></div>';
+    h += '<div class="aph-c aph-sec"><h3>Day by day, last six months</h3><p class="sub">Volume each day with the 7-day average. Hover a day for the amount.</p>' + dailyChart(R, 'volume') + '</div>';
+    h += '<div class="aph-c aph-sec"><div class="aph-dh"><div><h3>Day by month</h3><p class="sub">Like the Daily Volume report: days down, months across. Shaded cells are expected (rest of this month and forecast months).</p></div><span class="aph-seg">' + ['volume', 'revenue'].map(function (m) { return '<button type="button" data-gmetric="' + m + '" aria-pressed="' + (rv.gmetric === m) + '">' + LBL[m] + '</button>'; }).join('') + '<button type="button" data-rv="csv-grid">Download CSV</button></span></div>' + gridHtml(R, rv.gmetric) + '</div>';
+    var rows = (rv.showAll ? R.history : R.history.slice(-12)).slice().reverse();
+    var tr = function (r, label) { return '<tr class="' + (r.kind === 'forecast' ? 'fc' : r.kind === 'current' ? 'cur' : '') + '"><td>' + esc(mn(r.month, true)) + '</td><td>' + label + '</td><td class="r">' + money(r.volume) + '</td><td class="r">' + money(r.revenue) + '</td><td class="r">' + money(r.costs) + '</td><td class="r"><b>' + money(r.net) + '</b></td><td class="r">' + pct(r.takeRate, 2) + '</td></tr>'; };
+    h += '<div class="aph-c aph-sec"><div class="aph-dh"><div><h3>Month by month</h3><p class="sub">Forecast months first, then this month and the actuals' + (rv.showAll ? ' since ' + esc(mn(R.firstMonth, true)) : ' for the last 12 months') + '</p></div><span class="aph-seg"><button type="button" data-rv="all">' + (rv.showAll ? 'Last 12 months' : 'Every month') + '</button></span></div><table class="aph-t"><thead><tr><th>Month</th><th>Type</th><th class="r">Volume</th><th class="r">Revenue</th><th class="r">Costs</th><th class="r">Net</th><th class="r">Take rate</th></tr></thead><tbody>' +
+      R.forecast.slice().reverse().map(function (f) { return tr(f, 'Forecast <small>' + money(f.low, true) + ' to ' + money(f.high, true) + ' volume</small>'); }).join('') + tr(cur, 'This month <small>' + money(cur.toDate.volume, true) + ' so far</small>') + rows.map(function (r) { return tr(r, 'Actual'); }).join('') + '</tbody></table></div>';
+    h += '<div class="aph-c aph-sec aph-how"><h3>How the forecast is worked out</h3><ol>' + R.method.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol></div></div>';
     return h;
   }
   function renderRevenue(root, d, fresh) {
     css(); view = 'revenue';
-    if (!rv.data || fresh) root.innerHTML = '<div class="aph"><div class="aph-hd"><div><h2>Adit Pay home' + navHtml(d) + '</h2><p>Reading six months of Stripe data. This can take a minute the first time.</p></div></div></div>';
+    if (!rv.data || fresh) root.innerHTML = '<div class="aph"><div class="aph-hd"><div><h2>Adit Pay home' + navHtml(d) + '</h2><p>Reading every day since day one from Stripe and the Daily Volume report. This can take a minute or two the first time.</p></div></div></div>';
     wireNav(root, d);
     var draw = function () {
-      root.innerHTML = revHtml(rv.data, d); wireNav(root, d);
+      var R = rv.data; root.innerHTML = revHtml(R, d); wireNav(root, d);
       root.querySelectorAll('[data-tip]').forEach(function (el) { tip(el, el.getAttribute('data-tip')); });
       root.querySelectorAll('[data-metric]').forEach(function (b) { b.onclick = function () { rv.metric = b.dataset.metric; draw(); }; });
-      var ms = root.querySelector('[data-month]'); if (ms) ms.onchange = function () { rv.month = ms.value; draw(); };
-      var rf = root.querySelector('[data-rv="refresh"]'); if (rf) rf.onclick = function () { renderRevenue(root, d, true); };
+      root.querySelectorAll('[data-span]').forEach(function (b) { b.onclick = function () { rv.span = b.dataset.span; draw(); }; });
+      root.querySelectorAll('[data-gmetric]').forEach(function (b) { b.onclick = function () { rv.gmetric = b.dataset.gmetric; draw(); }; });
+      var on = function (k, fn) { var b = root.querySelector('[data-rv="' + k + '"]'); if (b) b.onclick = fn; };
+      on('refresh', function () { renderRevenue(root, d, true); });
+      on('all', function () { rv.showAll = !rv.showAll; draw(); });
+      on('print', function () { window.print(); });
+      on('csv-month', function () { download('adit-pay-revenue-by-month.csv', monthCsv(R)); });
+      on('csv-grid', function () { download('adit-pay-' + rv.gmetric + '-day-by-month.csv', gridCsv(R, rv.gmetric)); });
     };
     if (rv.data && !fresh) { draw(); return; }
     fetch('/api/aditpay/revenue' + (fresh ? '?fresh=1' : ''), { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (j) {
       if (view !== 'revenue') return;
-      if (!j.success) { root.querySelector('.aph-hd p').textContent = j.error || 'Could not load revenue.'; return; }
+      var p = root.querySelector('.aph-hd p');
+      if (!j.success) { if (p) p.textContent = j.error || 'Could not load revenue.'; return; }
       if (j.data.loading) { setTimeout(function () { if (view === 'revenue') renderRevenue(root, d); }, 15000); return; }
-      if (j.data.error) { root.querySelector('.aph-hd p').textContent = 'Stripe data could not be read: ' + j.data.error; return; }
+      if (j.data.error) { if (p) p.textContent = 'Stripe data could not be read: ' + j.data.error; return; }
       rv.data = j.data; draw();
     }).catch(function () { var p = root.querySelector('.aph-hd p'); if (p) p.textContent = 'Could not load revenue. Try Refresh.'; });
   }
