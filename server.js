@@ -2429,7 +2429,8 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
     const attachments = (Array.isArray(b.attachments) ? b.attachments : []).slice(0, 5).map(a => ({ name: String((a && a.name) || 'file').slice(0, 120), kind: String((a && a.kind) || '').slice(0, 10), text: String((a && a.text) || '').slice(0, 16000) }));
     const out = await expertMod().ask({ attachments, question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, lazyReview: !!b.lazyReview, email: req.session.email,
-      team: req.workspace === 'aditpay' ? 'aditpay' : 't1' }); // Batch 364: Adit Pay Expert in the Adit Pay workspace
+      team: req.workspace === 'aditpay' ? 'aditpay' : 't1', // Batch 364: Adit Pay Expert in the Adit Pay workspace
+      insights: (await getRoleForEmail(req.session.email).catch(() => null)) === 'admin' }); // Batch 370: account and report insights for admins
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
 });

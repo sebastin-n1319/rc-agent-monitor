@@ -339,3 +339,15 @@ describe('Adit Pay Expert (Batch 364)', () => {
     expect(e._sysOf('t1')).toContain('never promise that T1 will phone the client');
   });
 });
+
+describe('Account and report insights for admins (Batch 370)', () => {
+  it('answers a non-admin account or report question with the admin-only note, without the AI', async () => {
+    const e = require('../../lib/expert.js');
+    e.setDeps({ ai: { anyConfigured: () => true, bestJSON: async () => { throw new Error('AI must not run'); } } });
+    const r = await e.ask({ question: 'how many clients did we lose for adit pay this year?', insights: false, email: 'agent@x.com' });
+    expect(r.restricted).toBe(true);
+    expect(r.answer.brief.bottom_line).toMatch(/admins only/);
+    const r2 = await e.ask({ question: 'what happened with Smile Dental and what is the current status?', insights: false, email: 'agent@x.com' });
+    expect(r2.restricted).toBe(true);
+  });
+});
