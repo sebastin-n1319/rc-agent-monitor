@@ -9445,6 +9445,28 @@ app.get('/api/aditpay/tasks', requireAuth, async (req, res) => {
     res.json({ success: true, ok: true, at: r.at, byEmail, unassigned: admin ? r.unassigned : undefined, projectUrl: 'https://app.asana.com/0/' + r.project });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 391: who has the tool open right now. Everyone's open tab sends a beat; only admins (leads) see the list,
+// and only the people of the workspace they are in.
+app.post('/api/presence/beat', requireAuth, (req, res) => {
+  try { require('./lib/presence').beat(req.session, req.body || {}); } catch (e) { /* presence is best effort */ }
+  res.json({ success: true });
+});
+app.post('/api/presence/bye', requireAuth, (req, res) => {
+  try { require('./lib/presence').bye(req.session.email); } catch (e) { /* best effort */ }
+  res.json({ success: true });
+});
+app.get('/api/presence', requireAdmin, async (req, res) => {
+  try {
+    const me = String(req.session.email || '').toLowerCase();
+    const online = [];
+    for (const p of require('./lib/presence').list()) {
+      const ws = await workspacesOf(p.email).catch(() => ['t1']);
+      if (!ws.includes(req.workspace)) continue;
+      online.push({ name: p.name, picture: p.picture, page: p.page, since: p.since, status: p.status, idleMin: p.idleMin, me: p.email === me });
+    }
+    res.json({ success: true, at: Date.now(), online });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
   try {
     const [snap, monitored, desk, siq, chatLog, chats, ssm] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), chatStatusByEmail(), latestChatStatusByEmail(), activeChatsByEmail(), require('./lib/scrin').statusByEmail()]);
