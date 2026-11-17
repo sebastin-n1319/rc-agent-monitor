@@ -5,7 +5,8 @@
   var lastInput = Date.now(), beatTimer = null, listTimer = null, open = false, last = [];
   var $ = function (id) { return document.getElementById(id); };
   function role() { try { return typeof currentRole !== 'undefined' ? currentRole : null; } catch (e) { return null; } }
-  function signedIn() { return document.documentElement.classList.contains('app-authenticated') && !!role(); }
+  // The role is set the moment someone signs in (and cleared on sign out), whichever way the page was opened.
+  function signedIn() { return !!role(); }
   function isAdmin() { return role() === 'admin'; }
   function page() {
     var it = document.querySelector('#adit-admin-sidebar .sb-item.active, #adit-agent-sidebar .sb-item.active');
@@ -90,8 +91,14 @@
       if (signedIn()) start();
       else { var w = $('onWrap'); if (w) w.hidden = true; }
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    // The role can arrive after the page is marked signed in.
-    var tries = 0, t = setInterval(function () { tries++; if (signedIn()) { start(); clearInterval(t); } else if (tries > 30) clearInterval(t); }, 2000);
+    // Signing in and out do not always change the page's class, so the role is also checked every few seconds.
+    var was = signedIn();
+    setInterval(function () {
+      var now = signedIn();
+      if (now && !was) start();
+      if (!now && was) { var w2 = $('onWrap'); if (w2) w2.hidden = true; last = []; }
+      was = now;
+    }, 3000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

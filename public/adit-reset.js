@@ -37,6 +37,7 @@
     'illus.css', // Session 63
     'notice-center.css', // Session 68
     'app-header.css', // Batch 159: new header and profile menu
+    'online-now.css', // Batch 391: Online now in the header
     'voip-project.css', // Batch 250: T1 CS VoIP
     'call-qa.css', // Batch 265: Call QA
     'ticket-hygiene.css', // Batch 260: T1 CS ticket hygiene
