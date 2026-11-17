@@ -18,6 +18,11 @@ describe('internal Expert guides (Batch 354)', () => {
     expect(d.aiagent.html).toContain('AI Disclosure');
     expect(d.aiagent.html).toContain('Where the two documents differ');
     expect(d.aiagent.html).not.toMatch(/TrueLark|docs\.google\.com/);
+    // Batch 386: the team documents library from Drive: many documents, no logins, no personal emails, no image data.
+    expect(d.library.chunks.length).toBeGreaterThan(800);
+    expect(d.library.html).toMatch(/AI Front\s+Desk support per EHR/);
+    expect(d.library.html).not.toMatch(/Account details|Adit@20\d\d|data:image|docs\.google\.com|app\.avoma\.com/);
+    expect(d.library.html).not.toMatch(/[A-Za-z0-9._%+-]+\.[A-Za-z0-9._%+-]+@adit\.com/);
     // Batch 380: the EHR library has a section for every EHR in the Integration Rulebook.
     expect(d.ehrlib.chunks.length).toBeGreaterThan(200);
     // Screenshot sections carry their images, served from the signed-in image route.

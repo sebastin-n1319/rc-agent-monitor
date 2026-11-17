@@ -250,6 +250,14 @@
    "how": "export as Markdown to scripts/ai-agent-knowledge/docs/ (master.md from the Intro heading on; redrafted.md), run scripts/ai-agent-knowledge/build.py, and update the differences list in build.py if the documents changed",
    "imported_at": "2026-11-18T09:20:00Z",
    "source_modified": "2026-09-04T19:41:08Z"
+  },
+  {
+   "id": "scripts/drive-library/sources.json",
+   "kind": "list",
+   "title": "Team documents library (57 Drive documents)",
+   "feeds": "content/guides/library.html (doc id 'library')",
+   "how": "follow scripts/drive-library/README.md: re-export changed documents, look for new product and process documents, run build.py",
+   "imported_at": "2026-11-18T09:40:00Z"
   }
  ]
 }

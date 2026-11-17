@@ -1,0 +1,484 @@
+{
+ "about": "Product and process documents from Google Drive that Adit Expert reads (internal guide 'library', content/guides/library.html). Built by build.py from raw/<id>.md. The weekly knowledge check re-exports changed ones and looks for new documents by the rules in README.md.",
+ "sources": [
+  {
+   "id": "1szvwuWRyFjOdPYkaG3_UWsIIEMgCH2ZRso78bXYVqVE",
+   "title": "Tech OB Whitelisting Ticket Handling Process",
+   "area": "Onboarding",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1wGcT4DzxnUQNeDEkh09GQ6QX3RmjwJFni3odi4brkcA",
+   "title": "CSR Automation - Process Document",
+   "area": "Product",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "13GlZOZnczHahVyjVDrflnmw98m5K5q--7BNE3_WaBl0",
+   "title": "How SMS Usage Is Calculated: A Mass Texting Reference Guide",
+   "area": "Engage",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1Nl0ylzBA1B8dPi9KFGc3QaZV_GwqFh2U4OLYQ-QTbDI",
+   "title": "Online Scheduling Migration Checklist",
+   "area": "Scheduling",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1sYmVcubYzzUdwUcPx5JbWzc-etIQhA3uUArfysojCPI",
+   "title": "Phone Order Process - Internal and Client-Facing Guidelines",
+   "area": "Voice",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1Qt5lUPEKlm9KzIURco7CotlBZmT6siSbv6sfsj25dEc",
+   "title": "Adit Pay Terminal Adoption Playbook",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1DjM8D4kIHuDQgN9l5D6sfv5l_7kn5RY3vKz15ho-EOM",
+   "title": "Adit Pay - Sales Enablement Playbook",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1p8bdPKK2DhewoRoeMBg2QyHHpK0nViG4eggrbCWxz1Q",
+   "title": "(External) Adit Voice: Master Document",
+   "area": "Voice",
+   "mime": "doc",
+   "skip": "older copy; the newer Adit Voice Master Document is used"
+  },
+  {
+   "id": "1ki_Bv_9T-CD_ytYS5I1s2-QPmLJVozPZ8ArYrC4cAEQ",
+   "title": "OB Training: Communication, Expectation Setting, and Client Updates",
+   "area": "Onboarding",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1wHO7QmUCcIsP3hFVq3qtXbPMG61xIhotWShzVwnveBY",
+   "title": "Adit Pay - Walkthrough Checklist",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1GdnruFJ3qrlCZJnJl_RXu_FQSEyFCNJPcP7RhfQf7RQ",
+   "title": "AI FD - EHR Master Sheet",
+   "area": "AI Front Desk",
+   "mime": "sheet",
+   "modified": "2026-11-17T20:20:46.580Z",
+   "note": "written by hand from the tabs EHR Level Document, Cancel / Delete, Formula for Availability, OS - Availability Logic, Cloud EHR Sync Frequency, Summary Sync (status and notes only, never the Account details column) and Pending / Failed Status; QA names, links and logins left out",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1PJ-DKJnpPnmeOB9FcKOygLAwwb165VouxIMOFNX9Rh4",
+   "title": "Playbooks",
+   "area": "Process",
+   "mime": "sheet",
+   "modified": "2026-11-13T23:14:36.578Z",
+   "skip": "sales team workbook with login tabs; not used"
+  },
+  {
+   "id": "1PUR47df9ZEGVZ5H5FXS7IKkIyZyI2LSm0ME2SSsDUE8",
+   "title": "Ticket Handling Practices - SOP for Client-Facing Teams",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-11-13T13:49:55.370Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1-iWVKj1Ev1qAmAJ94zP76aCbBIVpoTwMsauLZE_7-I0",
+   "title": "4. Staff Training Process",
+   "area": "Onboarding",
+   "mime": "doc",
+   "modified": "2026-11-04T21:19:45.211Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1ftyOCUt0gvNnYrfqHr-YCgJlAsjurC847LCtc8unEvI",
+   "title": "SMS Status - Troubleshooting Guide",
+   "area": "Engage",
+   "mime": "doc",
+   "modified": "2026-11-04T05:52:37.300Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1pInXOaJloKiIBXy2vv150U-0saX0l0z-3WPcqiZ0Qw0",
+   "title": "Adit Pay Playbook for Sales & Upgrades",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-10-30T16:41:57.996Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1R-G1wtXqv8sGtRAhcsa07kUndviBTGfC75s6K9MwC6k",
+   "title": "1. Tech Onboarding Process",
+   "area": "Onboarding",
+   "mime": "doc",
+   "modified": "2026-10-30T05:06:26.840Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1FlJjzHEt4xb8u0V2lMvdpOATXlwwUe3lO977B-qTvKM",
+   "title": "PBX User Manual",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-10-27T13:39:50.725Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "15kvONnU-ooLPBsuJW-3lVFd489TgEy1HEJXL6ERrDKU",
+   "title": "T1 CS VoIP Support Guide and Query Catalog",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-10-14T16:55:11.171Z",
+   "skip": "already the VoIP support guide (voip.html)"
+  },
+  {
+   "id": "1XWzcRDuLDU1rk_szcVrztMLdQvYbLKeAWasAtaHbduM",
+   "title": "Adit Pay CSM Client Communication Guide",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-10-13T20:23:11.591Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1lcKK-1_lvMYQweXd-nmFjbOm2gfj_eGbHIIKedBuqnA",
+   "title": "Copy of VoIP Asset Management  SOP",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-09-18T20:11:09.860Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "19l4BjUXWZ2wovWVJI0SfV3yXbh_2D6esyZ1rqJKUoYY",
+   "title": "T1 - Voice Module & Phone System Training",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-09-16T22:09:04.910Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1U7P7LyvoeisjHTrxh_oIPs353nTvqg74iG5EBit8AWI",
+   "title": "Adit Voice : Master Document",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-09-16T17:36:05.615Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "19F544KvqTuUOvXCp8YbmewBHzrDKTX0fj8iGs8fHxNQ",
+   "title": "Process for number movement from old Adit app account to new Adit app account",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-09-09T19:18:29.426Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "15WdodxVdOorPQo65u7_33j0iqo6P27flQLZsecPfWfs",
+   "title": "AditPay Statement IQ User Manual",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-09-07T23:54:47.291Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1hcZzchAiJzsyOoThqfidINugPkxf_ofrAKYzdUxfEkc",
+   "title": "Adit AI Support T1 FAQ",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-09-04T21:33:15.411Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "11AGj-mq8r9Zw4psmsdicf4MLafLXgNyXTYwlsXKwJvY",
+   "title": "Adit AI Corrections Master",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-09-04T19:41:00.361Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1esoo4uHodJ9vgX6vNl9ITHE4Au11jAQO1G8m7zDB8ls",
+   "title": "Internal KB Guide - PMS Compatibility - Feature & Version",
+   "area": "Integrations",
+   "mime": "doc",
+   "modified": "2026-09-04T19:40:53.456Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1k2qOy1OgC6Tq376GBDIeLf611LDv4R-h-UMVR-yofvw",
+   "title": "Adit Phones Guide v2",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-09-04T19:40:28.394Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1Av79udLAheT9AxnuElbFTlg9srmSseNB8GGmL27TCdM",
+   "title": "Adit Call Intelligence Upgrade Sales Playbook",
+   "area": "Call Intelligence",
+   "mime": "doc",
+   "modified": "2026-08-27T15:15:36.311Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1nVI8ShczhOokuAA99PNlApxYM1zN2pBSBCEuINU-piM",
+   "title": "AI FRONT DESK : Upgrade Sales Playbook",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-08-27T15:15:11.161Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "18_RBGuIbXxPMSlelHpsISqhxEW1mt8YIorwYUj-RYyw",
+   "title": "KB Article RCM Guide",
+   "area": "RCM",
+   "mime": "doc",
+   "modified": "2026-08-25T14:25:18.193Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1TYpZv9aQ3yFaW8INQ2ZGf5E9PZWvA8pYn9-lvhhzFmk",
+   "title": "Standard Operating Procedure (SOP) for Ticket Handling Between T1 and T2",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-08-18T14:16:01.913Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1iw_6QQst8T_F17IoOZXfmW9kLX0ZtvErXNRsJ7ro0ZE",
+   "title": "Adit Pay Statement IQ - Playbook",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-08-17T14:37:42.638Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1xHwtXy4ox0ykLilaLf-UIuvNhtBJX26K_pcjYiQ7M7I",
+   "title": "Adit Pay ACH/CF Process Document",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-08-14T19:15:48.365Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1HApGHHjwVgUYsK_9AYvH9btjVhnYadd8lMoxpUXUCFE",
+   "title": "Process Corrections and Updates",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-08-13T17:22:58.127Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1RuIucwZy6NuJB57HQoe7keevmyp6jTeW1sUxsXI8gVY",
+   "title": "Adit Pay Setup/Training/Demo Checklist",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-08-10T17:34:28.903Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1LdnEaR6kteKYyI1x57EocBWc4ktlUFNvp7Xsj5y3Xv4",
+   "title": "Parent/Child Ticket Guide",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-07-30T14:39:00.465Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1_03b5RuFVFuhxMjWB4EGa5MREFD8tHXPbSWGqSXvVVw",
+   "title": "Adit Pay Dispute Handling SOP",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-07-29T14:09:53.402Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1C8gylG6zGabvP8x7vikzEZjpnZT3XgOrnnmyCeAs1cQ",
+   "title": "2. Kickoff Call Process",
+   "area": "Onboarding",
+   "mime": "doc",
+   "modified": "2026-07-27T17:53:40.110Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1sCpznYjxZ3a5Na3QzOCiqj9Oarcl0iUfxInuFr25FsE",
+   "title": "Adit-Pay-ACH-and-CF-Training-QA-Manual",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-07-23T14:58:35.767Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1JcGpJ0DalFUgihXVBceKRHZ0kACryzXAuS7ig5e7_Gc",
+   "title": "Update regarding porting process Getting Started to Onboarding",
+   "area": "Voice",
+   "mime": "doc",
+   "modified": "2026-07-23T13:35:25.940Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1Rjg7pDZOf0kb3LD1TuyjgYJOQNXb42_y_83WniqHxls",
+   "title": "3. Configuration Call Process",
+   "area": "Onboarding",
+   "mime": "doc",
+   "modified": "2026-07-23T13:23:59.051Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "185PqvJIDs4ELAOXh-EYPu0MIcUHm9n2oHCfbVEghgDw",
+   "title": "Adit Automations Training",
+   "area": "Automations",
+   "mime": "slides",
+   "modified": "2026-07-16T19:49:58.913Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1qevKh5CNhRn1q9hdhhUQ3GPHUs_ajGdohMbKBjiz19k",
+   "title": "AI training Document v2",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-07-14T12:34:24.318Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1OYxOh1xTC9KT2Lmu2nt3vKAoalYaWvC1F8q6MWCZB2o",
+   "title": "AI Recare Master Document",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-07-13T22:47:42.954Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1LaSE5rb0PYxOY-oBshuJ6I9cEUqIpdQgHky-tTnQPg0",
+   "title": "Guide to Insurance Verification Charges",
+   "area": "Insurance Verification",
+   "mime": "doc",
+   "modified": "2026-07-10T17:47:57.406Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1nIOnEp7bWiAMt_6Gk2-ckNzSLHsi-AdktCquDKBURx8",
+   "title": "Adit Patient Forms Configuration Guide",
+   "area": "Patient Forms",
+   "mime": "doc",
+   "modified": "2026-06-09T21:52:59.177Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1U7dH-P8WD80xKmunKvh9e-1CsvQjCtGZpuRjbjR7W8s",
+   "title": "Text message issue process",
+   "area": "Engage",
+   "mime": "doc",
+   "modified": "2026-06-05T16:35:10.308Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1E3GUBbxOZSjUL6LP3kgAcIaGUCo-WmErLDe--oWnrTY",
+   "title": "Standard Operating Procedure (SOP) - Adit Pay Team",
+   "area": "Adit Pay",
+   "mime": "doc",
+   "modified": "2026-06-04T05:39:25.442Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1N1FV26C7y6lNAB4LDbWvGJEbSBLRlptmQ860LOc97Ok",
+   "title": "Adit KB FAQ's 28 May 26 V1",
+   "area": "FAQ",
+   "mime": "doc",
+   "modified": "2026-06-02T19:10:47.571Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1_DtvnOxM_AO00GpKQ5R6FPR_E-G8C8NE",
+   "title": "Adit Insider - User Guide.pdf",
+   "area": "Product",
+   "mime": "pdf",
+   "modified": "2026-06-01T21:06:57Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1LQgXd91VQNulxnViu3GueG2eIZKG_gGo",
+   "title": "Adit RCM AI Training Knowledge Base.pdf",
+   "area": "RCM",
+   "mime": "pdf",
+   "modified": "2026-05-29T21:04:15Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1EVRiGw89EUIrN0FClUdhYpPlEVK3mddswU0ABntl3gA",
+   "title": "Adit KB FAQ's PA - Engage 29 May 2026 V1",
+   "area": "FAQ",
+   "mime": "doc",
+   "modified": "2026-05-28T20:17:26.043Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1FCUnc4TAQEuPS_WC43EFt3XvCbKX_8mq",
+   "title": "Adit Phone Quick Start Guide.pdf",
+   "area": "Voice",
+   "mime": "pdf",
+   "modified": "2026-05-28T19:12:15Z",
+   "skip": "image-only PDF, no text"
+  },
+  {
+   "id": "1p1IAH-GolvfpoteEA21j-1cy02-0sLG9g1m3ETYekdE",
+   "title": "Call Intelligence - Master Document",
+   "area": "Call Intelligence",
+   "mime": "doc",
+   "modified": "2026-05-13T17:16:02.849Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1WSu_u9lFjH_N9sjxPpLupzF5-lF4p8oxIlZavz17j8k",
+   "title": "Authorization Guide - Zoho Desk Client Bugs Tab",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-05-08T15:54:16.701Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "1Uv0NCcdp13Xhs-kY-NyIug6kJUbXCkNnDYzdQ9UQ1G8",
+   "title": "Adit Zoho Desk SOP v3",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-04-30T22:32:37.565Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "18mohM7_OWrkqFZ4Po2IQcskpuDGxgB3M80ZZTRAjInQ",
+   "title": "Playbooks for AI Frontdesk",
+   "area": "AI Front Desk",
+   "mime": "doc",
+   "modified": "2026-04-28T14:18:33.778Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "11vc6DFNMEDzzRO-Y-4-DnKW2Y6Bm5MuxG5pkc3CPdlw",
+   "title": "Password OTP Troubleshooting",
+   "area": "Account access",
+   "mime": "doc",
+   "modified": "2026-04-22T14:44:29.954Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "18iXWS28wdrVv_zVh0f8yKNMbgJvToUie",
+   "title": "Installation Process",
+   "area": "Voice",
+   "mime": "pdf",
+   "modified": "2025-12-18T21:44:54Z",
+   "imported_at": "2026-11-18T09:40:00Z"
+  }
+ ]
+}
