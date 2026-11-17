@@ -267,6 +267,54 @@
     }).join('')}</div>`;
   }
 
+  // Batch 382: calendar call status (Avoma meetings now and next, a video call app in scrin.io) and, for the Adit Pay
+  // team, open Asana tasks. Shown in the Adit Pay workspace.
+  function isPay() { return window.__ws === 'aditpay' || document.body.classList.contains('ws-aditpay'); }
+  let _meet = null, _meetAt = 0, _tasks = null, _tasksAt = 0;
+  async function refreshMeetings() {
+    if (!isPay() || Date.now() - _meetAt < 45000) return;
+    _meetAt = Date.now();
+    try { const j = await fetch('/api/live-floor/meetings', { credentials: 'include' }).then(r => r.json()); if (j && j.success) { _meet = j; if (_last) paint(_last); } } catch (err) { /* the line stays hidden */ }
+  }
+  async function refreshTasks() {
+    if (!isPay() || Date.now() - _tasksAt < 300000) return;
+    _tasksAt = Date.now();
+    try { const j = await fetch('/api/aditpay/tasks', { credentials: 'include' }).then(r => r.json()); if (j && j.success) { _tasks = j; if (_last) paint(_last); } } catch (err) { /* hidden */ }
+  }
+  function meetFor(email) { return (_meet && _meet.data && _meet.data[String(email || '').toLowerCase()]) || null; }
+  function videoNow(m) { return m && m.video && m.video.at && Date.now() - Date.parse(m.video.at) < 10 * 60000 ? m.video : null; }
+  function tasksFor(email) { return (_tasks && _tasks.ok && _tasks.byEmail && _tasks.byEmail[String(email || '').toLowerCase()]) || null; }
+  function hm(iso) { return shortTime(Date.parse(iso)); }
+  function meetName(m, own) { return own && m.title ? m.title : m.kind; }
+  // One line on each card: the meeting now (or the video call app), the next one today, and open tasks.
+  function calLine(email, own) {
+    if (!isPay()) return '';
+    const m = meetFor(email), v = videoNow(m), t = tasksFor(email), parts = [];
+    if (m && m.now) parts.push(`<span class="lf-cal-now" title="${e((own && m.now.title ? m.now.title + ' · ' : '') + 'Google Calendar, from Avoma')}">Now <b>${e(m.now.kind)}</b> to ${e(hm(m.now.end))}</span>`);
+    else if (v) parts.push(`<span class="lf-cal-now" title="Seen in scrin.io ${e(hm(v.at))}">On <b>${e(v.app)}</b></span>`);
+    if (m && m.next) parts.push(`<span title="${e((own && m.next.title ? m.next.title + ' · ' : '') + 'Google Calendar, from Avoma')}">Next <b>${e(m.next.kind)}</b> ${e(hm(m.next.start))}</span>`);
+    if (!parts.length && _meet) parts.push('<span class="lf-dim">No meetings left today</span>');
+    if (t && t.open) parts.push(`<span title="Open tasks in the Adit Pay Asana project">Tasks <b class="lf-mono">${t.open}</b>${t.overdue ? ` <span class="lf-neg">${t.overdue} overdue</span>` : ''}</span>`);
+    return parts.length ? `<div class="lf-cal">${parts.join('<span class="lf-sep"></span>')}</div>` : '';
+  }
+  // The agent's own calendar and tasks, under their card.
+  function myDay(email) {
+    if (!isPay()) return '';
+    const m = meetFor(email), v = videoNow(m), t = tasksFor(email);
+    const cal = [];
+    if (m && m.now) cal.push(`<li class="on"><b>Now</b><span>${e(meetName(m.now, true))}</span><em>${e(hm(m.now.start))} to ${e(hm(m.now.end))}</em></li>`);
+    else if (v) cal.push(`<li class="on"><b>Now</b><span>On ${e(v.app)} (scrin.io)</span><em>${e(hm(v.at))}</em></li>`);
+    if (m && m.next) cal.push(`<li><b>Next</b><span>${e(meetName(m.next, true))}</span><em>${e(hm(m.next.start))} to ${e(hm(m.next.end))}</em></li>`);
+    const calBox = `<section class="lf-myday-c" aria-label="My calendar today"><h4>My calendar today${m && m.today ? ` <span class="lf-dim">${m.today} meeting${m.today === 1 ? '' : 's'}</span>` : ''}</h4>${cal.length ? `<ul class="lf-myday-l">${cal.join('')}</ul>` : `<p class="lf-sub">${_meet ? 'Nothing else on your calendar today.' : 'Loading...'}</p>`}<p class="lf-fine">From your Google Calendar as Avoma has it${_meet && _meet.avomaError ? ' (not available right now)' : ''}.</p></section>`;
+    let taskBox = '';
+    if (_tasks) {
+      const list = t && t.list ? t.list.slice(0, 5) : [];
+      const today = typeof todayStr === 'function' ? todayStr() : new Date().toISOString().slice(0, 10);
+      taskBox = `<section class="lf-myday-c" aria-label="My Asana tasks"><h4>My Asana tasks${t && t.open ? ` <span class="lf-dim">${t.open} open${t.overdue ? ', ' + t.overdue + ' overdue' : ''}</span>` : ''}</h4>${!_tasks.ok ? `<p class="lf-sub">${e(_tasks.error || 'Asana is not available right now.')}</p>` : list.length ? `<ul class="lf-myday-l">${list.map(x => `<li${x.due && x.due < today ? ' class="late"' : ''}><b>${x.due ? e(x.due.slice(5).replace('-', '/')) : 'No date'}</b><span>${x.url ? `<a href="${e(x.url)}" target="_blank" rel="noopener">${e(x.name)}</a>` : e(x.name)}</span>${x.section ? `<em>${e(x.section)}</em>` : ''}</li>`).join('')}</ul>` : '<p class="lf-sub">No open tasks assigned to you.</p>'}${_tasks.projectUrl ? `<p class="lf-fine"><a href="${e(_tasks.projectUrl)}" target="_blank" rel="noopener">Open the Adit Pay project in Asana</a></p>` : ''}</section>`;
+    }
+    return `<div class="lf-myday">${calBox}${taskBox}</div>`;
+  }
+
   function chatsFor(email) {
     const v = _chats[String(email || '').toLowerCase()];
     return typeof v === 'number' ? v : null;
@@ -292,7 +340,7 @@
     const calls = Math.max(1, inbound + outbound);
     const k = [
       ['Available', n('avail'), n('avail') / team, 'var(--lf-green)'],
-      ['On call', n('call'), n('call') / team, 'var(--lf-teal)'],
+      ['On call', n('call') + n('meet'), (n('call') + n('meet')) / team, 'var(--lf-teal)', n('meet') ? `${n('meet')} in a meeting` : ''],
       ['Unavailable', n('busy') + n('break'), (n('busy') + n('break')) / team, 'var(--lf-red)'],
       ['Inbound today', inbound, inbound / calls, 'var(--lf-teal)'],
       ['Outbound today', outbound, outbound / calls, 'var(--lf-purple)'],
@@ -323,6 +371,7 @@
       </div>
       ${breakLine(st.tr)}
       ${dayLine(op.agent.email)}
+      ${calLine(op.agent.email, admin || isMe)}
     </article>`;
   }
 
@@ -396,6 +445,7 @@
         <h3 class="lf-rail-t" id="lf-team-t">Team right now</h3>
         <div class="lf-kv"><span>Available</span><b class="lf-mono">${n('avail')}</b></div>
         <div class="lf-kv"><span>On call</span><b class="lf-mono">${n('call')}</b></div>
+        ${n('meet') ? `<div class="lf-kv"><span>In a meeting</span><b class="lf-mono">${n('meet')}</b></div>` : ''}
         <div class="lf-kv"><span>Unavailable / away</span><b class="lf-mono">${n('busy') + n('break')}</b></div>
         <div class="lf-kv"><span>Abandoned today</span><b class="lf-mono">${Math.max(q.abandonedCount || 0, (g('abandonedCalls', []) || []).length)}</b></div>
         <div class="lf-kv"><span>Voicemail today</span><b class="lf-mono">${q.voicemailCount || 0}</b></div>
@@ -430,11 +480,12 @@
         <div class="lf-me-hi">Hi ${e(first)}</div>${pill(st)}${presenceDots(op.agent.email)}
         <div class="lf-sub lf-mono" style="margin-top:4px">in this state for <span data-lf-since="${st.sinceMs || ''}">${since == null ? '-' : clock(since)}</span></div></div></div>
       <div class="lf-me-stats">${stats.map(([v, l]) => `<div><b class="lf-mono">${e(v)}</b><span>${e(l)}</span></div>`).join('')}</div>
+      ${myDay(op.agent.email)}
     </div>`;
   }
 
   // ── paint ───────────────────────────────────────────────────────────────
-  const ORDER = { call: 0, avail: 1, chat: 2, busy: 2, break: 3, off: 4 };
+  const ORDER = { call: 0, meet: 0, avail: 1, chat: 2, busy: 2, break: 3, off: 4 };
 
   function paint(ctx) {
     const mode = ctx.mode;
@@ -446,6 +497,10 @@
       // Chat Wing: unavailable on the phone is normal. They are on chat duty once logged in, or while they have open chats.
       const openChats = _pres && _pres.data && _pres.data[String(op.agent.email || '').toLowerCase()] && /open chat/.test(((_pres.data[String(op.agent.email || '').toLowerCase()].chat) || {}).label || '');
       if (wing === 'chat' && (st.key === 'busy' || (st.noLogin && openChats))) st = Object.assign({}, st, { key: 'chat', label: 'Chat duty', sinceMs: st.sinceMs || parseTs(op.sinceTs) });
+      // Batch 382: in a calendar meeting, or on a video call app, and not on a RingCentral call or away: "In a meeting".
+      const mt = isPay() ? meetFor(op.agent.email) : null, vd = videoNow(mt);
+      if ((mt && mt.now || vd) && (st.key === 'avail' || st.key === 'busy' || (st.key === 'off' && st.label !== 'Logged out')))
+        st = Object.assign({}, st, { key: 'meet', label: mt && mt.now ? 'In a meeting · ' + mt.now.kind : 'On ' + vd.app, sinceMs: mt && mt.now ? Date.parse(mt.now.start) : Date.parse(vd.at) });
       return { op, st, wing }; })
       .sort((a, b) => (ORDER[a.st.key] - ORDER[b.st.key]) || String(a.op.agent.name).localeCompare(String(b.op.agent.name)));
     const myEmail = String(g('currentEmail', '') || '').toLowerCase();
@@ -461,7 +516,7 @@
       const list = rows.filter(r => r.wing === key);
       if (!list.length) return '';
       const n = k => list.filter(r => r.st.key === k).length;
-      const sub = (key === 'chat' ? [`${n('chat') + n('avail') + n('call')} on chat duty`, `${n('break')} away`] : [`${n('avail')} available`, `${n('call')} on call`, `${n('busy') + n('break')} away`]).join(' · ');
+      const sub = (key === 'chat' ? [`${n('chat') + n('avail') + n('call')} on chat duty`, `${n('break')} away`] : [`${n('avail')} available`, `${n('call')} on call`].concat(n('meet') ? [`${n('meet')} in a meeting`] : []).concat([`${n('busy') + n('break')} away`])).join(' · ');
       return `<section class="lf-wing" aria-label="${e(title)}">
         <h3 class="lf-wing-t">${e(title)} <span class="lf-wing-n">${list.length}</span><span class="lf-wing-sub">${e(sub)}</span></h3>
         <div class="lf-grid">${list.map(r => agentCard(r, me && r === me, mode === 'admin')).join('')}</div>
@@ -502,6 +557,8 @@
       refreshChats();
       refreshPresence();
       refreshDay();
+      refreshMeetings();
+      refreshTasks();
       if (ctx.mode === 'agent') refreshMine();
       if (ctx.mode === 'admin') refreshAvail();
     } catch (err) {

@@ -32,16 +32,21 @@ describe('expert keeps the ticket for the conversation', () => {
   const { _pickTickets: pick } = require('../../lib/expert.js');
   const h = [{ role: 'user', content: '420465 how to handle this' }, { role: 'assistant', content: 'answer' }];
   it('reads a ticket the agent points to as related context, not instead', () => {
-    expect(pick('this client has a relevant ticket 417650 why didnt you check this', h, T)).toEqual({ tnum: '420465', relNums: ['417650'] });
+    expect(pick('this client has a relevant ticket 417650 why didnt you check this', h, T)).toMatchObject({ tnum: '420465', relNums: ['417650'] });
   });
   it('keeps the ticket on follow-ups without a number', () => {
-    expect(pick('make it shorter', h, T)).toEqual({ tnum: '420465', relNums: [] });
+    expect(pick('make it shorter', h, T)).toMatchObject({ tnum: '420465', relNums: [] });
   });
   it('a new ticket to review replaces the old one', () => {
-    expect(pick('420700 how to handle this', h, T)).toEqual({ tnum: '420700', relNums: [] });
+    expect(pick('420700 how to handle this', h, T)).toMatchObject({ tnum: '420700', relNums: [] });
+  });
+  // Batch 384 (#430296): a new case without a ticket number does not inherit the earlier ticket.
+  it('a longer new case with no ticket number drops the earlier ticket', () => {
+    expect(pick('The client requested an update to the AI assistant text responses so patients are told they are talking to an AI. Share the steps', h, T)).toMatchObject({ tnum: null, dropped: '420465' });
+    expect(pick('Can you also check whether the reminder template was changed by someone on our side before the 11th?', h, T)).toMatchObject({ tnum: '420465', carried: true });
   });
   it('first question with two tickets: first is reviewed, second is context', () => {
-    expect(pick('#420465 and earlier #417650', [], T)).toEqual({ tnum: '420465', relNums: ['417650'] });
+    expect(pick('#420465 and earlier #417650', [], T)).toMatchObject({ tnum: '420465', relNums: ['417650'] });
   });
 });
 

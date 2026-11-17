@@ -124,3 +124,22 @@ html.dark-mode .lf-root{
 .lf-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .lf-mecard .lf-avl{margin-top:6px}
 .lf-agent .lf-avl{display:grid;grid-template-columns:repeat(2,minmax(0,max-content));gap:4px 14px}
+/* Batch 382: calendar call status (Avoma, scrin.io) and Asana tasks, Adit Pay workspace */
+.lf-meet{color:var(--lf-purple);background:rgba(124,92,196,.12)} .lf-meet .lf-dot{background:var(--lf-purple)}
+.lf-b-meet{border-left-color:var(--lf-purple)}
+.lf-cal{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--lf-t3);margin-top:6px;padding-top:6px;border-top:1px dashed var(--lf-border)}
+.lf-cal b{color:var(--lf-t1);font-weight:600}
+.lf-cal-now,.lf-cal-now b{color:var(--lf-purple)}
+.lf-myday{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:4px}
+.lf-myday-c{border:1px solid var(--lf-border);border-radius:12px;padding:10px 12px;min-width:0}
+.lf-myday-c h4{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--lf-t1);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.lf-myday-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lf-myday-l li{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:8px;align-items:baseline;font-size:12.5px;color:var(--lf-t1)}
+.lf-myday-l li b{font-size:11px;font-weight:600;color:var(--lf-t3);text-transform:uppercase;letter-spacing:.04em}
+.lf-myday-l li.on b{color:var(--lf-purple)}
+.lf-myday-l li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lf-myday-l li em{font-style:normal;font-size:12px;color:var(--lf-t3);white-space:nowrap}
+.lf-myday-l a{color:inherit;text-decoration:none}.lf-myday-l a:hover{text-decoration:underline}
+@media (max-width:640px){.lf-myday-l li{grid-template-columns:42px minmax(0,1fr)}.lf-myday-l li em{grid-column:2}}
+.lf-fine{margin:6px 0 0;font-size:11px;color:var(--lf-t3)}
+.lf-myday-l li.late b{color:var(--lf-red)}

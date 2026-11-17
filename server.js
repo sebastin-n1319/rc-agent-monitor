@@ -891,7 +891,11 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         // on a call or chat = working, whatever scrin.io says
         busy: async () => { const [snap, monitored, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), activeChatsByEmail().catch(() => ({ data: {} }))]);
           const out = {}; for (const a of monitored) { const em = String(a.email || '').toLowerCase(); if (!em) continue; const st = (snap && snap[String(a.rc_id)]) || {};
-            out[em] = { onCall: !!st.isOnCall || /on call|ringing/i.test(String(st.normalizedStatus || '')), activeChats: (chats.data || {})[em] || 0 }; } return out; },
+            out[em] = { onCall: !!st.isOnCall || /on call|ringing/i.test(String(st.normalizedStatus || '')), activeChats: (chats.data || {})[em] || 0 }; }
+          // Batch 382: in a calendar meeting (Avoma) = working too
+          const mt = await require('./lib/meeting-status').inMeetingNow(Object.keys(out)).catch(() => ({}));
+          for (const em of Object.keys(mt)) if (out[em]) out[em].onCall = true;
+          return out; },
         notify: async (event) => {
           if (isTestAccount(event.email) || NOTIFICATION_BLOCKLIST.includes(String(event.email || '').toLowerCase().trim())) return;
           const n = await sendBreakChatNotification(event).catch((e) => ({ notified: false, status: 'failed', response: e.message }));
@@ -9409,6 +9413,38 @@ async function latestChatStatusByEmail() {
          ON m.operator_email = e.operator_email AND datetime(e.timestamp) = m.t`, [],
     (err, rows) => { const out = {}; for (const r of (err ? [] : rows || [])) out[String(r.email).toLowerCase()] = { status: r.status, since: r.timestamp }; resolve(out); }));
 }
+// Batch 382: calendar call status for the live floor: the Avoma (Google Calendar) meeting each agent is in now and the
+// next one today, and, in the Adit Pay workspace, a video call app open in scrin.io. Meeting titles are shown only to
+// the person and to admins; everyone else sees the kind (Demo, Training, Meeting) and the times.
+app.get('/api/live-floor/meetings', requireAuth, async (req, res) => {
+  try {
+    const monitored = await getMonitoredAgents();
+    const emails = monitored.map(a => String(a.email || '').toLowerCase()).filter(Boolean);
+    const ms = require('./lib/meeting-status');
+    const r = await ms.forEmails(emails, { scrinOn: req.workspace === 'aditpay' });
+    const admin = await isAdminSession(req), me = String(req.session.email || '').toLowerCase();
+    const data = {};
+    for (const [em, x] of Object.entries(r.data || {})) {
+      const own = admin || em === me, strip = (m) => m ? (own ? m : Object.assign({}, m, { title: '' })) : null;
+      data[em] = { now: strip(x.now), next: strip(x.next), today: x.today, video: x.video };
+    }
+    const out = { success: true, data, avomaError: r.avomaError, scrinError: r.scrinError, at: r.at };
+    if (req.query.debug && admin) out.debug = { scrinSample: ms.scrinSample() };
+    res.json(out);
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 382 (from the old Adit Pay Ops tool): open Asana tasks in the Adit Pay project. Agents get their own list;
+// admins get everyone's.
+app.get('/api/aditpay/tasks', requireAuth, async (req, res) => {
+  try {
+    const r = await require('./lib/aditpay-tasks').summary({ fresh: req.query.fresh === '1' && await isAdminSession(req) });
+    if (!r.ok) return res.json({ success: true, ok: false, error: r.error, byEmail: {} });
+    const admin = await isAdminSession(req), me = String(req.session.email || '').toLowerCase();
+    const byEmail = {};
+    for (const [em, o] of Object.entries(r.byEmail)) byEmail[em] = admin || em === me ? o : { open: o.open, overdue: o.overdue, dueToday: o.dueToday, list: [] };
+    res.json({ success: true, ok: true, at: r.at, byEmail, unassigned: admin ? r.unassigned : undefined, projectUrl: 'https://app.asana.com/0/' + r.project });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
   try {
     const [snap, monitored, desk, siq, chatLog, chats, ssm] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), chatStatusByEmail(), latestChatStatusByEmail(), activeChatsByEmail(), require('./lib/scrin').statusByEmail()]);
