@@ -3657,7 +3657,11 @@ function payAlerts() {
       return (a && a.chat_id) || await getGoogleSubForEmail(email);
     },
     getMonitoredAgents: async () => (await WSX.unscoped(() => getMonitoredAgents())).filter((a) => String(a.workspace || 't1') === 'aditpay'),
-    db: require('./database'),
+    // Batch 369: Adit Pay alerts are logged apart from T1's (key prefix "pay:"), so each workspace lists only its own posts
+    db: Object.assign({}, require('./database'), {
+      insertT1AlertLog: (l) => require('./database').insertT1AlertLog({ ...l, dedupe_key: 'pay:' + (l.dedupe_key || l.kind || '') }),
+      t1AlertSentSince: (k, s) => require('./database').t1AlertSentSince('pay:' + k, s),
+    }),
     fetchFn: fetch,
   });
   return _payAlerts;
@@ -3712,7 +3716,7 @@ app.post('/api/t1-alerts/test', requireAdmin, rateLimit(5, 60000), async (req, r
   res.json({ success: r.ok, error: r.error });
 });
 app.get('/api/t1-alerts/log', requireAdmin, async (req, res) => {
-  try { res.json({ success: true, data: (await require('./database').listT1AlertLog(40)).filter(r => !/_item$/.test(r.kind)) }); }
+  try { const pay = req.workspace === 'aditpay'; res.json({ success: true, data: (await require('./database').listT1AlertLog(400)).filter(r => !/_item$/.test(r.kind) && /^pay:/.test(String(r.dedupe_key || '')) === pay).slice(0, 40) }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/t1-alerts/queue-debug', requireAdmin, async (req, res) => {
@@ -3770,6 +3774,11 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
         { key: 'liveOps', label: 'Ticket alerts', desc: 'Unassigned T2 - Adit Pay tickets and assigned tickets with no action.', enabled: pcfg.enabled !== false,
           source: pcfg.webhookUrl ? 'app' : 'none', masked: maskHook(pcfg.webhookUrl), parts: { tickets: pcfg.tickets.enabled },
           timing: { fields: [{ path: 'tickets.scanMin', label: 'Ticket check: every', unit: 'min', value: pcfg.tickets.scanMin, min: 2, max: 120 }] } },
+        // Batch 369: the team's daily report, posted once a day
+        (() => { const dc = payDailyCfg(); return { key: 'dailyReport', label: 'Daily report', desc: "The Adit Pay team's daily numbers (calls in from the queue and direct, calls out, demos and trainings, new tickets and follow-ups), the same as Pay home, posted once a day.", enabled: dc.enabled,
+          source: dc.url ? 'app' : 'none', masked: maskHook(dc.url),
+          timing: { fields: [{ path: 'daily.hour', label: 'Post at (hour, Central, 0 to 23)', unit: 'h', value: dc.hour, min: 0, max: 23 }, { path: 'daily.minute', label: 'and minute', unit: 'min', value: dc.minute, min: 0, max: 59 }],
+            note: 'Posts once a day at this Central time. Off until a space is set and it is switched on.' } }; })(),
       ] });
     }
     res.json({ success: true, channels: [
@@ -3809,7 +3818,7 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
   try {
     const b = req.body || {};
     const key = String(b.key || '');
-    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review', 'reviewMsg'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
+    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review', 'reviewMsg', 'dailyReport'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
     const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
     if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
     // Batch 360: Adit Pay workspace settings
@@ -3827,6 +3836,15 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
         if (typeof b.enabled === 'boolean') cur.enabled = b.enabled;
         if (b.tickets && b.tickets.scanMin != null) cur.tickets = { ...(cur.tickets || {}), scanMin: Math.max(2, Math.min(120, Math.round(Number(b.tickets.scanMin)) || 5)) };
         await setSetting('pay_alerts_config', JSON.stringify(cur), req.session.email); payAlerts().invalidate();
+      } else if (key === 'dailyReport') { // Batch 369
+        const h = await loadAlertHooks();
+        if (url) h.payDaily = url;
+        if (b.clearWebhook) delete h.payDaily;
+        if (typeof b.enabled === 'boolean') h.payDailyEnabled = b.enabled;
+        const d = b.daily || {}, n = (v, lo, hi) => { const x = Math.round(Number(v)); return Number.isFinite(x) ? Math.max(lo, Math.min(hi, x)) : null; };
+        if (d.hour != null && n(d.hour, 0, 23) != null) h.payDailyHour = n(d.hour, 0, 23);
+        if (d.minute != null && n(d.minute, 0, 59) != null) h.payDailyMinute = n(d.minute, 0, 59);
+        await setSetting('alert_hooks', JSON.stringify(h), req.session.email); await loadAlertHooks();
       } else return res.status(400).json({ success: false, error: 'This alert is part of T1 CS only' });
       insertAuditLog(req.session.email, 'alert_channel_saved', 'aditpay:' + key, url ? 'webhook set' : b.clearWebhook ? 'webhook cleared' : '').catch(() => {});
       return res.json({ success: true });
@@ -3880,8 +3898,10 @@ app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, r
   await loadAlertHooks();
   let url = '';
   if (req.workspace === 'aditpay') { // Batch 360
-    url = key === 'breakLog' ? (ALERT_HOOKS.payBreakLog || process.env.ADITPAY_BREAK_WEBHOOK_URL || '') : key === 'liveOps' ? (await payAlerts().config()).webhookUrl : '';
+    url = key === 'breakLog' ? (ALERT_HOOKS.payBreakLog || process.env.ADITPAY_BREAK_WEBHOOK_URL || '') : key === 'liveOps' ? (await payAlerts().config()).webhookUrl : key === 'dailyReport' ? (ALERT_HOOKS.payDaily || '') : '';
     if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
+    // Batch 369: the Daily report test posts today's report so far
+    if (key === 'dailyReport') { try { const r = await postPayDaily(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }), url, true); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); } catch (e) { return res.json({ success: false, error: 'Could not post the report' }); } }
     try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: `🔔 Test: Adit Pay ${key === 'breakLog' ? 'break log' : 'ticket'} alerts will post in this space.` }), signal: AbortSignal.timeout(15000) }); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); }
     catch (e) { return res.json({ success: false, error: 'Could not reach Google Chat' }); }
   }
@@ -8774,6 +8794,16 @@ async function deskLifecycleAgentRoster() {
     const r = rosterByEmail[email];
     byEmail[email] = { pseudo: r?.pseudo || null, full_name: r?.full_name || a.name || null };
   }
+  // Batch 369: in the Adit Pay workspace, people with Adit Pay access count too, before they are added in Manage Agents
+  if (WSX.current() === 'aditpay') {
+    try {
+      for (const e of (await WSX.members()).emails) {
+        const email = String(e).toLowerCase(); if (!email || emails.includes(email)) continue;
+        const name = email.split('@')[0].split(/[._]/).filter(Boolean).map((x) => x.charAt(0).toUpperCase() + x.slice(1)).join(' ');
+        emails.push(email); agentNames[email] = name; byEmail[email] = { pseudo: null, full_name: name };
+      }
+    } catch (e) { /* roster stays the monitored agents */ }
+  }
   return { emails, agentNames, byEmail };
 }
 
@@ -10444,7 +10474,13 @@ app.get('/api/aditpay/daily', requireAuth, rateLimit(30, 60000), async (req, res
     if (!s || !(s.workspaces || []).includes('aditpay')) return res.status(403).json({ success: false, error: 'The Adit Pay workspace is not turned on for you.' });
     const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
     const day = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) && String(req.query.date) <= today ? String(req.query.date) : today;
-    const win = getDateWindow(day, tz), from = win.start.toISOString(), to = win.end.toISOString();
+    const data = await payDailyReport(day);
+    res.json({ success: true, date: day, ...data });
+  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
+});
+// Batch 369: the daily report itself, shared by Pay home and the Daily report post to Google Chat.
+async function payDailyReport(day) {
+    const tz = 'America/Chicago', win = getDateWindow(day, tz), from = win.start.toISOString(), to = win.end.toISOString();
     const data = await WSX.run('aditpay', async () => {
       const roster = await deskLifecycleAgentRoster();
       const m = await WSX.members(), emails = Array.from(new Set(roster.emails.concat(Array.from(m.emails)))).sort();
@@ -10473,9 +10509,32 @@ app.get('/api/aditpay/daily', requireAuth, rateLimit(30, 60000), async (req, res
       }) };
     });
     data.people.forEach((p) => { p.chat = require('./lib/aditpay-daily').chatText(p); });
-    res.json({ success: true, date: day, ...data });
-  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 200) }); }
-});
+    return data;
+}
+// Batch 369: Daily report post. Once a day at the set Central time, the Adit Pay team's daily report (the same numbers
+// as Pay home) is posted to the Daily report space set on the Alerts page in the Adit Pay workspace.
+function payDailyCfg() { const h = ALERT_HOOKS || {}; return { url: h.payDaily || '', enabled: h.payDailyEnabled === true, hour: Number.isFinite(Number(h.payDailyHour)) ? Number(h.payDailyHour) : 18, minute: Number.isFinite(Number(h.payDailyMinute)) ? Number(h.payDailyMinute) : 45 }; }
+async function postPayDaily(day, url, test = false) {
+  const data = await payDailyReport(day);
+  const when = new Date(day + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const people = data.people.filter((p) => p.tracked || (p.calls && p.calls.total) || (p.sessions && p.sessions.total) || (p.tickets.new + p.tickets.followup));
+  const text = [`📊 *Adit Pay daily report, ${when}*`, ''].concat(people.length ? people.map((p) => p.chat + '\n') : ['No Adit Pay activity was recorded for this day.']).join('\n').slice(0, 4000);
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text }), signal: AbortSignal.timeout(20000) });
+  await require('./database').insertT1AlertLog({ kind: 'daily_report', dedupe_key: (test ? 'pay:dailytest:' : 'pay:daily:') + day, summary: (test ? 'Test: ' : '') + 'Adit Pay daily report ' + day, ok: r.ok, error: r.ok ? null : 'HTTP ' + r.status }).catch(() => {});
+  return { ok: r.ok, status: r.status };
+}
+setInterval(async () => {
+  try {
+    const c = payDailyCfg(); if (!c.enabled || !c.url) return;
+    const now = new Date(), ct = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+    if (ct.getHours() * 60 + ct.getMinutes() < c.hour * 60 + c.minute) return;
+    const day = now.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    if (await require('./database').t1AlertSentSince('pay:daily:' + day, new Date(Date.now() - 20 * 3600e3).toISOString().replace('T', ' ').slice(0, 19)).catch(() => false)) return;
+    if ((await getSetting('pay_daily_tried').catch(() => '')) === day) return; // one try a day, even when Google Chat refuses it
+    await setSetting('pay_daily_tried', day, 'system').catch(() => {});
+    console.log('📊 Adit Pay daily report:', JSON.stringify(await postPayDaily(day, c.url)));
+  } catch (e) { console.warn('pay daily post:', e.message); }
+}, 60 * 1000);
 // Batch 358: admin check of the Stripe data in Zoho Analytics (aggregates only) before Pay home uses it.
 app.get('/api/aditpay/stripe-probe', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { res.json({ success: true, data: await require('./lib/aditpay-stripe').probe({ query: req.query.q ? String(req.query.q).slice(0, 2000) : '' }) }); } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }

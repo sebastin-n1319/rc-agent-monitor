@@ -29,6 +29,7 @@
     assessments: ic('<path d="M9 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/><path d="M9 4v4H5M9 13h6M9 17h4"/>'),
     reviewMsg: ic('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
     review: ic('<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/><path d="M8.5 3.5L6 6M15.5 3.5L18 6"/>'),
+    dailyReport: ic('<path d="M4 20h16"/><path d="M7 16v-4M11 16V8M15 16v-6M19 16V5"/>'), // Batch 369
     liveOps: ic('<path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M12 3v1.5"/>'),
   };
   const EVENTS = [['shift', 'Shift start and end'], ['break', 'Break'], ['brb', 'BRB'], ['training', 'Training'], ['qa', 'QA session'], ['internal', 'Internal call']];
@@ -49,7 +50,7 @@
     return `<div class="ah-timing"><div class="ah-tt">Timing</div>${f}${t.note ? `<p class="ah-foot" style="margin:4px 0 0">${esc(t.note)}</p>` : ''}</div>`;
   }
   function card(c) {
-    const parts = c.key === 'liveOps' && c.parts ? `<div class="ah-parts">${[['queue', 'Caller in queue'], ['coverage', 'Nobody available'], ['tickets', 'Tickets']].map(([k, l]) => `<span class="${c.parts[k] ? 'on' : ''}">${l}</span>`).join('')}</div>` : '';
+    const parts = c.key === 'liveOps' && c.parts ? `<div class="ah-parts">${[['queue', 'Caller in queue'], ['coverage', 'Nobody available'], ['tickets', 'Tickets']].filter(([k]) => k in c.parts).map(([k, l]) => `<span class="${c.parts[k] ? 'on' : ''}">${l}</span>`).join('')}</div>` : '';
     const sched = c.key === 'summaries' ? `<div class="ah-parts"><span class="${c.schedulesOn ? 'on' : ''}">${c.schedulesOn || 0} of ${c.schedules || 0} schedules on</span></div>` : '';
     const events = c.key === 'breakLog' ? `<fieldset class="ah-events"><legend>Post these taps</legend>${EVENTS.map(([k, l]) => `<label><input type="checkbox" data-ev="${k}"${(c.events || []).includes(k) ? ' checked' : ''}> ${l}</label>`).join('')}</fieldset>` : '';
     return `<article class="ah-card ${c.enabled ? '' : 'is-off'}" data-key="${c.key}">

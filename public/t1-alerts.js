@@ -36,15 +36,16 @@
     </section>`;
   }
 
+  const PAY = () => window.__ws === 'aditpay'; // Batch 369: the same page for the Adit Pay team's tickets
   function liveHTML(st) {
     const q = st.queue || {};
     const longest = (q.waiting || [])[0];
     const off = !q.loggedIn;
     return `<div class="ta-kpis">
-      <div class="ta-kpi ${longest && longest.waitSec >= 60 ? 'ta-bad' : ''}"><span class="ta-ic">${I.phone}</span><div><small>Callers waiting</small><b>${off ? '-' : (q.waiting || []).length}</b><em>${longest ? 'Longest ' + dur(longest.waitSec) : (off ? 'Team off shift' : 'Queue clear')}</em></div></div>
-      <div class="ta-kpi ${!off && !q.available ? 'ta-bad' : ''}"><span class="ta-ic">${I.users}</span><div><small>Available now</small><b>${off ? '-' : q.available + ' / ' + q.loggedIn}</b><em>${q.zeroSince ? 'Nobody available for ' + dur((Date.now() - Date.parse(q.zeroSince)) / 1000) : (q.onCall ? q.onCall + ' on call' : 'logged in')}</em></div></div>
+      ${PAY() ? '' : `<div class="ta-kpi ${longest && longest.waitSec >= 60 ? 'ta-bad' : ''}"><span class="ta-ic">${I.phone}</span><div><small>Callers waiting</small><b>${off ? '-' : (q.waiting || []).length}</b><em>${longest ? 'Longest ' + dur(longest.waitSec) : (off ? 'Team off shift' : 'Queue clear')}</em></div></div>
+      <div class="ta-kpi ${!off && !q.available ? 'ta-bad' : ''}"><span class="ta-ic">${I.users}</span><div><small>Available now</small><b>${off ? '-' : q.available + ' / ' + q.loggedIn}</b><em>${q.zeroSince ? 'Nobody available for ' + dur((Date.now() - Date.parse(q.zeroSince)) / 1000) : (q.onCall ? q.onCall + ' on call' : 'logged in')}</em></div></div>`}
       <div class="ta-kpi ${(st.tickets.unassigned || []).some(t => t.bucket === 'over') ? 'ta-bad' : ''}"><span class="ta-ic">${I.ticket}</span><div><small>Unassigned tickets</small><b>${(st.tickets.unassigned || []).length}</b><em>${(st.tickets.unassigned || []).filter(t => t.bucket !== 'new').length} over 30 min</em></div></div>
-      <div class="ta-kpi ${(st.tickets.idle || []).length ? 'ta-warn' : ''}"><span class="ta-ic">${I.clock}</span><div><small>${st.isAdmin ? 'Assigned, no action' : 'My tickets, no action'}</small><b>${(st.tickets.idle || []).length}</b><em>${st.isAdmin ? 'across T1' : 'since assignment'}</em></div></div>
+      <div class="ta-kpi ${(st.tickets.idle || []).length ? 'ta-warn' : ''}"><span class="ta-ic">${I.clock}</span><div><small>${st.isAdmin ? 'Assigned, no action' : 'My tickets, no action'}</small><b>${(st.tickets.idle || []).length}</b><em>${st.isAdmin ? (PAY() ? 'across the team' : 'across T1') : 'since assignment'}</em></div></div>
     </div>`;
   }
 
@@ -57,7 +58,7 @@
         ${lane('Over 1 hour', 'over', by('over'), 'Nothing over an hour')}
         ${lane(st.isAdmin ? 'Assigned, no action' : 'Mine, no action', 'idle', st.tickets.idle || [], st.isAdmin ? 'Every assigned ticket has been actioned' : 'You are all caught up', st.isAdmin)}
       </div>
-      <p class="ta-foot">${st.tickets.department ? esc(st.tickets.department) + ' department · ' : ''}Unassigned shows only T1's queue (T1 - Customer Support team, or no team yet). Open tickets from the last few days. Updated ${esc(ago(st.tickets.at))}${st.tickets.error ? ' · <span class="ta-err">' + esc(st.tickets.error) + '</span>' : ''}. "No action" means no reply and no comment from the owner since the ticket was assigned to them.</p>`;
+      <p class="ta-foot">${st.tickets.department ? esc(st.tickets.department) + ' department · ' : ''}${PAY() ? 'Unassigned shows only the T2 - Adit Pay team.' : 'Unassigned shows only T1\'s queue (T1 - Customer Support team, or no team yet).'} Open tickets from the last few days. Updated ${esc(ago(st.tickets.at))}${st.tickets.error ? ' · <span class="ta-err">' + esc(st.tickets.error) + '</span>' : ''}. "No action" means no reply and no comment from the owner since the ticket was assigned to them.</p>`;
   }
 
   async function load(root, mode) {
@@ -85,14 +86,14 @@
         <fieldset><legend>Google Chat space</legend>
           <label class="ta-f ta-wide"><span>Incoming webhook URL ${c.webhookSet ? '<i class="ta-ok">Connected</i>' : '<i class="ta-no">Not set</i>'}</span>
             <input class="ta-in" name="webhookUrl" type="url" autocomplete="off" placeholder="${c.webhookSet ? esc(c.webhookMasked) : 'https://chat.googleapis.com/v1/spaces/...'}"></label>
-          <p class="ta-help">In your T1 CS Alerts space: space name, <b>Apps &amp; integrations</b>, <b>Webhooks</b>, add one named "T1 Alerts", copy the URL and paste it here.</p>
+          <p class="ta-help">In your ${PAY() ? 'Adit Pay' : 'T1 CS'} alerts space: space name, <b>Apps &amp; integrations</b>, <b>Webhooks</b>, add one named "${PAY() ? 'Adit Pay Alerts' : 'T1 Alerts'}", copy the URL and paste it here.</p>
           <div class="ta-row">
-            <label class="ta-f"><span>Tag on queue and coverage alerts</span><input class="ta-in" name="mention" value="${esc(c.mention || '')}" placeholder="ronnie@adit.com"></label>
+            <label class="ta-f"><span>${PAY() ? 'Tag on ticket alerts' : 'Tag on queue and coverage alerts'}</span><input class="ta-in" name="mention" value="${esc(c.mention || '')}" placeholder="ronnie@adit.com"></label>
             <label class="ta-f"><span>Name if no tag</span><input class="ta-in" name="mentionLabel" value="${esc(c.mentionLabel || '')}" placeholder="Ronnie"></label>
           </div>
           <p class="ta-help">${mention && mention.resolved ? `<span class="ta-ok">Real tag ready</span> ${mention.email ? esc(mention.email) + ' will be pinged.' : 'Tag set.'}` : `<span class="ta-no">Not a real tag yet</span> ${esc((mention && mention.reason) || '')} Posts show plain <code>${esc(preview || '(no tag)')}</code>. Once they sign in to this tool once, the tag becomes a real ping, or paste their Google Chat ID as users/123…`}</p>
         </fieldset>
-        <fieldset><legend>Calls</legend>
+        <fieldset${PAY() ? ' hidden' : ''}><legend>Calls</legend>
           ${tog('queue.enabled', c.queue.enabled, 'Caller waiting in queue')}
           <div class="ta-row">${num('queue.waitSec', c.queue.waitSec, 'Alert after', 'sec', 15, 900)}${num('queue.repeatMin', c.queue.repeatMin, 'Remind every', 'min', 1, 120)}</div>
           ${tog('coverage.enabled', c.coverage.enabled, 'Nobody available')}
@@ -144,7 +145,7 @@
   function shell(mode) {
     const admin = mode === 'admin';
     return `<div class="ta-page">
-      <div class="ta-head"><div><h2>${admin ? 'T1 CS alerts' : 'Ticket alerts'}</h2><p>${admin ? 'Live queue, coverage and ticket ownership watch. Alerts post to your T1 CS Alerts space in Google Chat.' : 'Unassigned tickets that need an owner, and your own tickets still waiting for a first action.'}</p></div>
+      <div class="ta-head"><div><h2>${admin ? (PAY() ? 'Adit Pay alerts' : 'T1 CS alerts') : 'Ticket alerts'}</h2><p>${admin ? (PAY() ? 'Ticket ownership watch for the T2 - Adit Pay team. Alerts post to your Adit Pay alerts space in Google Chat.' : 'Live queue, coverage and ticket ownership watch. Alerts post to your T1 CS Alerts space in Google Chat.') : 'Unassigned tickets that need an owner, and your own tickets still waiting for a first action.'}</p></div>
       ${admin ? '<button type="button" class="ta-btn" data-scan>Check tickets now</button>' : ''}</div>
       <div data-live><div class="ta-skel"></div></div>
       <div class="ta-card" data-lists><div class="ta-skel"></div><div class="ta-skel"></div></div>
