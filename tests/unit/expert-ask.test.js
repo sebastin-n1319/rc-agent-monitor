@@ -301,6 +301,51 @@ describe('account details in the first note (Batch 357)', () => {
   });
 });
 
+describe('RingCentral callers are identified only by an exact phone match (Batch 388, #430014)', () => {
+  const ex = require('../../lib/expert');
+  const dn = require('../../lib/ticket-doc-note');
+  const T = require('../../lib/expert-ticket');
+  const accts = { c1: { name: 'Pearl Dental', number: '19233' }, c2: { name: 'Island Dental', number: '18001' }, c3: { name: 'Overflow Of Customer Service', number: '18940' } };
+  const setup = (exact) => ex.setDeps({ client: {
+    search: async (q) => (/^#/.test(q) ? { results: [{ accountId: 'c3' }] } : { results: [{ accountId: 'c1' }] }), // a loose search would always "find" something
+    phoneExact: async (n) => exact[n] || { accountIds: [], rows: [] },
+    profile: async (id) => ({ available: true, accountId: id, header: { account: accts[id].name, stage: 'CSM' }, account: { name: accts[id].name, number: accts[id].number }, detail: {} }) } });
+  const subj = 'New Call from MULLET,SABRINA - 1025 (904) 484-4843';
+  it('reads the caller from the subject and marks the ticket as a RingCentral one', () => {
+    expect(T._rcCallerOf(subj, '')).toBe('9044844843');
+    expect(T.RC_SUBJECT.test(subj)).toBe(true);
+  });
+  it('a number that is not in CRM: no practice, no account, no deal, even after an agent changed the contact', async () => {
+    setup({});
+    const r = await ex.resolveAccount('430014', { meta: { idents: { rc: true, rcCaller: '9044844843', accts: [], noteAccts: [], emails: ['pat@gmail.com'], phones: ['9044844843', '2814681445'], names: [] } } });
+    expect(r.blank).toBe(true); expect(r.rc).toBe(true);
+    const h = dn.header({ ticketNumber: '430014', email: 'pat@gmail.com', contact: { lastName: 'Pat Example', account: { accountName: 'Island Dental' } } }, null, null, { caller: '9044844843', blank: r });
+    expect(h['Practice Name']).toBe('Not identified: (904) 484-4843 is not in CRM, please confirm with the caller');
+    expect(h).toMatchObject({ 'Account Number': '', 'Deal Stage': '', 'Client Name': '', 'Email': '', 'Callback Number': '(904) 484-4843' });
+  });
+  it('an exact match on one account fills the practice', async () => {
+    setup({ '9044844843': { accountIds: ['c2'], rows: [{ accountId: 'c2', account: 'Island Dental' }] } });
+    const r = await ex.resolveAccount('430014', { meta: { idents: { rc: true, rcCaller: '9044844843', accts: [], noteAccts: [], emails: [], phones: [], names: [] } } });
+    expect(r.account.number).toBe('18001'); expect(r.rcOk).toBe(true);
+    const h = dn.header({ ticketNumber: '430014', contact: {} }, r, null, { caller: '9044844843', blank: null });
+    expect(h['Practice Name']).toBe('Island Dental');
+  });
+  it('a number on two accounts is not guessed', async () => {
+    setup({ '9044844843': { accountIds: ['c1', 'c2'], rows: [{ accountId: 'c1', account: 'Pearl Dental' }, { accountId: 'c2', account: 'Island Dental' }] } });
+    const r = await ex.resolveAccount('430014', { meta: { idents: { rc: true, rcCaller: '9044844843', accts: [], noteAccts: [], emails: [], phones: [], names: [] } } });
+    const h = dn.header({ ticketNumber: '430014', contact: {} }, null, null, { caller: '9044844843', blank: r });
+    expect(h['Practice Name']).toMatch(/^Not identified: \(904\) 484-4843 is on more than one account \(Pearl Dental, Island Dental\)/);
+  });
+  it('an account number an agent documented still counts', async () => {
+    setup({});
+    const r = await ex.resolveAccount('430014', { meta: { idents: { rc: true, rcCaller: '9044844843', accts: [], noteAccts: [{ n: '18001', by: 'a1', name: 'Lincy', field: true }], emails: [], phones: [], names: [] } } });
+    ex.setDeps({ client: { search: async () => ({ results: [{ accountId: 'c2' }] }), profile: async (id) => ({ available: true, accountId: id, header: { account: 'Island Dental' }, account: { name: 'Island Dental', number: '18001' }, detail: {} }) } });
+    const r2 = await ex.resolveAccount('430014', { meta: { idents: { rc: true, rcCaller: '9044844843', accts: [], noteAccts: [{ n: '18001', by: 'a1', name: 'Lincy', field: true }], emails: [], phones: [], names: [] } } });
+    expect(r2.rcOk).toBe(true);
+    expect(dn.header({ ticketNumber: '430014', contact: {} }, r2, null, { caller: '9044844843', blank: null })['Account Number']).toBe('18001');
+  });
+});
+
 describe('account numbers in a question (Batch 357)', () => {
   const T = require('../../lib/expert-ticket');
   it('"accnt # 20378" is an account, not a ticket', () => {
