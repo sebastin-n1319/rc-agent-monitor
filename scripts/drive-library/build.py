@@ -49,8 +49,9 @@ areas = sorted({s['area'] for s in docs})
 out = ['<h1 id="library">Team documents library (product and process documents from Google Drive)</h1>'
        '<p>Adit\'s own product and process documents: SOPs, playbooks, training guides, master documents and FAQs, by product area. '
        'Each section names the document it comes from. Sales playbooks describe how a product is sold and priced; prices, credits and dates '
-       'in them may have changed, so check the client\'s package before quoting. Where a document disagrees with the Help Center, a team '
-       'rule or a newer document, the newer source wins; say which you used.</p>']
+       'in them may have changed, so check the client\'s package before quoting. Each document title carries the date it was last updated. Documents '
+       'can be out of date: where one disagrees with a team rule, a product update, a reviewer decision, the Help Center or how the team has '
+       'handled the same request in recent tickets, the newer source wins; say which you followed.</p>']
 missing, built = [], 0
 for area in areas:
     for s in [d for d in docs if d['area'] == area]:
@@ -62,7 +63,8 @@ for area in areas:
         x = to_html(raw, key + '-', plain=s['mime'] in ('pdf', 'slides'))
         x = re.sub(r'<img[^>]*>', '', x)
         x = split_long(x, key + '-', s['title'])
-        out.append(f'<h1 id="{key}">{E(s["title"])} ({E(area)})</h1>' + x); built += 1
+        upd = (', updated ' + s['modified'][:10]) if s.get('modified') else ''   # Batch 387: Expert weighs a document by its date
+        out.append(f'<h1 id="{key}">{E(s["title"])} ({E(area)}{upd})</h1>' + x); built += 1
 s = '\n'.join(out) + '\n'
 s = s.replace('–', '-').replace('—', '-')
 open(J('..', '..', 'content', 'guides', 'library.html'), 'w').write(s)
