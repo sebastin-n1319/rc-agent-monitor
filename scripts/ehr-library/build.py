@@ -1,16 +1,16 @@
 # Builds content/guides/ehr-library.html from work/*.json, notes/*.md, tickets.json and doc-images.json. See README.md.
 import json,re,html,os
 W=os.path.dirname(os.path.abspath(__file__)); J=lambda *p: os.path.join(W,*p)
-RB=json.load(open(J('work','rulebook.json'))); TK=json.load(open(J('tickets.json'))); MAN=json.load(open(J('doc-images.json'))); DOCMAP={'revolution':'revolution','dentrix-ascend':'ascend','opendental':'opendental','curve':'curve'}; PMS=json.load(open(J('work','pms.json'))); KB=json.load(open(J('work','kb_ehr.json')))
+RB=json.load(open(J('work','rulebook.json'))); TK=json.load(open(J('tickets.json'))); DF=json.load(open(J('work','dentalfields.json'))); MAN=json.load(open(J('doc-images.json'))); DOCMAP={'revolution':'revolution','dentrix-ascend':'ascend','opendental':'opendental','curve':'curve'}; PMS=json.load(open(J('work','pms.json'))); KB=json.load(open(J('work','kb_ehr.json')))
 E=lambda s: html.escape(str(s),quote=False)
 LIB=[ # id, title, specialty, rulebook keys, pms keys, notes file, kb key, deep guide name
  ('dentrix','Dentrix (G6, G7)','Dental',['Dentrix'],['Dentrix'],'dentrix','dentrix',None),
  ('dentrix-ascend','Dentrix Ascend','Dental',['Dentrix Ascend'],['Dentrix Ascend'],'dentrixascend','ascend','Dentrix Ascend'),
  ('opendental','Open Dental (server and Open Dental Cloud)','Dental',['OpenDental','Opendental Cloud'],['OpenDental'],'opendental','opendental','Open Dental'),
- ('eaglesoft','Eaglesoft','Dental',['Eaglesoft'],[],'eaglesoft','eaglesoft',None),
- ('cleardent','ClearDent','Dental',['Cleardent'],[],'cleardent','cleardent',None),
+ ('eaglesoft','Eaglesoft','Dental',['Eaglesoft'],['D:Eaglesoft'],'eaglesoft','eaglesoft',None),
+ ('cleardent','ClearDent','Dental',['Cleardent'],['D:Cleardent'],'cleardent','cleardent',None),
  ('softdent','SoftDent','Dental',['Softdent'],[],'softdent','softdent',None),
- ('tracker','Tracker','Dental',['Tracker'],[],'tracker','tracker',None),
+ ('tracker','Tracker','Dental',['Tracker'],['D:Tracker'],'tracker','tracker',None),
  ('practiceworks','PracticeWorks','Dental',['PracticeWork'],[],'practiceworks','practiceworks',None),
  ('easydental','Easy Dental','Dental',['EasyDental'],[],'easydental','easydental',None),
  ('denticon','Denticon (Planet DDS)','Dental',['Denticon (Planet DDS)'],['Denticon'],'denticon','denticon','Denticon'),
@@ -71,7 +71,7 @@ def rb_section(key,eid,name):
 def pms_section(keys,eid,name):
   h=[]
   for k in keys:
-    rows=PMS[k]; lines=[]
+    rows=PMS[k] if not k.startswith('D:') else DF[k[2:]]; lines=[]
     for v,notes in rows[1:]:
       if v[0] in ('True','PMS Fields','Patient Field Name'): continue
       f=v[0]; syn=next((x for x in v[1:] if x in ('True','False')),None)
@@ -84,7 +84,7 @@ def pms_section(keys,eid,name):
       if notes: s+=' ('+'; '.join(notes)+')'
       lines.append(E(s))
     if lines:
-      h.append(f'<h3 id="lib-{eid}-pms-{re.sub(r"[^a-z0-9]+","-",k.lower())}">{E(name)}: patient form fields that write into the EHR ({E(k)})</h3><p>Form field to EHR field, from the Patient Form PMS field integration sheet. A field writes only when the form field is mapped (green cloud icon) and the form is approved and imported.<br>'+'<br>'.join(lines)+'</p>')
+      h.append(f'<h3 id="lib-{eid}-pms-{re.sub(r"[^a-z0-9]+","-",k.lower())}">{E(name)}: patient form fields that write into the EHR ({E(k[2:]+', Patient Forms EHR Fields List' if k.startswith('D:') else k)})</h3><p>Form field to EHR field, from the Patient Form PMS field integration sheet. A field writes only when the form field is mapped (green cloud icon) and the form is approved and imported.<br>'+'<br>'.join(lines)+'</p>')
   return '\n'.join(h)
 def notes_section(nf,eid,name):
   if not nf: return ''
@@ -111,6 +111,29 @@ def shots_section(eid,name):
     imgs=''.join(f'<img src="/api/guides/doc-img/{d}/{x["file"]}" alt="{E(name)}: {E(sec)}">' for x in xs)
     h.append(f'<h3 id="lib-{eid}-screens-{i}">{E(name)} screenshots: {E(sec)}</h3><p>{E(name)}, {E(sec)}. {E(ctx)}</p>{imgs}')
   return '\n'.join(h)
+ORTHO_DOCS=[('os_changes','Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)'),('presentation','Ortho OS Presentation: differences between Dolphin, OrthoTrac and Cloud 9'),
+ ('quick_guide','Ortho OS Quick Guide'),('training_manual','Adit OS Ortho Training Manual'),('aifd_rulebook','AI Front Desk Webchat and SMS Agent: Ortho EHR Rulebook'),
+ ('cloud9_notes','Online Scheduling and Schedule Build for Ortho (Cloud 9 notes)'),('orthotrac_ob','OrthoTrac Training for OB'),('contact_status','Contact Number and Patient Status: Ortho EHRs'),
+ ('multiloc_sales','Multi-Location PMS into Single Adit Location: Sales Guide'),('multiloc_os','Multi-Location PMS into Single Adit Location: Online Scheduling'),('multisingle_ob','Multi-Single Build: Onboarding Guide')]
+def ortho_docs():
+  import subprocess
+  h=['<h1 id="lib-ortho-ref">Ortho EHR reference documents (Dolphin, OrthoTrac, Cloud 9)</h1><p>Adit\'s own reference documents listed in the Orthodontics tab of the Integration Rulebook: how online scheduling, availabilities, appointments, the booking link, AI Front Desk, contact numbers, patient status and the multi-location (multi to single) build work for Dolphin, OrthoTrac and Cloud 9. Struck-out (old) logic is left out.</p>']
+  for key,title in ORTHO_DOCS:
+    md=open(J('ortho-docs',key+'.md')).read()
+    md=re.sub(r'~~.*?~~','',md,flags=re.S)
+    md=re.sub(r'`?\[image\]`?','',md)
+    fmt='markdown' if key!='presentation' else 'plain'
+    if fmt=='plain': md='\n\n'.join(l.strip() for l in md.split('\n') if l.strip())
+    x=subprocess.run(['pandoc','-f','markdown','-t','html','--id-prefix=ortho-'+key+'-'],input=md,capture_output=True,text=True).stdout
+    x=re.sub(r'<img[^>]*>','',x); x=re.sub(r'<(/?)del>','',x)
+    x=re.sub(r'<h1 ',r'<h3 ',x); x=re.sub(r'</h1>','</h3>',x); x=re.sub(r'<h2 ','<h3 ',x); x=re.sub(r'</h2>','</h3>',x)
+    x=re.sub(r'<h([4-6])[^>]*>',r'<p><b>',x); x=re.sub(r'</h[4-6]>','</b></p>',x)
+    x=re.sub(r'<h3>(.*?)</h3>',lambda m:'<p><b>'+m.group(1)+'</b></p>',x)
+    # headings get the document name so a section found alone still says where it is from
+    x=re.sub(r'<h3 id="([^"]+)"([^>]*)>(.*?)</h3>',lambda m:'<h3 id="'+m.group(1)+'">'+E(title.split(':')[0])+': '+re.sub('<[^>]+>','',m.group(3))+'</h3>',x,flags=re.S)
+    x=re.sub(r'<p>\s*</p>','',x)
+    h.append(f'<h2 id="lib-ortho-ref-{key}">{E(title)}</h2>'+x)
+  return '\n'.join(h)
 def kb_section(k,eid,name):
   a=KB.get(k) or []
   if not a: return ''
@@ -119,6 +142,7 @@ out=['<h1 id="lib-ehr-library">EHR library (Nov 2026)</h1>',
  '<p>One section per EHR Adit integrates with: what Adit supports for it (from the Adit Integration Rulebook, including its cell notes and colour codes), which patient form fields write into it and where, how the EHR itself works from its public help (with links to the vendor pages, which carry the screenshots), and the Adit Help Center articles for it. Where the EHR integration notes cover an EHR in depth (how our sync works, known issues, troubleshooting), use those too.<br>Rulebook colour codes: Supported = Adit offers it; Supported with limits = offered with a limitation in the note; Not available = the EHR does not have the function; Not offered by Adit = the EHR has it but Adit does not integrate it; In development.<br>Forms PDFs are stored in: Open Dental > Images > Patient information; Eaglesoft > Patient details > SmartDoc; ClearDent > Patient details > Document > ElectronicDoc; Dentrix > Family File > Doc. Center > Patient Information; Dentrix Ascend > Patient > Document Manager; Tracker > Patient > Correspondence.<br>When a value looks different in the EHR after a form syncs (for example a name changes case), first type the same value by hand in the EHR: if the EHR changes it too, it is an EHR setting (OrthoTrac, for example, has an Automatic Capitalization system option); if not, send it to T2 Core with screenshots.</p>']
 for eid,name,spec,rbk,pmsk,nf,kbk,deep in LIB:
   out.append(f'<h1 id="lib-{eid}">{E(name)} ({spec})</h1>')
+  if eid in ('dolphin','orthotrac','cloud9'): out.append(f'<p>How online scheduling, availabilities, appointments, the booking link, AI Front Desk, contact numbers and patient status work for {E(name)}: see the Ortho EHR reference documents section of this library.</p>')
   if deep: out.append(f'<p>{E(name)} is also covered in depth in the EHR integration notes (section "{E(deep)} integration"): how the Adit sync works, known issues and the troubleshooting flow.</p>')
   out.append(notes_section(nf,eid,name))
   for k in rbk: out.append(rb_section(k,eid,name))
@@ -126,6 +150,7 @@ for eid,name,spec,rbk,pmsk,nf,kbk,deep in LIB:
   out.append(kb_section(kbk,eid,name))
   out.append(ticket_section(eid,name))
   out.append(shots_section(eid,name))
+out.append(ortho_docs())
 s='\n'.join(x for x in out if x)+'\n'
 s=s.replace('\u2013','-').replace('\u2014','-')
 open(J('..','..','content','guides','ehr-library.html'),'w').write(s)

@@ -13,3 +13,15 @@ for t in wb.sheetnames:
   out[t]=rows
 json.dump(out,open(os.path.join(W,'work','pms.json'),'w'),indent=0)
 print(sorted(out))
+
+# The Dental patient form field list (Google Sheet 11lRwVlOOScGRyoAf0BQN8wv09omyWYCcehsxxtVQGPc, linked from the rulebook) adds Eaglesoft, ClearDent and Tracker.
+wb=openpyxl.load_workbook(os.path.join(W,'work','dentalfields.xlsx'),data_only=True)
+df={}
+for t in wb.sheetnames:
+  ws=wb[t]; rows=[]
+  for r in ws.iter_rows():
+    v=[re.sub(r'\s+',' ',str(c.value)).strip() for c in r if c.value not in (None,'')]
+    if v: rows.append((v,[]))
+  df[t]=rows
+json.dump(df,open(os.path.join(W,'work','dentalfields.json'),'w'),indent=0)
+print(sorted(df))
