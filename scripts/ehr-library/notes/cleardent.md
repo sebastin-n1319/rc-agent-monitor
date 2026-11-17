@@ -1,0 +1,3 @@
+## ClearDent (ClearDent, Burnaby BC, Canada)
+- Canadian dental practice management software. ClearDent On-Premise is the server product Adit integrates with; ClearDent Cloud is a separate product, and ClearDent Link connects on-premise to the cloud. Has its own patient portal (Patient Kiosk) for forms that sync to the patient file, recall reminders, a billing wizard (claims, unscheduled recalls for the family) and ClearVault cloud backup. Source: https://cleardent.com/dental-software/cleardent-on-premise/patient-management
+- Patient forms PDFs land in Patient details > Document > ElectronicDoc (Adit rulebook).

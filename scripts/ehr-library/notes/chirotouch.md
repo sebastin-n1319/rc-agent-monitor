@@ -1,0 +1,3 @@
+## ChiroTouch (on-premise server and ChiroTouch Cloud)
+- Chiropractic EHR and practice management, sold as an on-premise server version and ChiroTouch Cloud (Adit integrates with both; the cloud integration is covered in depth in the EHR integration notes).
+- A ChiroTouch appointment can carry more than one appointment type; integrations that sync one type per appointment usually take the first alphabetically, so reminders follow that type. To get the right reminder, book the appointment with only the intended type (for example Re-Evaluation alone). Source: https://intercom.help/sked-help-center/en/articles/12734107-showing-the-correct-chirotouch-appointment-in-sked

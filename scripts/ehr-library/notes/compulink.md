@@ -1,0 +1,2 @@
+## Compulink (Compulink Advantage, optometry/ophthalmology, on-premise)
+- Compulink Advantage (in business since 1985) is an all-in-one EHR and practice management system for specialty practices (optometry, ophthalmology and others), with its own patient engagement and optical point of sale. No public developer portal; approved partners connect through Compulink's Partner Program (ODBC access), and the only public API is a read-only FHIR patient-access API. Source (independent overview, not Compulink documentation): https://supergood.ai/docs/compulink-api

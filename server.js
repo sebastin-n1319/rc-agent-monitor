@@ -148,7 +148,10 @@ app.use((req, res, next) => {
   res.on('finish', done); res.on('close', done);
   next();
 });
-app.use(express.json({ limit: '1mb' })); // Batch 289: Expert questions can carry the text of attached files
+// Batch 289: Expert questions can carry the text of attached files. Batch 380: Expert notes can carry screenshots, so
+// that one route takes up to 10 MB.
+const jsonSmall = express.json({ limit: '1mb' }), jsonNotes = express.json({ limit: '10mb' });
+app.use((req, res, next) => (/^\/api\/guides\/expert\/notes(\/|$)/.test(req.path) ? jsonNotes : jsonSmall)(req, res, next));
 app.use(cookieParser());
 // Session 86: Speed check. Records how long each API route takes (in memory only, no
 // request data), plus event-loop delay, so slow pages can be traced to a route.
@@ -2744,6 +2747,22 @@ app.get('/api/guides/expert/kb', requireAuth, (req, res) => { try { res.json({ s
 app.get('/api/guides/expert/kb/:id', requireAuth, (req, res) => { const a = expertMod().article(req.params.id); if (!a) return res.status(404).json({ success: false, error: 'Article not found' }); res.json({ success: true, article: a }); });
 app.get('/api/guides/expert/admin', requireAdmin, async (req, res) => {
   try { const ex = expertMod(); res.json({ success: true, insights: await ex.insights(), notes: await ex.notes(), feedback: await ex.feedbackQueue() }); } catch (e) { expertErr(res, e, 'Could not load'); }
+});
+// Batch 380: screenshots from Adit's own EHR technical documentation (EHR library), for signed-in users only.
+app.get('/api/guides/doc-img/:doc/:file', requireAuth, (req, res) => {
+  const doc = String(req.params.doc || ''), file = String(req.params.file || '');
+  if (!/^[a-z0-9-]{1,40}$/.test(doc) || !/^[a-z0-9_-]{1,60}\.(webp|png|jpe?g)$/i.test(file)) return res.status(404).end();
+  res.set('Cache-Control', 'private, max-age=86400'); res.set('X-Content-Type-Options', 'nosniff');
+  res.sendFile(path.join(require('./lib/guides').IMG_DIR, doc, file), (e) => { if (e && !res.headersSent) res.status(404).end(); });
+});
+// Batch 380: a screenshot saved with a team note, shown in Expert answers that use the note.
+app.get('/api/guides/expert/notes/:id/image/:n', requireAuth, async (req, res) => {
+  try {
+    const im = await expertMod().noteImage(req.params.id, req.params.n);
+    if (!im) return res.status(404).end();
+    res.set('Content-Type', im.type); res.set('Cache-Control', 'private, max-age=3600'); res.set('X-Content-Type-Options', 'nosniff');
+    res.send(im.buf);
+  } catch (e) { res.status(500).end(); }
 });
 app.post('/api/guides/expert/notes', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(null, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
 app.put('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(req.params.id, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });

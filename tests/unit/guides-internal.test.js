@@ -9,6 +9,13 @@ describe('internal Expert guides (Batch 354)', () => {
     expect(d.ehr.chunks.length).toBeGreaterThan(100);
     expect(d.aditpay.chunks.length).toBeGreaterThan(10);
     expect(d.app.chunks.length).toBeGreaterThan(10);
+    // Batch 380: the EHR library has a section for every EHR in the Integration Rulebook.
+    expect(d.ehrlib.chunks.length).toBeGreaterThan(200);
+    // Screenshot sections carry their images, served from the signed-in image route.
+    const shots = d.ehrlib.chunks.filter((c) => c.images && c.images.length);
+    expect(shots.length).toBeGreaterThan(20);
+    expect(shots.every((c) => c.images.every((i) => /^\/api\/guides\/doc-img\/[a-z0-9-]+\/[a-z0-9_-]+\.webp$/.test(i.src)))).toBe(true);
+    for (const e of ['Ortho2 Edge', 'Dentrix', 'Eaglesoft', 'Open Dental', 'OfficeMate', 'ChiroTouch', 'OrthoTrac', 'Dolphin', 'Cloud 9']) expect(d.ehrlib.html).toContain(e);
   });
   it('keeps them off the Guides page and out of guide Ask AI', () => {
     expect(g.docList().map((x) => x.id)).toEqual(['voip', 'ai']);

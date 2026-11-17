@@ -1,0 +1,2 @@
+## Easy Dental (Henry Schein One, on-premise)
+- Entry-level dental practice management software from Henry Schein One, a separate product from Dentrix. Version 12.2 (Aug 2020) added a simplified patient module, a patient banner (history, medical alerts, upcoming appointments), creating new patients from the schedule, and an insurance tab with primary and secondary insurance and outstanding claims. Source: https://insidedentistry.net/news?newsID=439463bc-652c-42f4-b6b8-7cd0aea03016

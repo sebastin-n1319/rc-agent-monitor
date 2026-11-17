@@ -1,0 +1,2 @@
+## Curve Dental (Curve Hero, cloud)
+- Cloud-native dental practice management software for the US and Canada (scheduling with self-booking, charting and imaging, billing and insurance, Curve Pay, analytics). Curve has no public developer portal; integrations are limited to a curated partner list arranged with Curve. Source (independent overview, not Curve documentation): https://supergood.ai/docs/curve-dental-api

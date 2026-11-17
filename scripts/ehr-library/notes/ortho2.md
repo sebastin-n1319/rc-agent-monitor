@@ -1,0 +1,3 @@
+## Ortho2 Edge (Edge Cloud, orthodontic)
+- Orthodontic practice management software from Ortho2 (Edge Cloud). Public help: https://help.ortho2.com/ . Its scheduler needs a scheduling template on each date, staff need the Scheduling security group, and it has its own Edge Reminders and Edge Portal (patients can confirm or cancel there). Source: https://help.ortho2.com/scheduling/About_YourSchedule
+- Ortho2 Edge is NOT in the Adit Integration Rulebook. Two live deals (CSM) list it as their EHR; their tickets in the last 12 months are about phones and call routing, none about EHR sync. Do not tell the practice that sync features (forms writing to the EHR, appointment write-back, Practice Analytics) work with it; check with T2 Core first.

@@ -1,0 +1,3 @@
+## ABELDent (ABELDent Inc., Canada and USA)
+- Dental practice management software founded in 1977, with on-premise (local server) and cloud platforms. Modules: appointments and reminders, charting and treatment planning, imaging, patient records and accounts, billing and claims, inventory. Source: https://slashdot.org/software/p/ABELDent/
+- Adit rulebook lists supported versions 14.4.2, 14.8.2 and 12.10.6, and 15 and above (in QA). Adit's field-mapping notes for ABELDent say marital status, SSN, driver's license, emergency contact, school and spouse are not in the EHR, so those form fields cannot sync.

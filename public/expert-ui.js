@@ -502,6 +502,7 @@
       if (j.rulesUsed && j.rulesUsed.length) card.appendChild(h('p', { class: 'ax-rules' }, [icon('rule', 'sm'), 'Team rule applied: ' + j.rulesUsed.join('; ')]));
       if (a.cautions && a.cautions.length) card.appendChild(section('warn', 'Heads up', [h('ul', null, a.cautions.map(function (c) { return h('li', { text: c }); }))], 'warn'));
       if (j.share) card.appendChild(h('div', { class: 'ax-share' }, [icon('link'), h('span', null, ['Send the client: ', h('a', { href: j.share.url, target: '_blank', rel: 'noopener', text: j.share.title })]), h('span', { class: 'ax-sp' }), copyBtn(j.share.url, 'Copy link')]));
+      if (j.images && j.images.length) card.appendChild(shotsBox(j.images));
       if (j.sources && j.sources.length) card.appendChild(sourcesBox(j.sources));
       if ((j.trace && j.trace.length) || a.basis) card.appendChild(howBox(j, a));
       card = outer;
@@ -595,6 +596,31 @@
       if (j.trace && j.trace.length) box.appendChild(h('div', { class: 'ax-how-g' }, [h('h5', { text: 'Steps' }), h('ol', { class: 'ax-how-steps' }, j.trace.map(function (t) { return h('li', null, [h('span', { text: t.step }), t.ms ? h('span', { class: 'ax-muted', text: secs(t.ms) }) : null]); }))]));
       return box;
     }
+    // Batch 380: screenshots from the Help Center articles and team notes the answer used; click to see one full size.
+    var shotLb = null;
+    function closeShot() { if (!shotLb) return; var el = shotLb; shotLb = null; el.classList.remove('on'); setTimeout(function () { el.remove(); }, 180); }
+    function openShot(src, alt, caption) {
+      closeShot();
+      var x = h('button', { type: 'button', class: 'ax-lc-lbx', 'aria-label': 'Close' }, [icon('x')]);
+      shotLb = h('div', { class: 'ax-lc-lb', role: 'dialog', 'aria-modal': 'true', 'aria-label': alt || 'Screenshot' }, [h('figure', {}, [h('img', { src: src, alt: alt || '' }), caption ? h('figcaption', { text: caption }) : null]), x]);
+      shotLb.addEventListener('click', function (e) { if (e.target === shotLb || e.target.closest('.ax-lc-lbx')) closeShot(); });
+      document.body.appendChild(shotLb); requestAnimationFrame(function () { if (shotLb) shotLb.classList.add('on'); }); x.focus();
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && shotLb) closeShot(); });
+    function shotsBox(list) {
+      var grid = h('div', { class: 'ax-shots' });
+      list.forEach(function (m) {
+        var cap = (m.alt ? m.alt + ' · ' : '') + (m.title || '');
+        var img = h('img', { src: m.src, alt: m.alt || ('Screenshot from ' + (m.title || 'the Help Center')), loading: 'lazy' });
+        var b = h('button', { type: 'button', class: 'ax-shotb', title: 'Open full size' }, [img]);
+        img.addEventListener('error', function () { fig.remove(); if (!grid.children.length) wrap.remove(); });
+        b.addEventListener('click', function () { openShot(m.src, m.alt || '', cap); });
+        var fig = h('figure', null, [b, h('figcaption', null, [m.url ? h('a', { href: m.url, target: '_blank', rel: 'noopener', text: m.title || 'Help Center' }) : (m.title || '')])]);
+        grid.appendChild(fig);
+      });
+      var wrap = section('image', 'Screenshots', [grid], 'shots');
+      return wrap;
+    }
     function sourcesBox(list) {
       var box = h('details', { class: 'ax-srcs' }, [h('summary', null, [h('span', { text: 'Sources (' + list.length + ')' }), h('span', { class: 'ax-src-types' }, uniq(list.map(function (s) { return s.type; })).map(function (t) { return h('span', { class: 'ax-st t-' + t, text: (TYPE[t] || [t])[0] }); }))])]);
       var ul = h('ul');
@@ -686,13 +712,14 @@
         var body = h('div', { class: 'ax-art gd-doc' });
         var list = null;
         a.blocks.forEach(function (b) {
+          if (b.t === 'img') { list = null; if (b.src) body.appendChild(h('figure', { class: 'ax-art-img' }, [h('img', { src: b.src, alt: b.alt || '', loading: 'lazy' })])); return; }
           if (b.t === 'li') { if (!list) { list = h('ul'); body.appendChild(list); } list.appendChild(h('li', { text: b.x })); return; }
           list = null;
           if (b.t === 'table') { body.appendChild(h('table', null, [h('tbody', null, b.rows.map(function (r, i) { return h('tr', null, r.map(function (c) { return h(i === 0 ? 'th' : 'td', { text: c }); })); }))])); return; }
           if (/^h\d$/.test(b.t)) { body.appendChild(h(b.t === 'h3' ? 'h2' : 'h3', { text: b.x })); return; }
           body.appendChild(h('p', { text: b.x }));
         });
-        view.appendChild(hd); view.appendChild(body); view.appendChild(h('p', { class: 'ax-muted', text: 'Screenshots and videos are on the Help Center page.' }));
+        view.appendChild(hd); view.appendChild(body); view.appendChild(h('p', { class: 'ax-muted', text: 'Videos are on the Help Center page.' }));
         window.scrollTo(0, 0);
       }).catch(function (e) { clear(view); view.appendChild(h('div', { class: 'gd-note', text: e.message })); });
     }
@@ -828,17 +855,58 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     var kind = h('select', { class: 'ax-in' }, [h('option', { value: 'note', text: 'Note: used when relevant' }), h('option', { value: 'rule', text: 'Rule: always applied' })]); kind.value = d.kind || 'note';
     var on = h('input', { type: 'checkbox', checked: d.status === 'off' ? null : true });
     var err = h('p', { class: 'ax-err-t' });
+    // Batch 380: screenshots saved with the note; Expert shows them in answers that use it. Paste or pick up to 6.
+    var imgs = ((n && n.images) || []).map(function (x) { return { src: x.src, alt: x.alt || '' }; }), imgsChanged = false;
+    var imgRow = h('div', { class: 'ax-note-imgs' });
+    var picker = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', multiple: true, hidden: true });
+    function paintImgs() {
+      clear(imgRow);
+      imgs.forEach(function (x, i) {
+        var rm = h('button', { type: 'button', 'aria-label': 'Remove image', text: '×' });
+        rm.addEventListener('click', function () { imgs.splice(i, 1); imgsChanged = true; paintImgs(); });
+        imgRow.appendChild(h('div', { class: 'ax-note-img' }, [h('img', { src: x.data || x.src, alt: x.alt || 'Screenshot' }), rm]));
+      });
+      if (imgs.length < 6) imgRow.appendChild(h('button', { type: 'button', class: 'gd-btn', onclick: function () { picker.click(); } }, [icon('image', 'sm'), imgs.length ? 'Add another' : 'Add screenshot']));
+      imgRow.appendChild(h('span', { class: 'ax-muted', text: 'You can also paste a screenshot here. No patient details.' }));
+    }
+    function shrink(file) {
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          var url = fr.result; if (String(url).length < 1100000) return res(url);
+          var im = new Image(); im.onload = function () {
+            var sc = Math.min(1, 1600 / im.width), c = document.createElement('canvas'); c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); var out = c.toDataURL('image/jpeg', 0.82);
+            out.length < 1350000 ? res(out) : rej(new Error('That image is too large even after shrinking it'));
+          }; im.onerror = function () { rej(new Error('Could not read that image')); }; im.src = url;
+        };
+        fr.onerror = function () { rej(new Error('Could not read that image')); }; fr.readAsDataURL(file);
+      });
+    }
+    function addFiles(files) {
+      Array.prototype.slice.call(files || []).filter(function (f) { return /^image\//.test(f.type); }).slice(0, 6 - imgs.length).forEach(function (f) {
+        shrink(f).then(function (data) { if (imgs.length >= 6) return; imgs.push({ data: data, alt: (f.name || '').replace(/\.[a-z0-9]+$/i, '') }); imgsChanged = true; paintImgs(); }).catch(function (e) { err.textContent = e.message; });
+      });
+    }
+    picker.addEventListener('change', function () { addFiles(picker.files); picker.value = ''; });
+    paintImgs();
     var dlg = h('dialog', { class: 'ax-dlg', 'aria-label': n ? 'Edit note' : 'New note' });
+    dlg.addEventListener('paste', function (e) { var f = e.clipboardData && e.clipboardData.files; if (f && f.length) { e.preventDefault(); addFiles(f); } });
     var save = h('button', { type: 'button', class: 'gd-btn primary' }, ['Save']);
     dlg.appendChild(h('div', { class: 'ax-dlg-in' }, [h('h2', { text: n ? 'Edit' : d.kind === 'rule' ? 'New rule' : 'New rule or note' }), dlab('Title', title), dlab('What Adit Expert should know', body), h('div', { class: 'ax-2' }, [dlab('Product', mod), dlab('Type', kind)]),
+      h('div', { class: 'ax-lab' }, [h('span', { text: 'Screenshots (shown with answers that use this)' }), imgRow]), picker,
       h('label', { class: 'ax-tog' }, [on, h('span', { text: 'Active' })]), err,
       h('div', { class: 'ax-row' }, [n ? h('button', { type: 'button', class: 'gd-btn danger', onclick: function () { if (!confirm('Delete this note?')) return; ctx.api('/api/guides/expert/notes/' + n.id, null, 'DELETE').then(function () { dlg.close(); done(); }); } }, [icon('trash', 'sm'), 'Delete']) : null,
         h('span', { class: 'ax-sp' }), h('button', { type: 'button', class: 'gd-btn', text: 'Cancel', onclick: function () { dlg.close(); } }), save])]));
     save.addEventListener('click', function () {
       err.textContent = ''; save.disabled = true;
       var payload = { title: title.value, body: body.value, module: mod.value, kind: kind.value, status: on.checked ? 'active' : 'off' };
+      var asData = function (x) { return x.data ? Promise.resolve(x.data) : fetch(x.src, { credentials: 'same-origin' }).then(function (r) { return r.blob(); }).then(function (b) { return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.readAsDataURL(b); }); }); };
+      var ready = imgsChanged ? Promise.all(imgs.map(asData)).then(function (list) { payload.images = list.map(function (d, i) { return { data: d, alt: imgs[i].alt || '' }; }); }) : Promise.resolve();
+      ready.then(function () {
       var p = feedbackId ? ctx.api('/api/guides/expert/feedback/' + feedbackId, Object.assign({ action: 'apply' }, payload)) : n ? ctx.api('/api/guides/expert/notes/' + n.id, payload, 'PUT') : ctx.api('/api/guides/expert/notes', payload);
-      p.then(function () { dlg.close(); ctx.toast('Saved. Adit Expert uses it from now on.'); done(); }).catch(function (e) { save.disabled = false; err.textContent = e.message; });
+      return p.then(function () { dlg.close(); ctx.toast('Saved. Adit Expert uses it from now on.'); done(); });
+      }).catch(function (e) { save.disabled = false; err.textContent = e.message; });
     });
     dlg.addEventListener('close', function () { dlg.remove(); });
     document.body.appendChild(dlg); dlg.showModal(); title.focus();

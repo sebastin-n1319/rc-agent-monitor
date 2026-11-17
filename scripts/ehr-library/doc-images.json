@@ -1,0 +1,315 @@
+{
+ "revolution": [
+  {
+   "section": "How RevolutionEHR works",
+   "file": "image18.webp",
+   "ctx": "RevolutionEHR is a cloud-based EHR and Practice Management (PM) platform primarily designed for the eye care industry, especially optometry practices. It helps optometrists manage the complete patient journey, from appointment scheduling and patient registration to eye examinations, prescriptions, billing, and follow-up care."
+  },
+  {
+   "section": "Revolution EHR Integration with Adit",
+   "file": "image7.webp",
+   "ctx": ""
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image14.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image12.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image5.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image15.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image10.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image16.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image13.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image1.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extensions > Details > Pin to toolbar 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again. It is not safe to assume that every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "Demographics",
+   "file": "image17.webp",
+   "ctx": ""
+  },
+  {
+   "section": "Insurance",
+   "file": "image20.webp",
+   "ctx": ""
+  },
+  {
+   "section": "Medical Data",
+   "file": "image3.webp",
+   "ctx": ""
+  },
+  {
+   "section": "Medical Data",
+   "file": "image21.webp",
+   "ctx": ""
+  },
+  {
+   "section": "Medical Data",
+   "file": "image8.webp",
+   "ctx": ""
+  },
+  {
+   "section": "Family File",
+   "file": "image6.webp",
+   "ctx": "The Family File contains the patient's family relationships and is synchronized to maintain accurate patient-family relationships within Adit."
+  },
+  {
+   "section": "Patient Notes",
+   "file": "image2.webp",
+   "ctx": "Notes are included in the synchronized data and passed in Manual Patient Sync QA."
+  },
+  {
+   "section": "Visits, Appointments, and Account Data",
+   "file": "image22.webp",
+   "ctx": "Note:\u00a0Do not assume every data point is synchronized by every mechanism. Confirm the specific client setup and current product behavior."
+  },
+  {
+   "section": "Manual Patient Sync",
+   "file": "image19.webp",
+   "ctx": "Manual Patient Sync is available from the Patient Card\u00a0in the Adit application. When the user clicks the sync button, the system initiates syncing for the selected patient. The expected behavior is for the patient and related data to sync within a few seconds under normal conditions. Data Included: The UI is expected to show the sync status. When synchronization fails, the failure reason should be available in the tooltip, according to the tested behavior."
+  },
+  {
+   "section": "Recall Data",
+   "file": "image11.webp",
+   "ctx": "Recall status in Revolution determines whether Adit sends a recall reminder."
+  }
+ ],
+ "ascend": [
+  {
+   "section": "1. How Dentrix Ascend works \u2013 overall workflow",
+   "file": "image16.webp",
+   "ctx": "2. Major modules of Dentrix Ascend A. Patient Management B. Appointment Scheduling C. Clinical Management Posting procedures (Ledger) D. Billing & Insurance E. Recall & Patient Engagement"
+  },
+  {
+   "section": "1. How Dentrix Ascend works \u2013 overall workflow",
+   "file": "image27.webp",
+   "ctx": "2. Major modules of Dentrix Ascend A. Patient Management B. Appointment Scheduling C. Clinical Management Posting procedures (Ledger) D. Billing & Insurance E. Recall & Patient Engagement"
+  },
+  {
+   "section": "1. How Dentrix Ascend works \u2013 overall workflow",
+   "file": "image21.webp",
+   "ctx": "2. Major modules of Dentrix Ascend A. Patient Management B. Appointment Scheduling C. Clinical Management Posting procedures (Ledger) D. Billing & Insurance E. Recall & Patient Engagement"
+  },
+  {
+   "section": "1. How Dentrix Ascend works \u2013 overall workflow",
+   "file": "image10.webp",
+   "ctx": "2. Major modules of Dentrix Ascend A. Patient Management B. Appointment Scheduling C. Clinical Management Posting procedures (Ledger) D. Billing & Insurance E. Recall & Patient Engagement"
+  },
+  {
+   "section": "1. How Dentrix Ascend works \u2013 overall workflow",
+   "file": "image13.webp",
+   "ctx": "2. Major modules of Dentrix Ascend A. Patient Management B. Appointment Scheduling C. Clinical Management Posting procedures (Ledger) D. Billing & Insurance E. Recall & Patient Engagement"
+  },
+  {
+   "section": "3. How its cloud architecture works",
+   "file": "image22.webp",
+   "ctx": "Dentrix Ascend uses a centralized cloud architecture: Important:\u00a0It is not a traditional desktop database-based EHR where an integration necessarily needs direct access to the practice's local database."
+  },
+  {
+   "section": "Cloud-Based Dental EHR Integration with Adit",
+   "file": "image24.webp",
+   "ctx": "Our cloud-based Dental EHR integration synchronizes data from the client's EHR system to the Adit application using a Google Chrome extension. The Chrome extension serves as the real-time synchronization agent. It monitors Create, Update, and Delete (CRUD) operations performed within the EHR and securely transmits these changes to the Adit application. For real-time synchronization to function correctly, the Chrome extension must be installed on every workstation where practice staff, providers, or other users access the EHR and perform data modifications. In cloud-based EHR environments, each computer or device used to access the EHR is referred to as a workstation."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image23.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image5.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image8.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image19.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image15.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "How to install the Adit Extension?",
+   "file": "image7.webp",
+   "ctx": "3.When the Extension popup window appears, click on Add Extension button 4. Not a mandatory step, but pin the extension so it would be easy to track if any issue connection/Disconnection Path: Extension> No access Need> Dentrix for DA> Pin button 5. Login with Adit app credentials into extension and select the location 6. Make sure the EHR is also connected and wait for the Extension to get connected again."
+  },
+  {
+   "section": "Backup Synchronization",
+   "file": "image12.webp",
+   "ctx": "To ensure data consistency, the system includes a backup synchronization\u00a0mechanism that identifies and synchronizes any changes missed during real-time synchronization. While this process helps keep the data consistent between the EHR and Adit, it does not provide immediate updates. Therefore, to achieve complete and real-time synchronization, the Chrome extension should be installed on every workstation\u00a0where users access and update the EHR. The following screenshots illustrate the Google Chrome extension and the Dentrix Ascend EHR interface used as part of the integration. Chrome Store URL:https://chromewebstore.google.com/detail/adit-for-chrome-da/ohhgimafjhknidliafggogngdjodinla?pli=1 La"
+  },
+  {
+   "section": "Dentrix Ascend Integration Background",
+   "file": "image6.webp",
+   "ctx": "Initially, Adit had an official integration partnership with Dentrix Ascend. Following the end of that partnership, we transitioned to an RPA-based integration approach that relies on UI automation and API scraping instead of the official integration. Since then, maintaining the integration has been an ongoing challenge. Dentrix Ascend regularly introduces security enhancements and anti-automation measures that can interfere with our synchronization process. Over time, these measures have included detection based on: As a result, the integration requires continuous monitoring, maintenance, and periodic updates to ensure compatibility with changes introduced by Dentrix Ascend and to maintain "
+  },
+  {
+   "section": "Dentrix Ascend Integration Background",
+   "file": "image11.webp",
+   "ctx": "Initially, Adit had an official integration partnership with Dentrix Ascend. Following the end of that partnership, we transitioned to an RPA-based integration approach that relies on UI automation and API scraping instead of the official integration. Since then, maintaining the integration has been an ongoing challenge. Dentrix Ascend regularly introduces security enhancements and anti-automation measures that can interfere with our synchronization process. Over time, these measures have included detection based on: As a result, the integration requires continuous monitoring, maintenance, and periodic updates to ensure compatibility with changes introduced by Dentrix Ascend and to maintain "
+  },
+  {
+   "section": "Patient Notes",
+   "file": "image9.webp",
+   "ctx": "The Notes\u00a0section stores all patient-related notes created in both the EHR\u00a0and Adit. To support bidirectional note synchronization\u00a0(EHR \u2192 Adit and Adit \u2192 EHR), the required Practice Analytics (PA)\u00a0database structure must be available for the specific EHR integration. Patient notes are retrieved and synchronized through stored procedures\u00a0that are part of the PA database structure. Before note synchronization can be enabled, the following prerequisites must be met: If these prerequisites are not met, patient notes cannot be synchronized between the EHR and Adit. The Add Notes\u00a0dialog allows users to create patient-specific notes. Key fields include: Once completed, click Save\u00a0to store the note "
+  },
+  {
+   "section": "Patient Notes",
+   "file": "image17.webp",
+   "ctx": "The Notes\u00a0section stores all patient-related notes created in both the EHR\u00a0and Adit. To support bidirectional note synchronization\u00a0(EHR \u2192 Adit and Adit \u2192 EHR), the required Practice Analytics (PA)\u00a0database structure must be available for the specific EHR integration. Patient notes are retrieved and synchronized through stored procedures\u00a0that are part of the PA database structure. Before note synchronization can be enabled, the following prerequisites must be met: If these prerequisites are not met, patient notes cannot be synchronized between the EHR and Adit. The Add Notes\u00a0dialog allows users to create patient-specific notes. Key fields include: Once completed, click Save\u00a0to store the note "
+  },
+  {
+   "section": "Patient Notes",
+   "file": "image4.webp",
+   "ctx": "The Notes\u00a0section stores all patient-related notes created in both the EHR\u00a0and Adit. To support bidirectional note synchronization\u00a0(EHR \u2192 Adit and Adit \u2192 EHR), the required Practice Analytics (PA)\u00a0database structure must be available for the specific EHR integration. Patient notes are retrieved and synchronized through stored procedures\u00a0that are part of the PA database structure. Before note synchronization can be enabled, the following prerequisites must be met: If these prerequisites are not met, patient notes cannot be synchronized between the EHR and Adit. The Add Notes\u00a0dialog allows users to create patient-specific notes. Key fields include: Once completed, click Save\u00a0to store the note "
+  },
+  {
+   "section": "Recare Data in Adit",
+   "file": "image25.webp",
+   "ctx": "Adit processes recare data primarily for the following modules: The Recall Reminders\u00a0feature helps practices maintain patient retention and maximize production by ensuring that patients receive reminders when they become due for their recall visits. Practices often create recall entries in the EHR but may forget to contact patients. Without timely reminders, patients may not schedule their follow-up appointments, resulting in missed treatment opportunities and lost production. Adit addresses this by: This helps practices improve appointment scheduling, increase patient compliance, and reduce missed recall opportunities. For Dentrix Ascend, Adit retrieves the recall master data from the Recar"
+  },
+  {
+   "section": "Recare Data in Adit",
+   "file": "image3.webp",
+   "ctx": "Adit processes recare data primarily for the following modules: The Recall Reminders\u00a0feature helps practices maintain patient retention and maximize production by ensuring that patients receive reminders when they become due for their recall visits. Practices often create recall entries in the EHR but may forget to contact patients. Without timely reminders, patients may not schedule their follow-up appointments, resulting in missed treatment opportunities and lost production. Adit addresses this by: This helps practices improve appointment scheduling, increase patient compliance, and reduce missed recall opportunities. For Dentrix Ascend, Adit retrieves the recall master data from the Recar"
+  },
+  {
+   "section": "Overview",
+   "file": "image2.webp",
+   "ctx": "Practice Analytics (PA) data synchronization requires multiple API calls to the EHR. Frequent API requests can potentially put our application under Dentrix Ascend's monitoring (radar). To minimize this risk, Realtime Sync has been disabled\u00a0for Practice Analytics, and the data is synchronized only through Backup Sync. We currently support two backup synchronization methods: The Puppeteer-based backup sync updates Practice Analytics data twice a day\u00a0based on the client's timezone. Sync Schedule After each synchronization, the Practice Analytics data in Adit is matched with the latest available data in the EHR. Note:\u00a0Since Practice Analytics is synchronized only through Backup Sync, users shou"
+  },
+  {
+   "section": "Overview",
+   "file": "image26.webp",
+   "ctx": "Practice Analytics (PA) data synchronization requires multiple API calls to the EHR. Frequent API requests can potentially put our application under Dentrix Ascend's monitoring (radar). To minimize this risk, Realtime Sync has been disabled\u00a0for Practice Analytics, and the data is synchronized only through Backup Sync. We currently support two backup synchronization methods: The Puppeteer-based backup sync updates Practice Analytics data twice a day\u00a0based on the client's timezone. Sync Schedule After each synchronization, the Practice Analytics data in Adit is matched with the latest available data in the EHR. Note:\u00a0Since Practice Analytics is synchronized only through Backup Sync, users shou"
+  },
+  {
+   "section": "Overview",
+   "file": "image1.webp",
+   "ctx": "Practice Analytics (PA) data synchronization requires multiple API calls to the EHR. Frequent API requests can potentially put our application under Dentrix Ascend's monitoring (radar). To minimize this risk, Realtime Sync has been disabled\u00a0for Practice Analytics, and the data is synchronized only through Backup Sync. We currently support two backup synchronization methods: The Puppeteer-based backup sync updates Practice Analytics data twice a day\u00a0based on the client's timezone. Sync Schedule After each synchronization, the Practice Analytics data in Adit is matched with the latest available data in the EHR. Note:\u00a0Since Practice Analytics is synchronized only through Backup Sync, users shou"
+  }
+ ],
+ "opendental": [
+  {
+   "section": "How Open Dental EHR Works",
+   "file": "image1.webp",
+   "ctx": "Open Dental is a dental practice management and EHR software used by dental clinics to manage their complete practice operations, including patient records, appointments, clinical charts, treatment plans, billing, insurance, payments, and reporting. Unlike many cloud-based EHR platforms, Open Dental is traditionally known for its locally hosted / client-server architecture, although cloud-hosted deployment options are also available."
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image6.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image3.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image7.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image2.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image9.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "2. Major modules in Open Dental",
+   "file": "image8.webp",
+   "ctx": "Patient Management Stores patient demographics, contact information, medical history, insurance, family relationships and patient notes. Appointment Management Manages provider schedules, operatories, appointment types, confirmations, cancellations, rescheduling and unscheduled appointments. Clinical Charting Maintains tooth charts, procedure history, diagnoses, clinical notes, periodontal examinations and patient conditions. Treatment Planning Tracks proposed procedures, accepted treatment, completed procedures, procedure codes and treatment estimates. Billing and Insurance Handles insurance claims, patient payments, adjustments, write-offs, statements and account balances. Recall Managemen"
+  },
+  {
+   "section": "3. Open Dental architecture \u2013 How the system works technically",
+   "file": "image5.webp",
+   "ctx": "This is particularly important when evaluating an integration with Adit. Open Dental traditionally follows a client-server architecture. Open Dental provides three API modes: API mode How it works Local API Communicates locally with Open Dental on the workstation API Service Uses a locally running API service Remote API Uses Open Dental's hosted API service and office eConnector The Remote API requires API enablement, appropriate permissions and a working eConnector."
+  },
+  {
+   "section": "1. High-level integration architecture",
+   "file": "image4.webp",
+   "ctx": "For Remote API deployments, Open Dental's eConnector facilitates communication between the Open Dental API service and the practice database. The actual integration architecture depends on whether the practice uses local, hosted or remote deployment."
+  }
+ ],
+ "curve": [
+  {
+   "section": "How Curve Dental EHR Works",
+   "file": "image1.webp",
+   "ctx": "Curve Dental (commonly called Curve Dental\u00a0or Curve) is a cloud-based Dental Practice Management System (PMS) designed to help dental practices manage their day-to-day clinical and administrative operations. Unlike traditional desktop-based dental software, Curve operates through a web browser, allowing dentists and practice staff to access patient information, appointments, clinical records, billing, and reports from different locations."
+  },
+  {
+   "section": "How Curve Dental EHR Works",
+   "file": "image7.webp",
+   "ctx": "Curve Dental (commonly called Curve Dental\u00a0or Curve) is a cloud-based Dental Practice Management System (PMS) designed to help dental practices manage their day-to-day clinical and administrative operations. Unlike traditional desktop-based dental software, Curve operates through a web browser, allowing dentists and practice staff to access patient information, appointments, clinical records, billing, and reports from different locations."
+  },
+  {
+   "section": "1. How Curve Dental works",
+   "file": "image6.webp",
+   "ctx": "Curve provides a centralized system where patient, appointment, clinical, and financial information is maintained. The typical workflow looks like this:"
+  },
+  {
+   "section": "About Curve and Adit Integration",
+   "file": "image4.webp",
+   "ctx": "Curve Dental is a cloud-based dental Electronic Health Record (EHR)\u00a0/ practice management system. Proposed data flow:"
+  },
+  {
+   "section": "How to Install the Adit Extension",
+   "file": "image3.webp",
+   "ctx": "1. Open Chrome Web Store: Go to the Chrome Web Store URL for \"Adit for Chrome - CV\". 2. Initiate Installation: Click on the \"Add to Chrome\" button. 3. Confirm Installation: When the extension popup window appears, click on the \"Add extension\" button. 4. Pin Extension (Optional): Not a mandatory step, but pin the extension to the toolbar so it is easy to track any connection or disconnection issues. Path: Extensions > No access needed > Adit for Chrome - CV > Pin button. 5. Authenticate & Select Location: Log in with Adit app credentials into the extension and select the appropriate location. 6. Verify EHR Connection: Make sure the EHR is also connected and wait for the extension status to sh"
+  },
+  {
+   "section": "How to Install the Adit Extension",
+   "file": "image2.webp",
+   "ctx": "1. Open Chrome Web Store: Go to the Chrome Web Store URL for \"Adit for Chrome - CV\". 2. Initiate Installation: Click on the \"Add to Chrome\" button. 3. Confirm Installation: When the extension popup window appears, click on the \"Add extension\" button. 4. Pin Extension (Optional): Not a mandatory step, but pin the extension to the toolbar so it is easy to track any connection or disconnection issues. Path: Extensions > No access needed > Adit for Chrome - CV > Pin button. 5. Authenticate & Select Location: Log in with Adit app credentials into the extension and select the appropriate location. 6. Verify EHR Connection: Make sure the EHR is also connected and wait for the extension status to sh"
+  },
+  {
+   "section": "How to Install the Adit Extension",
+   "file": "image5.webp",
+   "ctx": "1. Open Chrome Web Store: Go to the Chrome Web Store URL for \"Adit for Chrome - CV\". 2. Initiate Installation: Click on the \"Add to Chrome\" button. 3. Confirm Installation: When the extension popup window appears, click on the \"Add extension\" button. 4. Pin Extension (Optional): Not a mandatory step, but pin the extension to the toolbar so it is easy to track any connection or disconnection issues. Path: Extensions > No access needed > Adit for Chrome - CV > Pin button. 5. Authenticate & Select Location: Log in with Adit app credentials into the extension and select the appropriate location. 6. Verify EHR Connection: Make sure the EHR is also connected and wait for the extension status to sh"
+  },
+  {
+   "section": "How to Install the Adit Extension",
+   "file": "image8.webp",
+   "ctx": "1. Open Chrome Web Store: Go to the Chrome Web Store URL for \"Adit for Chrome - CV\". 2. Initiate Installation: Click on the \"Add to Chrome\" button. 3. Confirm Installation: When the extension popup window appears, click on the \"Add extension\" button. 4. Pin Extension (Optional): Not a mandatory step, but pin the extension to the toolbar so it is easy to track any connection or disconnection issues. Path: Extensions > No access needed > Adit for Chrome - CV > Pin button. 5. Authenticate & Select Location: Log in with Adit app credentials into the extension and select the appropriate location. 6. Verify EHR Connection: Make sure the EHR is also connected and wait for the extension status to sh"
+  }
+ ]
+}
