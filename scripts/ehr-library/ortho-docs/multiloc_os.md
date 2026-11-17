@@ -7,40 +7,33 @@
 **`Online Scheduling`** 
 
 `Ortho practices book New Patient Exams.`  
-`[image]`
+``
 
 `In Adit, For practices to allow patients to book in respective locations based on real-time availability, they would need to do the following:`
 
 * `Practices would need to label the location in the services. (ex: New Patient Consult - Location 1, New Patient Consult - Location 2)`  
-  `[image]`
+  ` {{IMG:image2}} `
 
 
   * `Associate these services to those specific operatories based on the location association.`  
-    `[image]`
+    ` {{IMG:image3}} `
 
   * `When patients go to the booking link, we would show the real-time availability based on the Operatory availability. The Operatories would mirror the location.`   
-    `[image]`
+    ` {{IMG:image4}} `
 
   * `We will show those operatories as closed when the staff is NOT at that location using Adit availabilities.`   
-    `[image]`
+    ` {{IMG:image5}} `
 
-    `[image]`
+    ` {{IMG:image6}} `
 
-    `[image]`
+    ` {{IMG:image7}} `
 
     
 
 **`Hide Address on Thank You Page in Booking Link`**  
 `The final page of the Booking link has the Address. In the case of Practices on the Multi-Single build, this will always default to the Primary Location’s address.`  
 `Practices can choose to Hide or Show the address details as per their preference by checking or unchecking this box.`  
-`[image]`  
-
-
-
-
-
-
-
+` {{IMG:image8}} `  
 
 
 

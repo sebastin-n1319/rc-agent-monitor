@@ -73,23 +73,23 @@ In Ortho (and sometimes other verticals), there are Practices that run satellite
 - **Process for linking Multiple locations to a Single Adit Location:-**  
 
   AE would choose the Multiple Locations \= "Yes" in the pre-agreement form  
-  [image]
+   {{IMG:image1}} 
 
   > > > > > > ⬇️
 
 	AE would link PMS locations to the Primary location  
-	[image]
+	 {{IMG:image2}} 
 
 ⬇️
 
 This would create 1 deal in the CRM, “*EHR Locations Linked*” under "Sales Details" would be TRUE.   
 Linked Locations would be visible in the Agreements Module in CRM  
-	[image]
+	
 
 ⬇️
 
 If Deal Stage \= “WON”, and “EHR Locations Linked” \= True, this will auto-create a Task in the Asana Project for Server Installs/Initial Sync. [Asana](https://app.asana.com/1/7153196700226/project/1212631630672469/list/1212677612373566). E.g. \-   
-[image]
+
 
 ---
 
@@ -113,26 +113,19 @@ If Deal Stage \= “WON”, and “EHR Locations Linked” \= True, this will au
 
 **Orthotrac Location view \-** 
 
-[image]
+ {{IMG:image5}} 
 
 **Dolphin Location view \-** 
 
-**[image]**
+** {{IMG:image6}} **
 
 **Cloud9 Location view \-** 
 
-**[image]**
+** {{IMG:image7}} **
 
 **Officemate Location view \-** 
 
-[image]
-
-
-
-
-
-
-
+ {{IMG:image8}} 
 
 
 

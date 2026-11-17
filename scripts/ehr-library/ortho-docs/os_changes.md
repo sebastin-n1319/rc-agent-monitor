@@ -14,39 +14,39 @@ Key Changes, Variations & Logic — Integration Quick Guide
 
 3. `“Adit Business Hours” will be available to select for Dolphin EHR`
 
-**[image]**
+** {{IMG:image1}} **
 
 **Availabilities:**
 
 1. `We will sync and writeback Availabilities from both Adit->Dolphin and Dolphin->Adit`
 
 2. `We will Sync the “Appt Types” in the “Availability Class” from Dolphin to Adit (so that the Availability is created in Adit with multiple Appt Type selections). For availabilities which are synced from the EHR into Adit (created in the EHR), we will not allow users to edit these in Adit`  
-   `[image]`
+   ` {{IMG:image2}} `
 
 3. `When creating Availabilities in Adit (Editable), we will only allow a Single Select on Appt Types. This way it would avoid conflict with an Appt Class in the EHR. Edit/update/delete will be enabled for Availabilities created in Adit`  
-   `[image]`
+   ``
 
 4. `Availability and Closures in Adit can be created in any slot since Dolphin allows creating availability and writebacks outside working hours. We can create Appts, Availabilities & Closures outside the normal Schedule Template Hours`  
-   `[image]`
+   ` {{IMG:image4}} `
 
 5. `We will not create Closures & Availabilities on days where Schedule Templates are not available.`  
    `Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit`  
-   `[image]`
+   ``
 
 6. `Availability Names in Adit: Availabilities (by Appointment Class) synced from the EHR into Adit will have the name of the Appointment Class in the EHR`  
-   `[image]`
+   ` {{IMG:image6}} `
 
 7. `For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.`  
-   `[image]`
+   ` {{IMG:image7}} `
 
 **Appointments:**
 
 1. `We will not create Appointments on days where Schedule Templates are not available.`  
    `Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit`  
-   `[image]`
+   ``
 
 2. `Appointments in Adit can be created in any slot since Dolphin allows creating Appointments and writebacks outside working hours. We can create Appts, Availabilities & Closures outside the normal Schedule Template Hours`  
-   `[image]`
+   ` {{IMG:image8}} `
 
    
 
@@ -66,40 +66,40 @@ Key Changes, Variations & Logic — Integration Quick Guide
 
 3. `“Adit Business Hours” option will be disabled for Orthotrac.`  
    `Reason: When both Provider/Operatory Hours and Adit Business Hours are enabled, Adit generates appointment slots based on the overlap of the two schedules. This can create booking times that do not align with the EHR's slot structure, resulting in appointment time discrepancies between what is being booked in the Booking link vs what is actually booked in the EHR. This is because Orthotrac does not allow creating Appointment mid-slot.`  
-   `[image]`
+   ` {{IMG:image9}} `
 
 4. `In Orthotrac Appointment & Service time duration will be based on units rather than fixed time. E.g. if Slot is of 10 mins and the Appt has 3 units, this will book the Appt time for 30 mins (10 x 3)`  
-   `[image]`
+   ` {{IMG:image10}} `
 
 5. `Provider list pulled from the “Schedule Maintenance” for creating Appointments. And from “Staff Maintenance" screen in Orthotrac for Patient Creation (as per EHR behaviour)`
 
 6. `Adit OS works with 1 Standard per Day per Location. If Practices have Multiple Standards on the same day and same location, Adit OS cannot manage the Practice’s scheduling at this point`  
-   `[image]`
+   ``
 
 **Availabilities:**
 
 1. `“Closures” and “Availabilities” in Adit can be created only within the working hours of the Standard applied in the EHR on that day. Meaning, if the Standard Start and End times are 9AM-5PM, the Availabilities in Adit can be only applied within 9AM-5PM.`  
-   `[image]`
+   ` {{IMG:image12}} `
 
 2. `Creating a Recurring Closure or Availability in the Adit App will NOT be available for Orthotrac. This is because different days can have different Standards applied.`  
-   `[image]`
+   ` {{IMG:image13}} `
 
 3. `Users will be able to create Closure & Availabilities in the Adit App for any day if the slots, chairs & working hours are available to create the Closure/Availability on that day.`
 
 4. `The Provider names in the Availability will be of the Provider associated to the Standard (only 1 option will be available)`  
-   `[image]`
+   ` {{IMG:image14}} `
 
 5. `Users cannot Move Closures and Availabilities for Orthotrac.`  
    `In Orthotrac moving a Closure or Availability creates a new EHR_ID which limits syncing it back to the EHR`
 
 6. `The Length of the Appt will be auto selected based on the Appt Type selection. The end time will be uneditable.`  
-   `[image]`
+   ` {{IMG:image15}} `
 
    `For Closures, the End time can be set as per choice`  
-   `[image]`
+   ` {{IMG:image16}} `
 
 7. `Users will only have a Create and a Delete option for Closures and Availabilities. Edit Option is not available`  
-   `[image]`
+   ` {{IMG:image17}} `
 
 8. **`Availability Name`** `- When an availability is created in the EHR and synced to Adit, the Availability Name in Adit will be set to the Appointment Type name. For Availabilities created in Adit, the custom Availability Name will not sync to the EHR; instead, the Availability will be created in the EHR using the Appointment Type name.`  
    `This is because Orthotrac Availabilities are named after the Appt Type selected when creating the Availability`
@@ -111,41 +111,41 @@ Key Changes, Variations & Logic — Integration Quick Guide
    `Adit Slot view in Scheduler selected as 5 mins`  
    `If Appt is being created at 09:55AM - In the Appt creation window, the slots would appear as starting from 10:00AM and show an interval of 15 mins there on (10:00AM, 10:15AM, 10:30AM and so on)`  
    `This is because OrthoTrac only supports booking appointments on predefined “Standard” slots.`  
-   `[image]`
+   ` {{IMG:image18}} `
 
 2. `When creating Appointments in the Adit app, the Appt End time will be default selected based on the “unit” of the Appt. This will be an uneditable field. This is because the appointment duration is based on units and can differ based on slots in the Standards applied.`  
-   `[image]`
+   ` {{IMG:image19}} `
 
 8. `When creating Appts in the Adit app, the Provider available to select will be the default Provider associated with the Standard. This is because only 1 provider is/can be associated to an EHR Standard`
 
 9. `Users can move / reschedule Appts in Adit within the same day as well as on different days even if the Standards are different across the days.`  
    `For days where Standards are not available in the EHR - we will show a validation message.`   
-   `[image]`
+   ` {{IMG:image20}} `
 
 10. `If Appt is being moved to another day and the start time on that day is later than appt time — e.g. Std2 starts at 10:00AM, appt is 9:30AM in Std1, the slots would appear from 10:00AM.`
 
 11. `If The Operatory/Chair the Appt is being moved to is not available on a different day - Only the Chairs available on that day’s Standard will appear in the dropdown.`   
-    `[image]`  
+    ` {{IMG:image21}} `  
     
 
 12. `Exceptions (where users will NOT be able to move/reschedule Appts) -` 
 
     1. **`The complete slot needs to be open`**`. If Std1 → 15 mins slot duration & Appt has 2 units, total appt length will be 30 mins. When moving Appt to Std2 where there are 30 mins slot durations, a 60 mins open time must be available to book that appointment.`  
        `If this is unavailable, we will not be able to reschedule the Appt and we will show a validation message.`  
-       `[image]`
+       ` {{IMG:image22}} `
 
     2. **`If there is a closure in the EHR`**`, we will not be able to reschedule the Appt and we will show a validation message.`  
-       `[image]`
+       ` {{IMG:image23}} `
 
     3. **`If there is an existing/overlapping Appt in the EHR`**`, we will not be able to reschedule the Appt and we will show a validation message.`  
-       `[image]`
+       ` {{IMG:image22}} `
 
     4. **`Standard is not applied`** `on the target date`  
-       `[image]`
+       ` {{IMG:image20}} `
 
 13. `While rescheduling an Appt in the Adit app to a different day, we will update the provider to match the provider in the Standard the Appt is being moved to. Explanation:-`  
     `Each Standard has a provider associated with it. Although the Appts do not have a provider association in the Orthotrac UI, the provider association is available in the DB tables. While rescheduling if both standards have the same provider, no change is required. However if the provider is different in the standard the Appt is being moved into, we will update the provider to the one associated with that Std.`  
-    `[image]`
+    ` {{IMG:image24}} `
 
 **Multi-Single Build for Orthotrac EHR:**
 
@@ -174,21 +174,21 @@ Key Changes, Variations & Logic — Integration Quick Guide
 
 3. `“Adit Business Hours” option will be disabled for Cloud9.`  
    `This is because we can only book appointments in the Schedule Blocks created in the EHR`  
-   `[image]`
+   ` {{IMG:image25}} `
 
 **Appointments:**
 
 1. `Adit can only create appointments for Appointment Types associated with Schedule Blocks where Allow Online Scheduling is enabled in the EHR.`  
-   `[image]`
+   ` {{IMG:image26}} `
 
 2. `When creating an Appointment in an Availability in Adit, only the Appointment Types related to that Availability will show in the dropdown selection`  
-   `[image]`
+   ` {{IMG:image27}} `
 
 3. `When creating Appointment outside the EHR Schedule Blocks, Adit will show a validation message`  
-   `[image]`
+   ` {{IMG:image28}} `
 
 4. `When Editing Appts in Adit, the Delete option for appointments will only allow to cancel the Appt.`  
-   `[image]`  
+   ` {{IMG:image29}} `  
     
 
 5. `If an appointment is created in the EHR within a Schedule Block using an Appointment Type that is not associated with that Schedule Block, the appointment will still sync to Adit. However, users will not be able to edit this Appt from the Adit Scheduler.`  
@@ -202,19 +202,19 @@ Key Changes, Variations & Logic — Integration Quick Guide
 1. `Availabilities in Adit are based on Scheduled Blocks/Availabilities in the EHR.`
 
 2. `Adit will only display Availabilities for Appointment Types associated with Schedule Blocks where “Allow Online Scheduling” is enabled in the EHR.`  
-   `[image]`
+   ` {{IMG:image26}} `
 
 3. `Closures and Availabilities cannot be created in the Adit app`
 
 4. `Availabilities in Adit will mirror the EHR Schedule Blocks`
 
 5. `Provider name will be unavailable in Availabilities (since Cloud9 does not have a Provider association with Block Schedules)`  
-   `[image]`
+   ` {{IMG:image30}} `
 
 6. `EHR Schedule Blocks for both “Appointment Class” as well as “Appointment Types” will sync to Adit` 
 
 7. `For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.`  
-   `[image]`
+   ` {{IMG:image7}} `
 
 **Booking Link:**
 
@@ -246,35 +246,6 @@ Key Changes, Variations & Logic — Integration Quick Guide
 **Webforms for Ortho EHRs:**
 
 1. `Webforms are not available in Ortho`
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

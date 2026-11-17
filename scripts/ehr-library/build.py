@@ -126,10 +126,28 @@ def ortho_docs():
     if fmt=='plain': md='\n\n'.join(l.strip() for l in md.split('\n') if l.strip())
     x=subprocess.run(['pandoc','-f','markdown','-t','html','--id-prefix=ortho-'+key+'-'],input=md,capture_output=True,text=True).stdout
     x=re.sub(r'<img[^>]*>','',x); x=re.sub(r'<(/?)del>','',x)
+    # screenshots kept by orthoimages.py (checked for patient details) go back where they were in the document
+    x=re.sub(r'\{\{IMG:([A-Za-z0-9_-]+)\}\}',lambda m:('<img src="/api/guides/doc-img/ortho/'+key+'_'+m.group(1)+'.webp" alt="'+E(title)+'">') if os.path.exists(J('..','..','content','guides','img','ortho',key+'_'+m.group(1)+'.webp')) else '',x)
     x=re.sub(r'<h1 ',r'<h3 ',x); x=re.sub(r'</h1>','</h3>',x); x=re.sub(r'<h2 ','<h3 ',x); x=re.sub(r'</h2>','</h3>',x)
     x=re.sub(r'<h([4-6])[^>]*>',r'<p><b>',x); x=re.sub(r'</h[4-6]>','</b></p>',x)
+    # a short bold-only line is a heading in these documents, so each gets its own section (and keeps its screenshots)
+    cnt=[0]
+    def boldh(m):
+      t=re.sub('<[^>]+>','',m.group(1)).strip()
+      if not t or len(t)>70: return m.group(0)
+      cnt[0]+=1; return f'<h3 id="ortho-{key}-b{cnt[0]}">{t}</h3>'
+    x=re.sub(r'<p><strong>(.*?)</strong>\s*</p>',boldh,x,flags=re.S)
     x=re.sub(r'<h3>(.*?)</h3>',lambda m:'<p><b>'+m.group(1)+'</b></p>',x)
     # headings get the document name so a section found alone still says where it is from
+    # headings under an EHR heading (Dolphin, OrthoTrac, Cloud 9) say which EHR they are about
+    curE=['']
+    def ehrh(m):
+      t=re.sub('<[^>]+>','',m.group(3))
+      f=re.search(r'(?i)dolphin|ortho ?trac|cloud ?9',t)
+      if f: curE[0]={'d':'Dolphin','o':'OrthoTrac','c':'Cloud 9'}[f.group(0)[0].lower()]
+      elif curE[0]: t=t+' ('+curE[0]+')'
+      return '<h3 id="'+m.group(1)+'"'+m.group(2)+'>'+t+'</h3>'
+    x=re.sub(r'<h3 id="([^"]+)"([^>]*)>(.*?)</h3>',ehrh,x,flags=re.S)
     x=re.sub(r'<h3 id="([^"]+)"([^>]*)>(.*?)</h3>',lambda m:'<h3 id="'+m.group(1)+'">'+E(title.split(':')[0])+': '+re.sub('<[^>]+>','',m.group(3))+'</h3>',x,flags=re.S)
     x=re.sub(r'<p>\s*</p>','',x)
     h.append(f'<h2 id="lib-ortho-ref-{key}">{E(title)}</h2>'+x)

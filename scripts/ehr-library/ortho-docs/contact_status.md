@@ -1,9 +1,9 @@
 **DOLPHIN** 
 
 **Contact Number in Dolphin:**  
-[image]
 
-[image]
+
+
 
 - [ ] 1st criteria \- Pull the number in the EHR that has "Use for SMS" checked regardless of the number type (in the mobile\# field in Adit)  
 - [ ] 2nd criteria \- If there are multiple numbers where "Use for SMS" is checked, pull the contact number based on Priority/Hierarchy (**Priority \= Mobile \> Cell \> Mom’s Cell \> Dad’s Cell \> Patient’s Cell**)  
@@ -11,9 +11,9 @@
 
 
 **Patient Status (Active / Inactive):**  
-**[image]**
+****
 
-**[image]**  
+** {{IMG:image4}} **  
 **if "This is an Active Patient" checkbox is Checked \= Active Patient in Adit**  
 **if "This is an Active Patient" checkbox is Unchecked \= Inactive Patient in Adit**
 
@@ -22,10 +22,10 @@
 * Since Practices can add/amend a Patient Status, Adit captures the Active/Inactive Patient status through the "**This is an Active Patient**" checkbox mapping
 
 **Communication Logs:**  
-**[image]**
+****
 
-**[image]**  
-**[image]**
+** {{IMG:image6}} **  
+** {{IMG:image7}} **
 
 **Cloud9:**  
 **Contact Number in Cloud9:**  
@@ -33,10 +33,10 @@ We pull the mobile number as per the ranking. If there are 2 numbers available i
 
 **~~Contact Number in Cloud9:~~**  
 ~~Adit refers the Contact Info screen in the Patient profile of Cloud9 to pull contact numbers:~~  
-[image]
+ {{IMG:image8}} 
 
 - [ ] **~~Condition 1:~~** ~~Adit considers all Contact Types in the mapping for the Group \= Mobile. For the mobile\# field in Adit, any contact types that are mapped to the Group “Mobile” in Cloud9 are valid mobile number fields. **Condition 1 should always be met.**~~  
-  ~~[image]~~
+  ~~ {{IMG:image9}} ~~
 
 
 - [ ] **~~Condition 2:~~** ~~Adit has a Priority assigned to the phone types (**Priority \= Mobile \> Cell \> Mom’s Cell \> Dad’s Cell \> Patient’s Cell**). If a Contact Type falls in the Group “Mobile” (See SS above), we will pull the 1st number in the **list** based on Priority.~~ 
@@ -50,31 +50,19 @@ We pull the mobile number as per the ranking. If there are 2 numbers available i
 - [ ] ~~If none of the conditions listed above are met, we will not pull the Mobile number in Adit.~~
 
 **Communication Logs (Cloud9):**  
-**[image]**
+** {{IMG:image10}} **
 
 **Orthotrac:**
 
 **Condition:** Adit has a Priority assigned to the phone types (**Priority \= Mobile \> Cell \> Mom’s Cell \> Dad’s Cell \> Patient’s Cell**). If there are more than one phone number in Orthotrac, we pull whichever number follows the highest priority
 
 If there are multiples of the same Phone Types listed, we pull the one which is listed as the **Primary** number.  
-[image]
+
 
 **Important Note:** The mobile numbers are only pulled if the office has the number types spelled exactly as shown above (see SS below for where to make those changes)
 
-[image]  
+  
 **Communication Logs (Orthotrac):**
-
-[image]
-
-
-
-
-
-
-
-
-
-
 
 
 

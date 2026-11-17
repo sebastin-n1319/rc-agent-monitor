@@ -486,9 +486,9 @@
 <h1 id="lib-ortho2">Ortho2 Edge (not in the Integration Rulebook) (Orthodontics)</h1>
 <h2 id="lib-ortho2-howitworks">Ortho2 Edge (not in the Integration Rulebook): how the EHR itself works (public vendor and partner help)</h2><p>Ortho2 Edge (Edge Cloud, orthodontic)<br>Orthodontic practice management software from Ortho2 (Edge Cloud). Public help: https://help.ortho2.com/ . Its scheduler needs a scheduling template on each date, staff need the Scheduling security group, and it has its own Edge Reminders and Edge Portal (patients can confirm or cancel there). Source: https://help.ortho2.com/scheduling/About_YourSchedule<br>Ortho2 Edge is NOT in the Adit Integration Rulebook. Two live deals (CSM) list it as their EHR; their tickets in the last 12 months are about phones and call routing, none about EHR sync. Do not tell the practice that sync features (forms writing to the EHR, appointment write-back, Practice Analytics) work with it; check with T2 Core first.<br>Vendor screenshots are on the linked pages; open them for the pictures.</p>
 <h1 id="lib-ortho-ref">Ortho EHR reference documents (Dolphin, OrthoTrac, Cloud 9)</h1><p>Adit's own reference documents listed in the Orthodontics tab of the Integration Rulebook: how online scheduling, availabilities, appointments, the booking link, AI Front Desk, contact numbers, patient status and the multi-location (multi to single) build work for Dolphin, OrthoTrac and Cloud 9. Struck-out (old) logic is left out.</p>
-<h2 id="lib-ortho-ref-os_changes">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)</h2><p><strong>Dolphin EHR</strong></p>
+<h2 id="lib-ortho-ref-os_changes">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)</h2><h3 id="ortho-os_changes-b1">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Dolphin EHR</h3>
 <p>Key Changes, Variations &amp; Logic - Integration Quick Guide</p>
-<p><strong>OS Configuration:</strong></p>
+<h3 id="ortho-os_changes-b2">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): OS Configuration: (Dolphin)</h3>
 <ol type="1">
 <li><p><code>When enabling OS in Adit for Dolphin, the “Operatory/Provider Hours in EHR” will be default selected and will be an uneditable field.</code><br />
 <code>This is because</code></p>
@@ -499,48 +499,65 @@
 <li><p><code>“Availabilities in Adit” will be available to select for Dolphin EHR</code></p></li>
 <li><p><code>“Adit Business Hours” will be available to select for Dolphin EHR</code></p></li>
 </ol>
-<hr />
-<p><strong>Availabilities:</strong></p>
+<p>** <img src="/api/guides/doc-img/ortho/os_changes_image1.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"> **</p>
+<h3 id="ortho-os_changes-b3">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Availabilities: (Dolphin)</h3>
 <ol type="1">
 <li><p><code>We will sync and writeback Availabilities from both Adit-&gt;Dolphin and Dolphin-&gt;Adit</code></p></li>
-<li><p><code>We will Sync the “Appt Types” in the “Availability Class” from Dolphin to Adit (so that the Availability is created in Adit with multiple Appt Type selections). For availabilities which are synced from the EHR into Adit (created in the EHR), we will not allow users to edit these in Adit</code></p></li>
-<li><p><code>When creating Availabilities in Adit (Editable), we will only allow a Single Select on Appt Types. This way it would avoid conflict with an Appt Class in the EHR. Edit/update/delete will be enabled for Availabilities created in Adit</code></p></li>
-<li><p><code>Availability and Closures in Adit can be created in any slot since Dolphin allows creating availability and writebacks outside working hours. We can create Appts, Availabilities &amp; Closures outside the normal Schedule Template Hours</code></p></li>
+<li><p><code>We will Sync the “Appt Types” in the “Availability Class” from Dolphin to Adit (so that the Availability is created in Adit with multiple Appt Type selections). For availabilities which are synced from the EHR into Adit (created in the EHR), we will not allow users to edit these in Adit</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image2.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>When creating Availabilities in Adit (Editable), we will only allow a Single Select on Appt Types. This way it would avoid conflict with an Appt Class in the EHR. Edit/update/delete will be enabled for Availabilities created in Adit</code><br />
+``</p></li>
+<li><p><code>Availability and Closures in Adit can be created in any slot since Dolphin allows creating availability and writebacks outside working hours. We can create Appts, Availabilities &amp; Closures outside the normal Schedule Template Hours</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image4.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>We will not create Closures &amp; Availabilities on days where Schedule Templates are not available.</code><br />
-<code>Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit</code></p></li>
-<li><p><code>Availability Names in Adit: Availabilities (by Appointment Class) synced from the EHR into Adit will have the name of the Appointment Class in the EHR</code></p></li>
-<li><p><code>For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.</code></p></li>
+<code>Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit</code><br />
+``</p></li>
+<li><p><code>Availability Names in Adit: Availabilities (by Appointment Class) synced from the EHR into Adit will have the name of the Appointment Class in the EHR</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image6.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image7.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol>
-<p><strong>Appointments:</strong></p>
+<h3 id="ortho-os_changes-b4">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Appointments: (Dolphin)</h3>
 <ol type="1">
 <li><p><code>We will not create Appointments on days where Schedule Templates are not available.</code><br />
-<code>Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit</code></p></li>
-<li><p><code>Appointments in Adit can be created in any slot since Dolphin allows creating Appointments and writebacks outside working hours. We can create Appts, Availabilities &amp; Closures outside the normal Schedule Template Hours</code></p></li>
+<code>Practices apply Schedule Templates to working days. We do not want Practices to inadvertently create appointments in non-working days through Adit</code><br />
+``</p></li>
+<li><p><code>Appointments in Adit can be created in any slot since Dolphin allows creating Appointments and writebacks outside working hours. We can create Appts, Availabilities &amp; Closures outside the normal Schedule Template Hours</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image8.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol>
-<p><strong>Orthotrac EHR</strong></p>
+<h3 id="ortho-os_changes-b5">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Orthotrac EHR</h3>
 <p>Key Changes, Variations &amp; Logic - Integration Quick Guide</p>
-<p><strong>OS Configuration:</strong></p>
+<h3 id="ortho-os_changes-b6">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): OS Configuration: (OrthoTrac)</h3>
 <ol type="1">
 <li><p><code>When enabling OS in Adit for Orthotrac, the “Operatory/Provider Hours in EHR” will be default selected and will be an uneditable field.</code><br />
 <code>This is because Appts cannot be written back to Orthotrac where a Standard is not available OR beyond the working hours of a Standard.</code></p></li>
 <li><p><code>“Availabilities in Adit” will be available to select for Orthotrac</code></p></li>
 <li><p><code>“Adit Business Hours” option will be disabled for Orthotrac.</code><br />
-<code>Reason: When both Provider/Operatory Hours and Adit Business Hours are enabled, Adit generates appointment slots based on the overlap of the two schedules. This can create booking times that do not align with the EHR's slot structure, resulting in appointment time discrepancies between what is being booked in the Booking link vs what is actually booked in the EHR. This is because Orthotrac does not allow creating Appointment mid-slot.</code></p></li>
-<li><p><code>In Orthotrac Appointment &amp; Service time duration will be based on units rather than fixed time. E.g. if Slot is of 10 mins and the Appt has 3 units, this will book the Appt time for 30 mins (10 x 3)</code></p></li>
+<code>Reason: When both Provider/Operatory Hours and Adit Business Hours are enabled, Adit generates appointment slots based on the overlap of the two schedules. This can create booking times that do not align with the EHR's slot structure, resulting in appointment time discrepancies between what is being booked in the Booking link vs what is actually booked in the EHR. This is because Orthotrac does not allow creating Appointment mid-slot.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image9.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>In Orthotrac Appointment &amp; Service time duration will be based on units rather than fixed time. E.g. if Slot is of 10 mins and the Appt has 3 units, this will book the Appt time for 30 mins (10 x 3)</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image10.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>Provider list pulled from the “Schedule Maintenance” for creating Appointments. And from “Staff Maintenance" screen in Orthotrac for Patient Creation (as per EHR behaviour)</code></p></li>
-<li><p><code>Adit OS works with 1 Standard per Day per Location. If Practices have Multiple Standards on the same day and same location, Adit OS cannot manage the Practice’s scheduling at this point</code></p></li>
+<li><p><code>Adit OS works with 1 Standard per Day per Location. If Practices have Multiple Standards on the same day and same location, Adit OS cannot manage the Practice’s scheduling at this point</code><br />
+``</p></li>
 </ol>
-<p><strong>Availabilities:</strong></p>
+<h3 id="ortho-os_changes-b7">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Availabilities: (OrthoTrac)</h3>
 <ol type="1">
-<li><p><code>“Closures” and “Availabilities” in Adit can be created only within the working hours of the Standard applied in the EHR on that day. Meaning, if the Standard Start and End times are 9AM-5PM, the Availabilities in Adit can be only applied within 9AM-5PM.</code></p></li>
-<li><p><code>Creating a Recurring Closure or Availability in the Adit App will NOT be available for Orthotrac. This is because different days can have different Standards applied.</code></p></li>
+<li><p><code>“Closures” and “Availabilities” in Adit can be created only within the working hours of the Standard applied in the EHR on that day. Meaning, if the Standard Start and End times are 9AM-5PM, the Availabilities in Adit can be only applied within 9AM-5PM.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image12.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>Creating a Recurring Closure or Availability in the Adit App will NOT be available for Orthotrac. This is because different days can have different Standards applied.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image13.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>Users will be able to create Closure &amp; Availabilities in the Adit App for any day if the slots, chairs &amp; working hours are available to create the Closure/Availability on that day.</code></p></li>
-<li><p><code>The Provider names in the Availability will be of the Provider associated to the Standard (only 1 option will be available)</code></p></li>
+<li><p><code>The Provider names in the Availability will be of the Provider associated to the Standard (only 1 option will be available)</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image14.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>Users cannot Move Closures and Availabilities for Orthotrac.</code><br />
 <code>In Orthotrac moving a Closure or Availability creates a new EHR_ID which limits syncing it back to the EHR</code></p></li>
-<li><p><code>The Length of the Appt will be auto selected based on the Appt Type selection. The end time will be uneditable.</code></p>
-<p><code>For Closures, the End time can be set as per choice</code></p></li>
-<li><p><code>Users will only have a Create and a Delete option for Closures and Availabilities. Edit Option is not available</code></p></li>
+<li><p><code>The Length of the Appt will be auto selected based on the Appt Type selection. The end time will be uneditable.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image15.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p>
+<p><code>For Closures, the End time can be set as per choice</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image16.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>Users will only have a Create and a Delete option for Closures and Availabilities. Edit Option is not available</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image17.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><strong><code>Availability Name</code></strong>
 <code>- When an availability is created in the EHR and synced to Adit, the Availability Name in Adit will be set to the Appointment Type name. For Availabilities created in Adit, the custom Availability Name will not sync to the EHR; instead, the Availability will be created in the EHR using the Appointment Type name.</code><br />
 <code>This is because Orthotrac Availabilities are named after the Appt Type selected when creating the Availability</code></p></li>
@@ -551,24 +568,33 @@
 <code>EHR Slots = 15 mins | Working Hours = 9AM to 5PM</code><br />
 <code>Adit Slot view in Scheduler selected as 5 mins</code><br />
 <code>If Appt is being created at 09:55AM - In the Appt creation window, the slots would appear as starting from 10:00AM and show an interval of 15 mins there on (10:00AM, 10:15AM, 10:30AM and so on)</code><br />
-<code>This is because OrthoTrac only supports booking appointments on predefined “Standard” slots.</code></p></li>
-<li><p><code>When creating Appointments in the Adit app, the Appt End time will be default selected based on the “unit” of the Appt. This will be an uneditable field. This is because the appointment duration is based on units and can differ based on slots in the Standards applied.</code></p></li>
+<code>This is because OrthoTrac only supports booking appointments on predefined “Standard” slots.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image18.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>When creating Appointments in the Adit app, the Appt End time will be default selected based on the “unit” of the Appt. This will be an uneditable field. This is because the appointment duration is based on units and can differ based on slots in the Standards applied.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image19.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>When creating Appts in the Adit app, the Provider available to select will be the default Provider associated with the Standard. This is because only 1 provider is/can be associated to an EHR Standard</code></p></li>
 <li><p><code>Users can move / reschedule Appts in Adit within the same day as well as on different days even if the Standards are different across the days.</code><br />
-<code>For days where Standards are not available in the EHR - we will show a validation message.</code></p></li>
+<code>For days where Standards are not available in the EHR - we will show a validation message.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image20.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>If Appt is being moved to another day and the start time on that day is later than appt time - e.g. Std2 starts at 10:00AM, appt is 9:30AM in Std1, the slots would appear from 10:00AM.</code></p></li>
-<li><p><code>If The Operatory/Chair the Appt is being moved to is not available on a different day - Only the Chairs available on that day’s Standard will appear in the dropdown.</code></p></li>
+<li><p><code>If The Operatory/Chair the Appt is being moved to is not available on a different day - Only the Chairs available on that day’s Standard will appear in the dropdown.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image21.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>Exceptions (where users will NOT be able to move/reschedule Appts) -</code></p>
 <ol type="1">
 <li><p><strong><code>The complete slot needs to be open</code></strong><code>. If Std1 → 15 mins slot duration &amp; Appt has 2 units, total appt length will be 30 mins. When moving Appt to Std2 where there are 30 mins slot durations, a 60 mins open time must be available to book that appointment.</code><br />
-<code>If this is unavailable, we will not be able to reschedule the Appt and we will show a validation message.</code></p></li>
-<li><p><strong><code>If there is a closure in the EHR</code></strong><code>, we will not be able to reschedule the Appt and we will show a validation message.</code></p></li>
-<li><p><strong><code>If there is an existing/overlapping Appt in the EHR</code></strong><code>, we will not be able to reschedule the Appt and we will show a validation message.</code></p></li>
+<code>If this is unavailable, we will not be able to reschedule the Appt and we will show a validation message.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image22.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><strong><code>If there is a closure in the EHR</code></strong><code>, we will not be able to reschedule the Appt and we will show a validation message.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image23.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><strong><code>If there is an existing/overlapping Appt in the EHR</code></strong><code>, we will not be able to reschedule the Appt and we will show a validation message.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image22.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><strong><code>Standard is not applied</code></strong>
-<code>on the target date</code></p></li>
+<code>on the target date</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image20.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol></li>
 <li><p><code>While rescheduling an Appt in the Adit app to a different day, we will update the provider to match the provider in the Standard the Appt is being moved to. Explanation:-</code><br />
-<code>Each Standard has a provider associated with it. Although the Appts do not have a provider association in the Orthotrac UI, the provider association is available in the DB tables. While rescheduling if both standards have the same provider, no change is required. However if the provider is different in the standard the Appt is being moved into, we will update the provider to the one associated with that Std.</code></p></li>
+<code>Each Standard has a provider associated with it. Although the Appts do not have a provider association in the Orthotrac UI, the provider association is available in the DB tables. While rescheduling if both standards have the same provider, no change is required. However if the provider is different in the standard the Appt is being moved into, we will update the provider to the one associated with that Std.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image24.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol>
 <p><strong>Multi-Single Build for Orthotrac EHR:</strong></p>
 <ol type="1">
@@ -588,45 +614,53 @@
 <li><code>We will Restrict recurrence of Closure &amp; Availabilities in the Adit App for Orthotrac</code></li>
 </ol></li>
 </ol>
-<p><strong>Cloud9 EHR</strong></p>
+<h3 id="ortho-os_changes-b8">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Cloud9 EHR</h3>
 <p>Key Changes, Variations &amp; Logic - Integration Quick Guide</p>
-<p><strong>OS Configuration:</strong></p>
+<h3 id="ortho-os_changes-b9">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): OS Configuration: (Cloud 9)</h3>
 <ol type="1">
 <li><p><code>When enabling OS in Adit for Cloud9, the “Availabilities in Adit” will be default selected and will be an uneditable field.</code></p></li>
 <li><p><code>“Operatory/Provider Hours in EHR” option will be disabled for Cloud9.</code></p></li>
 <li><p><code>“Adit Business Hours” option will be disabled for Cloud9.</code><br />
-<code>This is because we can only book appointments in the Schedule Blocks created in the EHR</code></p></li>
+<code>This is because we can only book appointments in the Schedule Blocks created in the EHR</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image25.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol>
-<p><strong>Appointments:</strong></p>
+<h3 id="ortho-os_changes-b10">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Appointments: (Cloud 9)</h3>
 <ol type="1">
-<li><p><code>Adit can only create appointments for Appointment Types associated with Schedule Blocks where Allow Online Scheduling is enabled in the EHR.</code></p></li>
-<li><p><code>When creating an Appointment in an Availability in Adit, only the Appointment Types related to that Availability will show in the dropdown selection</code></p></li>
-<li><p><code>When creating Appointment outside the EHR Schedule Blocks, Adit will show a validation message</code></p></li>
-<li><p><code>When Editing Appts in Adit, the Delete option for appointments will only allow to cancel the Appt.</code></p></li>
+<li><p><code>Adit can only create appointments for Appointment Types associated with Schedule Blocks where Allow Online Scheduling is enabled in the EHR.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image26.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>When creating an Appointment in an Availability in Adit, only the Appointment Types related to that Availability will show in the dropdown selection</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image27.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>When creating Appointment outside the EHR Schedule Blocks, Adit will show a validation message</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image28.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
+<li><p><code>When Editing Appts in Adit, the Delete option for appointments will only allow to cancel the Appt.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image29.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>If an appointment is created in the EHR within a Schedule Block using an Appointment Type that is not associated with that Schedule Block, the appointment will still sync to Adit. However, users will not be able to edit this Appt from the Adit Scheduler.</code><br />
 <code>validation message -</code><br />
 <code>“Unable to make changes since this appointment does not match the Appointment Type of the Schedule Block in your PMS. Please update this Appointment from your PMS”</code></p></li>
 <li><p><code>Appointments can be created upto 28 weeks in the future</code></p></li>
 </ol>
-<p><strong>Availability:</strong></p>
+<h3 id="ortho-os_changes-b11">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Availability: (Cloud 9)</h3>
 <ol type="1">
 <li><p><code>Availabilities in Adit are based on Scheduled Blocks/Availabilities in the EHR.</code></p></li>
-<li><p><code>Adit will only display Availabilities for Appointment Types associated with Schedule Blocks where “Allow Online Scheduling” is enabled in the EHR.</code></p></li>
+<li><p><code>Adit will only display Availabilities for Appointment Types associated with Schedule Blocks where “Allow Online Scheduling” is enabled in the EHR.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image26.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>Closures and Availabilities cannot be created in the Adit app</code></p></li>
 <li><p><code>Availabilities in Adit will mirror the EHR Schedule Blocks</code></p></li>
-<li><p><code>Provider name will be unavailable in Availabilities (since Cloud9 does not have a Provider association with Block Schedules)</code></p></li>
+<li><p><code>Provider name will be unavailable in Availabilities (since Cloud9 does not have a Provider association with Block Schedules)</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image30.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 <li><p><code>EHR Schedule Blocks for both “Appointment Class” as well as “Appointment Types” will sync to Adit</code></p></li>
-<li><p><code>For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.</code></p></li>
+<li><p><code>For Availabilities (by Appointment Class) synced from EHR into Adit, it will contain all the Appointment Types in the Appointment Type section of Adit availabilities in a comma separated format.</code><br />
+<code><img src="/api/guides/doc-img/ortho/os_changes_image7.webp" alt="Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9)"></code></p></li>
 </ol>
-<p><strong>Booking Link:</strong></p>
+<h3 id="ortho-os_changes-b12">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Booking Link: (Cloud 9)</h3>
 <ol type="1">
 <li><p><code>If the EHR Schedule Block has been created with "Reserve as one", Adit booking link will restrict booking multiple Appts in the Availability.</code></p></li>
 <li><p><code>If the EHR Schedule Block has been created with "Reserve As Many As Will Fit", Adit will allow booking multiple Appts (as many permissible) in the Availability.</code></p></li>
 <li><p><code>The Booking Link will display and accept bookings for all Appointment Types mapped to an Appointment Class Schedule Block where Allow Online Scheduling is enabled.</code></p></li>
 </ol>
 <p><code>______________________________________________________________________________</code></p>
-<p><strong>Booking Link Guardian/Resp Party Process for Ortho
-EHRs:</strong></p>
+<h3 id="ortho-os_changes-b13">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Booking Link Guardian/Resp Party Process for Ortho
+EHRs: (Cloud 9)</h3>
 <ol start="4" type="1">
 <li><p><code>In the Booking link, the “Guardian” in case of Orthodontics is the Responsible Party / Billing Party. When collecting information from this screen in the booking link for the Resp party, we will not create a Patient profile separately, we will add this to the Relationship section of Dolphin and Flag them as the "Primary Resp Party" if a Primary Resp Party does not already exist (meaning that the booking is for a New Patient)</code></p></li>
 <li><p><code>If the Guardian/Resp Party is already a patient and already associated as a "Primary Resp Party" to the patient the Appt is being booked for (existing patient), there will be no change to the "Primary Resp Party". In this case, the Guardian will reflect in the family details section of the Adit Patient Card.</code></p></li>
@@ -636,7 +670,7 @@ EHRs:</strong></p>
 <li><p><code>If the Guardian/Resp Party is NOT an existing patient and NOT associated as a "Primary Resp Party" to the patient the Appt is being booked for, we will associate them as the "Primary Resp Party" to the patient the Appt is being booked for. In this case as well, we will not create a Patient profile separately for the Guardian / Resp Party.</code></p></li>
 </ol>
 <p><code>Note: Patient Statuses in Ortho EHRs are used to categorize the stage of Treatment or identify Leads/follow up requirements. Most Ortho practices do not have a Non-Patient status hence we will not disrupt their workflow by creating a new status.</code></p>
-<p><strong>Webforms for Ortho EHRs:</strong></p>
+<h3 id="ortho-os_changes-b14">Ortho OS Changes in Details (Dolphin, OrthoTrac, Cloud 9): Webforms for Ortho EHRs: (Cloud 9)</h3>
 <ol type="1">
 <li><code>Webforms are not available in Ortho</code></li>
 </ol>
@@ -965,7 +999,7 @@ OS Presentation</u></a></p>
 </colgroup>
 <thead>
 <tr class="header">
-<th><p><strong>Dolphin EHR</strong></p>
+<th><h3 id="ortho-quick_guide-b1">Ortho OS Quick Guide: Dolphin EHR</h3>
 <p>Key changes, variations &amp; logic - integration quick
 guide</p></th>
 </tr>
@@ -976,7 +1010,7 @@ guide</p></th>
 </tr>
 </tbody>
 </table>
-<p><strong>OS CONFIGURATION</strong></p>
+<h3 id="ortho-quick_guide-b2">Ortho OS Quick Guide: OS CONFIGURATION (Dolphin)</h3>
 <table style="width:98%;">
 <colgroup>
 <col style="width: 28%" />
@@ -1001,7 +1035,7 @@ Adit</strong></td>
 </tr>
 </tbody>
 </table>
-<p><strong>AVAILABILITIES</strong></p>
+<h3 id="ortho-quick_guide-b3">Ortho OS Quick Guide: AVAILABILITIES (Dolphin)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 25%" />
@@ -1060,7 +1094,7 @@ EHR.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>APPOINTMENTS</strong></p>
+<h3 id="ortho-quick_guide-b4">Ortho OS Quick Guide: APPOINTMENTS (Dolphin)</h3>
 <table>
 <tbody>
 <tr class="odd">
@@ -1076,7 +1110,7 @@ where</td>
 </tbody>
 </table>
 <hr />
-<p><strong>BOOKING LINK</strong></p>
+<h3 id="ortho-quick_guide-b5">Ortho OS Quick Guide: BOOKING LINK (Dolphin)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1123,7 +1157,7 @@ in Ortho.</td>
 </colgroup>
 <thead>
 <tr class="header">
-<th><p><strong>Orthotrac EHR</strong></p>
+<th><h3 id="ortho-quick_guide-b6">Ortho OS Quick Guide: Orthotrac EHR</h3>
 <p>Key changes, variations &amp; logic - integration quick
 guide</p></th>
 </tr>
@@ -1134,7 +1168,7 @@ guide</p></th>
 </tr>
 </tbody>
 </table>
-<p><strong>OS CONFIGURATION</strong></p>
+<h3 id="ortho-quick_guide-b7">Ortho OS Quick Guide: OS CONFIGURATION (OrthoTrac)</h3>
 <table style="width:99%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1180,7 +1214,7 @@ day and location.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>AVAILABILITIES</strong></p>
+<h3 id="ortho-quick_guide-b8">Ortho OS Quick Guide: AVAILABILITIES (OrthoTrac)</h3>
 <table style="width:99%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1226,7 +1260,7 @@ instead.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>APPOINTMENTS</strong></p>
+<h3 id="ortho-quick_guide-b9">Ortho OS Quick Guide: APPOINTMENTS (OrthoTrac)</h3>
 <table style="width:99%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1289,7 +1323,7 @@ duplicate Schedule Confirmations.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>MULTI-SINGLE BUILD</strong></p>
+<h3 id="ortho-quick_guide-b10">Ortho OS Quick Guide: MULTI-SINGLE BUILD (OrthoTrac)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1326,7 +1360,7 @@ Availabilities.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>BOOKING LINK</strong></p>
+<h3 id="ortho-quick_guide-b11">Ortho OS Quick Guide: BOOKING LINK (OrthoTrac)</h3>
 <table>
 <tbody>
 <tr class="odd">
@@ -1370,7 +1404,7 @@ in Ortho.</td>
 </colgroup>
 <thead>
 <tr class="header">
-<th><p><strong>Cloud9 EHR</strong></p>
+<th><h3 id="ortho-quick_guide-b12">Ortho OS Quick Guide: Cloud9 EHR</h3>
 <p>Key changes, variations &amp; logic - integration quick
 guide</p></th>
 </tr>
@@ -1381,7 +1415,7 @@ guide</p></th>
 </tr>
 </tbody>
 </table>
-<p><strong>OS CONFIGURATION</strong></p>
+<h3 id="ortho-quick_guide-b13">Ortho OS Quick Guide: OS CONFIGURATION (Cloud 9)</h3>
 <table style="width:98%;">
 <colgroup>
 <col style="width: 28%" />
@@ -1409,7 +1443,7 @@ in EHR Schedule Blocks.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>APPOINTMENTS</strong></p>
+<h3 id="ortho-quick_guide-b14">Ortho OS Quick Guide: APPOINTMENTS (Cloud 9)</h3>
 <table style="width:99%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1446,7 +1480,7 @@ your PMS. Please update this Appointment from your PMS.”</em></p>
 </tr>
 </tbody>
 </table>
-<p><strong>AVAILABILITIES</strong></p>
+<h3 id="ortho-quick_guide-b15">Ortho OS Quick Guide: AVAILABILITIES (Cloud 9)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 25%" />
@@ -1483,7 +1517,7 @@ Block Schedules.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>BOOKING LINK</strong></p>
+<h3 id="ortho-quick_guide-b16">Ortho OS Quick Guide: BOOKING LINK (Cloud 9)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 22%" />
@@ -1539,7 +1573,7 @@ in Ortho.</td>
 </table>
 <hr />
 
-<h2 id="lib-ortho-ref-training_manual">Adit OS Ortho Training Manual</h2><p><strong>ORTHO ONLINE SCHEDULING</strong></p>
+<h2 id="lib-ortho-ref-training_manual">Adit OS Ortho Training Manual</h2><h3 id="ortho-training_manual-b1">Adit OS Ortho Training Manual: ORTHO ONLINE SCHEDULING</h3>
 <p>Orthodontics OS Integration</p>
 <p><em>Training Manual</em></p>
 <p>Covers: Dolphin • OrthoTrac • Cloud9</p>
@@ -1670,7 +1704,7 @@ Availabilities</td>
 availability creation, write-backs in both directions, and allows
 appointments outside normal schedule-template hours.</em></p>
 <h3 id="ortho-training_manual-os-configuration">Adit OS Ortho Training Manual: 1.1 OS
-Configuration</h3>
+Configuration (Dolphin)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 29%" />
@@ -1698,8 +1732,8 @@ Dolphin.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="ortho-training_manual-availabilities">Adit OS Ortho Training Manual: 1.2 Availabilities</h3>
-<h3 id="ortho-training_manual-syncing-direction">Adit OS Ortho Training Manual: Syncing Direction</h3>
+<h3 id="ortho-training_manual-availabilities">Adit OS Ortho Training Manual: 1.2 Availabilities (Dolphin)</h3>
+<h3 id="ortho-training_manual-syncing-direction">Adit OS Ortho Training Manual: Syncing Direction (Dolphin)</h3>
 <ul>
 <li><p>Adit ↔︎ Dolphin: bi-directional sync and writeback is
 supported.</p></li>
@@ -1719,7 +1753,7 @@ Adit.</p></li>
 be &gt; selected. This avoids conflicting with an Appointment Class in
 the &gt; EHR.</p></li>
 </ul>
-<h3 id="ortho-training_manual-naming-convention">Adit OS Ortho Training Manual: Naming Convention</h3>
+<h3 id="ortho-training_manual-naming-convention">Adit OS Ortho Training Manual: Naming Convention (Dolphin)</h3>
 <ul>
 <li><p>EHR-synced availabilities are named after the Appointment Class
 or &gt; Appointment Type in the EHR.</p></li>
@@ -1727,7 +1761,7 @@ or &gt; Appointment Type in the EHR.</p></li>
 Adit.</p></li>
 </ul>
 <h3 id="ortho-training_manual-ehr-template-hours">Adit OS Ortho Training Manual: EHR Template
-Hours</h3>
+Hours (Dolphin)</h3>
 <ul>
 <li><p>Adit allows appointments, availabilities, and closures to be
 created &gt; OUTSIDE normal Schedule Template hours.</p></li>
@@ -1735,7 +1769,7 @@ created &gt; OUTSIDE normal Schedule Template hours.</p></li>
 &gt; created on days where no Schedule Template is applied in the
 EHR</p></li>
 </ul>
-<h3 id="ortho-training_manual-appointments">Adit OS Ortho Training Manual: 1.3 Appointments</h3>
+<h3 id="ortho-training_manual-appointments">Adit OS Ortho Training Manual: 1.3 Appointments (Dolphin)</h3>
 <ul>
 <li><p>Appointments cannot be created on days where no Schedule Template
 is &gt; applied.</p></li>
@@ -1818,7 +1852,7 @@ revolves around predefined Standards - templates that define working
 hours, slot duration, and provider. Adit must work strictly within these
 Standards.</em></p>
 <h3 id="ortho-training_manual-os-configuration-1">Adit OS Ortho Training Manual: 2.1 OS
-Configuration</h3>
+Configuration (OrthoTrac)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 29%" />
@@ -1861,7 +1895,7 @@ cannot be fully managed by Adit OS at this time.</td>
 </tbody>
 </table>
 <h3 id="ortho-training_manual-unit-based-appointment-duration">Adit OS Ortho Training Manual: 2.2
-Unit-Based Appointment Duration</h3>
+Unit-Based Appointment Duration (OrthoTrac)</h3>
 <p>Unlike Dolphin and Cloud9, OrthoTrac measures appointment length in
 units, not fixed minutes.</p>
 <table style="width:97%;">
@@ -1890,8 +1924,8 @@ shown as an uneditable field. Users cannot manually change it.</td>
 </tbody>
 </table>
 <h3 id="ortho-training_manual-availabilities-closures">Adit OS Ortho Training Manual: 2.3
-Availabilities &amp; Closures</h3>
-<h3 id="ortho-training_manual-key-restrictions">Adit OS Ortho Training Manual: Key Restrictions</h3>
+Availabilities &amp; Closures (OrthoTrac)</h3>
+<h3 id="ortho-training_manual-key-restrictions">Adit OS Ortho Training Manual: Key Restrictions (OrthoTrac)</h3>
 <ul>
 <li><p>Closures and Availabilities can ONLY be created within the
 working &gt; hours of the Standard applied to that day (e.g. if Standard
@@ -1914,7 +1948,7 @@ EHR.</p></li>
 required</p></li>
 </ul>
 <h3 id="ortho-training_manual-naming-convention-1">Adit OS Ortho Training Manual: Naming
-Convention</h3>
+Convention (OrthoTrac)</h3>
 <ul>
 <li><p>Availability created in the EHR will be synced to Adit with the
 name &gt; of the Appointment Type or the Appt Class</p></li>
@@ -1922,7 +1956,7 @@ name &gt; of the Appointment Type or the Appt Class</p></li>
 the &gt; EHR always uses the Appointment Type or Appointment Class
 name.</p></li>
 </ul>
-<h3 id="ortho-training_manual-provider">Adit OS Ortho Training Manual: Provider</h3>
+<h3 id="ortho-training_manual-provider">Adit OS Ortho Training Manual: Provider (OrthoTrac)</h3>
 <ul>
 <li><p>The provider shown in the Availability is the provider associated
 &gt; with the Standard - there will always be only one option to &gt;
@@ -1932,8 +1966,8 @@ select</p></li>
 <li><p>Provider list for Patient Creation is pulled from 'Staff &gt;
 Maintenance' (as per EHR behaviour).</p></li>
 </ul>
-<h3 id="ortho-training_manual-appointments-1">Adit OS Ortho Training Manual: 2.4 Appointments</h3>
-<h3 id="ortho-training_manual-slot-snapping">Adit OS Ortho Training Manual: Slot Snapping</h3>
+<h3 id="ortho-training_manual-appointments-1">Adit OS Ortho Training Manual: 2.4 Appointments (OrthoTrac)</h3>
+<h3 id="ortho-training_manual-slot-snapping">Adit OS Ortho Training Manual: Slot Snapping (OrthoTrac)</h3>
 <p>OrthoTrac only allows booking on predefined Standard slot times. If a
 booking is attempted mid-slot in Adit, the system snaps to the next
 valid slot.</p>
@@ -1953,7 +1987,7 @@ intervals (10:00, 10:15, 10:30...).</em></p>
 applied.</li>
 </ul>
 <h3 id="ortho-training_manual-moving-rescheduling-appointments">Adit OS Ortho Training Manual: Moving /
-Rescheduling Appointments</h3>
+Rescheduling Appointments (OrthoTrac)</h3>
 <ul>
 <li><p>Appointments CAN be moved or Rescheduled within the same day or
 to &gt; different days even if the Standards differ across the
@@ -2004,7 +2038,7 @@ applied.</td>
 </tbody>
 </table>
 <h3 id="ortho-training_manual-provider-update-on-reschedule">Adit OS Ortho Training Manual: Provider
-Update on Reschedule</h3>
+Update on Reschedule (OrthoTrac)</h3>
 <p>When rescheduling to a different day, the provider is updated
 automatically to match the provider assigned to the destination
 Standard.</p>
@@ -2014,7 +2048,7 @@ Standard.</p>
 to &gt; match.</p></li>
 </ul>
 <h3 id="ortho-training_manual-multi-single-build-multi-location">Adit OS Ortho Training Manual: 2.5
-Multi-Single Build (Multi-Location)</h3>
+Multi-Single Build (Multi-Location) (OrthoTrac)</h3>
 <table style="width:98%;">
 <colgroup>
 <col style="width: 34%" />
@@ -2063,7 +2097,7 @@ table.</p>
 create or manage availabilities independently - everything is driven by
 Schedule Blocks defined inside Cloud9.</em></p>
 <h3 id="ortho-training_manual-os-configuration-2">Adit OS Ortho Training Manual: 3.1 OS
-Configuration</h3>
+Configuration (Cloud 9)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 29%" />
@@ -2094,7 +2128,7 @@ Schedule Blocks created in Cloud9.</td>
 </tr>
 </tbody>
 </table>
-<h3 id="ortho-training_manual-availabilities-1">Adit OS Ortho Training Manual: 3.2 Availabilities</h3>
+<h3 id="ortho-training_manual-availabilities-1">Adit OS Ortho Training Manual: 3.2 Availabilities (Cloud 9)</h3>
 <ul>
 <li><p>Availabilities in Adit mirror Cloud9 Schedule Blocks exactly.
 Adit &gt; cannot create or edit these.</p></li>
@@ -2109,9 +2143,9 @@ Appointment &gt; Types in a comma-separated list.</p></li>
 <li><p>Provider name is unavailable in Availabilities - Cloud9 does not
 &gt; associate providers with Schedule Blocks.</p></li>
 </ul>
-<h3 id="ortho-training_manual-appointments-2">Adit OS Ortho Training Manual: 3.3 Appointments</h3>
+<h3 id="ortho-training_manual-appointments-2">Adit OS Ortho Training Manual: 3.3 Appointments (Cloud 9)</h3>
 <h3 id="ortho-training_manual-what-can-be-booked">Adit OS Ortho Training Manual: What Can Be
-Booked</h3>
+Booked (Cloud 9)</h3>
 <ul>
 <li><p>Appointments can ONLY be created for Appointment Types associated
 &gt; with Schedule Blocks where 'Allow Online Scheduling' is
@@ -2122,7 +2156,7 @@ enabled.</p></li>
 <li><p>Appointments can be booked up to 28 weeks in the future.</p></li>
 </ul>
 <h3 id="ortho-training_manual-editing-deleting-appointments">Adit OS Ortho Training Manual: Editing
-&amp; Deleting Appointments</h3>
+&amp; Deleting Appointments (Cloud 9)</h3>
 <ul>
 <li>Delete option for appointments: only allows CANCELLATION</li>
 </ul>
@@ -2180,13 +2214,13 @@ Appointment Types mapped to an Appointment Class Schedule Block where
 </table>
 <p>Booking Link Guardian / Responsible Party logic for Cloud9 is
 identical to Dolphin - see Section 1.4 for the full scenario table.</p>
-<h3 id="ortho-training_manual-webforms">Adit OS Ortho Training Manual: 4 | Webforms</h3>
+<h3 id="ortho-training_manual-webforms">Adit OS Ortho Training Manual: 4 | Webforms (Cloud 9)</h3>
 <blockquote>
 <p><strong>📌 Note:</strong> <em>Webforms are NOT available for any
 Orthodontic EHR integration (Dolphin, OrthoTrac, or Cloud9).</em></p>
 </blockquote>
 <h3 id="ortho-training_manual-quick-reference-cheat-sheet">Adit OS Ortho Training Manual: 5 |
-Quick-Reference Cheat Sheet</h3>
+Quick-Reference Cheat Sheet (Cloud 9)</h3>
 <table style="width:97%;">
 <colgroup>
 <col style="width: 36%" />
@@ -2261,8 +2295,8 @@ cancelled)?</td>
 </table>
 <p><em>Adit | Internal Training Document | Confidential</em></p>
 
-<h2 id="lib-ortho-ref-aifd_rulebook">AI Front Desk Webchat and SMS Agent: Ortho EHR Rulebook</h2><p><strong>AI Front Desk Webchat and SMS Agent - Ortho EHR
-Rulebook</strong></p>
+<h2 id="lib-ortho-ref-aifd_rulebook">AI Front Desk Webchat and SMS Agent: Ortho EHR Rulebook</h2><h3 id="ortho-aifd_rulebook-b1">AI Front Desk Webchat and SMS Agent: AI Front Desk Webchat and SMS Agent - Ortho EHR
+Rulebook</h3>
 <p><em>What AI FD can and cannot do per Ortho EHR · for Sales &amp; OB
 scoping · Dolphin / OrthoTrac / Cloud9</em></p>
 <table>
@@ -2363,7 +2397,7 @@ availability isn’t configured.</p></li>
 no soft-cancel / status retention.</p></li>
 </ul>
 <h3 id="ortho-aifd_rulebook-applies-to-all-three-ehrs">AI Front Desk Webchat and SMS Agent: Applies
-to all three EHRs</h3>
+to all three EHRs (Cloud 9)</h3>
 <ul>
 <li><p>Cancellation = hard delete. The slot is removed directly from the
 EHR on cancel; there is no broken/cancelled status to retain. Set Sales
@@ -2374,7 +2408,7 @@ config. Template or Standard gaps can force whole days to NONE - worth
 checking during OB.</p></li>
 </ul>
 <h3 id="ortho-aifd_rulebook-confirm-before-circulating">AI Front Desk Webchat and SMS Agent: Confirm
-before circulating</h3>
+before circulating (Cloud 9)</h3>
 <p>One item below is drawn from prior OS-layer analysis - worth a quick
 check before this goes to Sales/OB:</p>
 <ul>
@@ -2384,35 +2418,35 @@ reschedule path.</li>
 
 <h2 id="lib-ortho-ref-cloud9_notes">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes)</h2><h3 id="ortho-cloud9_notes-ð-cloud9-notes">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): ð¥️ Cloud9
 Notes</h3>
-<p><strong>Cloud9 EHR Scheduler &amp; Online Scheduling</strong></p>
+<h3 id="ortho-cloud9_notes-b1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Cloud9 EHR Scheduler &amp; Online Scheduling</h3>
 <h3 id="ortho-cloud9_notes-provider-list">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Provider
-List</h3>
-<p><strong>Where to find in Cloud9:</strong></p>
+List (Cloud 9)</h3>
+<h3 id="ortho-cloud9_notes-b2">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find in Cloud9:</h3>
 <p>Edit -&gt; Setup -&gt; Employees</p>
 <p><strong>Who should be considered as a provider?</strong><br />
 Type = Doctor</p>
 <h3 id="ortho-cloud9_notes-operatory-chairs-list">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Operatory
-(Chairs) List</h3>
+(Chairs) List (Cloud 9)</h3>
 <p><strong>Where to find in Cloud9:</strong></p>
 <p>Edit -&gt; Setup -&gt; Schedule Views</p>
 <p>You can set up the <strong>operatories</strong>, <strong>location
 hours</strong> <strong>start and end time</strong>, and <strong>time
 intervals here</strong></p>
-<p><strong>Appointment Type List</strong></p>
-<p><strong>Where to find in Cloud9:</strong></p>
+<h3 id="ortho-cloud9_notes-b3">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Appointment Type List (Cloud 9)</h3>
+<h3 id="ortho-cloud9_notes-b4">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find in Cloud9:</h3>
 <p>Edit -&gt; Setup -&gt; Appointment Types</p>
 <ul>
 <li></li>
 </ul>
-<p><strong>Procedure Codes List</strong></p>
-<p><strong>Where to find in Cloud9:</strong></p>
+<h3 id="ortho-cloud9_notes-b5">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Procedure Codes List (Cloud 9)</h3>
+<h3 id="ortho-cloud9_notes-b6">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find in Cloud9:</h3>
 <p>Edit -&gt; Setup -&gt; Codes</p>
-<p><strong>Data Points to Pull for Availability Logic</strong></p>
+<h3 id="ortho-cloud9_notes-b7">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Data Points to Pull for Availability Logic (Cloud 9)</h3>
 <ul>
-<li><p><strong>**Schedule: Appointments**</strong></p></li>
-<li><p><strong>**Schedule: Blockouts/Closures**</strong></p></li>
-<li><p><strong>**Schedule Templates: Operatory Working
-Hours**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b8">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Schedule: Appointments** (Cloud 9)</h3></li>
+<li><h3 id="ortho-cloud9_notes-b9">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Schedule: Blockouts/Closures** (Cloud 9)</h3></li>
+<li><h3 id="ortho-cloud9_notes-b10">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Schedule Templates: Operatory Working
+Hours** (Cloud 9)</h3>
 <ul>
 <li><p>Go to Edit -&gt; Schedule Templates</p>
 <ul>
@@ -2433,8 +2467,8 @@ accept “Appointment Types” (Single) or “Appointment Classes”
 </li>
 </ul></li>
 </ul></li>
-<li><p><strong>**Important Note: Unable to Find Provider Working
-Hours**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b11">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Important Note: Unable to Find Provider Working
+Hours** (Cloud 9)</h3>
 <ul>
 <li><strong>Don’t see any information on:</strong>
 <ul>
@@ -2442,7 +2476,7 @@ Hours**</strong></p>
 <li>How to set provider working hours</li>
 </ul></li>
 </ul></li>
-<li><p><strong>**Other Notes:**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b12">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Other Notes:** (Cloud 9)</h3>
 <ul>
 <li><strong>The Schedule has a feature where you can add “schedule
 notes” with start and end times. Sometimes people will use this to as a
@@ -2452,7 +2486,7 @@ on the schedule</strong></li>
 <li></li>
 </ul></li>
 </ul>
-<p><strong>Questions:</strong></p>
+<h3 id="ortho-cloud9_notes-b13">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Questions: (Cloud 9)</h3>
 <ol type="1">
 <li><p>Can multiple schedule templates be assigned to the same day?</p>
 <ol type="1">
@@ -2471,7 +2505,7 @@ And Providers are also associated to a LOCATION</li>
 <li>??</li>
 </ol></li>
 </ol>
-<p><strong>Need To Do R&amp;D for Scheduling:</strong></p>
+<h3 id="ortho-cloud9_notes-b14">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Need To Do R&amp;D for Scheduling: (Cloud 9)</h3>
 <ul>
 <li><p>Create/Update/Delete Appointments</p></li>
 <li><p>Create/Update/Delete Blockouts</p></li>
@@ -2482,7 +2516,7 @@ back in Cloud9?</li>
 </ul></li>
 <li><p>Can we pull the exact color codes from their EHR?</p></li>
 </ul>
-<p><strong>CLOUD 9 RESOURCES:</strong></p>
+<h3 id="ortho-cloud9_notes-b15">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): CLOUD 9 RESOURCES:</h3>
 <p>Videos: <a
 href="https://cloud9support.planetdds.com/hc/en-us/categories/21590674643355-Training-Videos"
 class="uri">https://cloud9support.planetdds.com/hc/en-us/categories/21590674643355-Training-Videos</a></p>
@@ -2491,14 +2525,14 @@ class="uri">https://cloud9support.planetdds.com/hc/en-us/categories/215906746433
 href="https://cloud9support.planetdds.com/hc/en-us/categories/21150039401755-Setup"
 class="uri">https://cloud9support.planetdds.com/hc/en-us/categories/21150039401755-Setup</a></p>
 <p>---------------------------</p>
-<p><strong>Orthotrac</strong></p>
+<h3 id="ortho-cloud9_notes-b16">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Orthotrac</h3>
 <h2
 id="ortho-cloud9_notes-provider-list-standard-list-chairs-at-location-level"><strong>Provider
 List | Standard List | Chairs (at Location level)</strong></h3>
 <p><strong>Where to find in Orthotrac:</strong> **<br />
 ****Schedule Maintenance -&gt;**</p>
 <h3 id="ortho-cloud9_notes-time-unit-slot">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Time unit |
-Slot</h3>
+Slot (OrthoTrac)</h3>
 <p><strong>Where to find in Orthotrac:</strong> **<br />
 ****Available in a Standard (****add SS****)**</p>
 <h2
@@ -2514,7 +2548,7 @@ within the same day, also practices may have multiple Providers or
 Services and may apply individual Standards for each Provider or Types
 of Service.</p>
 <p><strong>Example of Multiple Standards-&gt;</strong></p>
-<p><strong>How to Set up Multiple Standards-&gt;</strong></p>
+<h3 id="ortho-cloud9_notes-b17">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): How to Set up Multiple Standards-&gt; (OrthoTrac)</h3>
 <ul>
 <li>When applying a Std to a day, there are 3 fields that need to be
 selected -&gt; Office. Std, Provider</li>
@@ -2556,7 +2590,7 @@ Office Name - Adit Loc A</p>
 <p>Std Name - SchedulingStd<br />
 Office Name - Adit Loc B</p>
 <h3 id="ortho-cloud9_notes-other-notes">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Other
-Notes:</h3>
+Notes: (OrthoTrac)</h3>
 <p><strong>How can we show Availability with Standards (same
 Location)?</strong>**<br />
 ****For New Patients:****<br />
@@ -2633,7 +2667,7 @@ Schedules, meaning impact on adoption.</li>
 <li><p>Workaround Solution: Practices can create Block Schedules with
 Appointment Class (parent) and associate multiple Appt Types (child) to
 it.</p></li>
-<li><p><strong>**Adit side changes:**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b18">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Adit side changes:** (OrthoTrac)</h3>
 <ol type="1">
 <li>Closures and Availabilities cannot be created in the Adit app</li>
 <li>Adit Availabilities will mirror the EHR Schedule Blocks</li>
@@ -2656,7 +2690,7 @@ Appt Types such as NP Consults, Adult Exams, Child Exam etc.</li>
 which are associated to an Appt class schedule block (where “Allow
 Online Scheduling” option is enabled)</li>
 </ol></li>
-<li><p><strong>**Appointments in Adit:**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b19">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Appointments in Adit:** (OrthoTrac)</h3>
 <ol type="1">
 <li>When Editing Appts in Adit, the Delete option for appointments will
 only allow to cancel the Appt (Mark as Cancelled option only will be
@@ -2672,7 +2706,7 @@ this Appt from the Adit Scheduler.</li>
 <li><p>Sad</p></li>
 <li></li>
 </ol>
-<p><strong>Booking Link:</strong></p>
+<h3 id="ortho-cloud9_notes-b20">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Booking Link: (OrthoTrac)</h3>
 <p>Guardian in case of Orthodontics is the Responsible Party / Billing
 Party. When collecting information from this screen in the booking link
 for the Resp party, we will not create a Patient profile separately, we
@@ -2715,7 +2749,7 @@ Treatment or identify Leads/follow up requirements. Most Ortho practices
 do not have a Non-Patient status hence we will not disrupt their
 workflow by creating a new status.</p>
 <p>Provider will not be available in availability in Adit</p>
-<p><strong>Appointment in Adit -</strong></p>
+<h3 id="ortho-cloud9_notes-b21">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Appointment in Adit - (OrthoTrac)</h3>
 <p>Delete option in Adit Appt - can only cancel instead of Delete (Mark
 as Cancelled option only will be available)</p>
 <p><strong>if Appt in a Schedule Block is not created within Appt
@@ -2741,7 +2775,7 @@ The Cloud9 integration will not offer Webforms.</p>
 <h1
 id="ortho-cloud9_notes-cloud9-official-integration-migration-plan"><strong>Cloud9
 Official Integration Migration Plan</strong></h3>
-<h3 id="ortho-cloud9_notes-objective">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Objective</h3>
+<h3 id="ortho-cloud9_notes-objective">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Objective (OrthoTrac)</h3>
 <p>Minimize client disruption and validate system stability before a
 full-scale rollout.<br />
 Cloud9 does not provide a staging environment. As a result:</p>
@@ -2759,8 +2793,8 @@ testing in Adit QA account</li>
 id="ortho-cloud9_notes-step-1-pilot-testing-qa-environment"><strong>Step
 1: Pilot Testing (QA Environment)</strong></h3>
 <h3 id="ortho-cloud9_notes-pilot-client-bernstein-ortho">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Pilot
-Client = Bernstein Ortho</h3>
-<h3 id="ortho-cloud9_notes-objectives">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Objectives</h3>
+Client = Bernstein Ortho (OrthoTrac)</h3>
+<h3 id="ortho-cloud9_notes-objectives">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Objectives (OrthoTrac)</h3>
 <ul>
 <li>Validate the Official Cloud9 Integration end-to-end.</li>
 <li><strong>**Execute CRM functionality testing.**</strong></li>
@@ -2769,7 +2803,7 @@ Client = Bernstein Ortho</h3>
 <li>Identify any migration-related issues before production
 rollout.</li>
 </ul>
-<h3 id="ortho-cloud9_notes-process">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Process</h3>
+<h3 id="ortho-cloud9_notes-process">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Process (OrthoTrac)</h3>
 <ol type="1">
 <li>Get the Cloud9 authorization form signed by Bernstein Ortho</li>
 <li>Sync &amp; Configure the Official Cloud9 API build in Adit QA
@@ -2796,7 +2830,7 @@ environment.</li>
 <li><strong>**Verify scalability beyond a single
 Location**</strong></li>
 </ul>
-<h3 id="ortho-cloud9_notes-process-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Process</h3>
+<h3 id="ortho-cloud9_notes-process-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Process (OrthoTrac)</h3>
 <ol type="1">
 <li>Get the signed Cloud9 Authorization Forms from these clients</li>
 <li>Send the authorization forms to Cloud9 to establish API
@@ -2812,7 +2846,7 @@ id="ortho-cloud9_notes-step-3-general-migration-rollout"><strong>Step 3:
 General Migration Rollout</strong></h3>
 <p>Following successful completion of the pilot phases, clients will be
 migrated in batches.</p>
-<h3 id="ortho-cloud9_notes-batch-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Batch 1 -</h3>
+<h3 id="ortho-cloud9_notes-batch-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Batch 1 - (OrthoTrac)</h3>
 <ul>
 <li>Non-VIP clients</li>
 <li>Single location practices</li>
@@ -2826,7 +2860,7 @@ id="ortho-cloud9_notes-objectives-2"><strong>Objectives</strong></h3>
 </ul>
 <hr />
 <h3 id="ortho-cloud9_notes-batch-2-vip-kol-clients">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Batch 2 -
-VIP / KOL Clients</h3>
+VIP / KOL Clients (OrthoTrac)</h3>
 <ul>
 <li>Key Opinion Leaders (KOLs)</li>
 <li>VIP Accounts</li>
@@ -2839,7 +2873,7 @@ id="ortho-cloud9_notes-step-4-multi-single-migration-rollout"><strong>Step
 <p>Multi-Single Official Integration Build Release ETA is <strong>June
 26th</strong></p>
 <h3 id="ortho-cloud9_notes-migration-strategy">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Migration
-Strategy</h3>
+Strategy (OrthoTrac)</h3>
 <p>The Multi-Single migration will follow the same phased approach:</p>
 <p><b><strong>Batch 1</strong></b></p>
 <ul>
@@ -2851,7 +2885,7 @@ Strategy</h3>
 </ul>
 <hr />
 <h3 id="ortho-cloud9_notes-migration-logistics">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Migration
-Logistics</h3>
+Logistics (OrthoTrac)</h3>
 <ul>
 <li>Initial syncs can be performed outside practice business hours,
 Weekend only migrations are not required.</li>
@@ -2878,20 +2912,20 @@ Extension to the Official Integration create data conflicts</p>
 **</p>
 <h3 id="ortho-cloud9_notes-ð-dolphin-notes">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): ð¬ Dolphin
 Notes</h3>
-<p><strong>Dolphin EHR Scheduler &amp; Online Scheduling</strong></p>
-<p><strong>Provider List</strong></p>
-<p><strong>Where to find:</strong></p>
+<h3 id="ortho-cloud9_notes-b22">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Dolphin EHR Scheduler &amp; Online Scheduling</h3>
+<h3 id="ortho-cloud9_notes-b23">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Provider List (Dolphin)</h3>
+<h3 id="ortho-cloud9_notes-b24">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find: (Dolphin)</h3>
 <p>Edit -&gt; Practice -&gt; Employees</p>
 <p>Employee Type = Provider</p>
-<p><strong>Operatory (Chairs) List</strong></p>
-<p><strong>Where to find:</strong></p>
+<h3 id="ortho-cloud9_notes-b25">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Operatory (Chairs) List (Dolphin)</h3>
+<h3 id="ortho-cloud9_notes-b26">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find: (Dolphin)</h3>
 <p>Edit -&gt; Practice -&gt; Locations</p>
 <p>Schedule Columns = How Many Chairs will be created for the
 location</p>
 <p>Start and End Time = The Locations Business Hours</p>
 <p>Slot Unites = The intervals that will be shown on the schedule</p>
-<p><strong>Appointment Type List</strong></p>
-<p><strong>Where to find in Dolphin:</strong></p>
+<h3 id="ortho-cloud9_notes-b27">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Appointment Type List (Dolphin)</h3>
+<h3 id="ortho-cloud9_notes-b28">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find in Dolphin:</h3>
 <p>Edit -&gt; Scheduling -&gt; Appt Types</p>
 <p><strong>Page 863:</strong> <a
 href="https://drive.google.com/file/d/147Rh_M60qVvYIu7X0Urghhr9bbnejwPp/view?usp=sharing"><strong>Dolphin
@@ -2899,15 +2933,15 @@ Management User Guide (1).PDF</strong></a></p>
 <p><strong>Appointment Status L</strong><a
 href="https://drive.google.com/file/d/147Rh_M60qVvYIu7X0Urghhr9bbnejwPp/view?usp=sharing"><strong>Dolphin
 Management User Guide (1).PDF</strong></a><strong>ist</strong></p>
-<p><strong>Where to find in Dolphin:</strong></p>
+<h3 id="ortho-cloud9_notes-b29">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find in Dolphin:</h3>
 <p>Edit -&gt; Scheduling -&gt; Appt Statuses</p>
-<p><strong>Procedure Codes List</strong></p>
-<p><strong>Where to find:</strong></p>
+<h3 id="ortho-cloud9_notes-b30">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Procedure Codes List (Dolphin)</h3>
+<h3 id="ortho-cloud9_notes-b31">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Where to find: (Dolphin)</h3>
 <p>Edit -&gt; Financial -&gt; Code Types</p>
-<p><strong>Data Points to Pull for Availability Logic</strong></p>
+<h3 id="ortho-cloud9_notes-b32">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Data Points to Pull for Availability Logic (Dolphin)</h3>
 <ul>
-<li><p><strong>**Schedule: Appointments**</strong></p></li>
-<li><p><strong>**Schedule: Blockouts/Closures**</strong></p></li>
+<li><h3 id="ortho-cloud9_notes-b33">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Schedule: Appointments** (Dolphin)</h3></li>
+<li><h3 id="ortho-cloud9_notes-b34">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Schedule: Blockouts/Closures** (Dolphin)</h3></li>
 </ul>
 <p>Dolphin has a feature where users can create “Day Notes” on the
 schedule</p>
@@ -2921,7 +2955,7 @@ Management User Guide (1).PDF</a></p>
 <li><strong>**Schedule Templates: Operatory &amp; Provider Working
 Hours**</strong></li>
 </ul>
-<p><strong>Scheduling -&gt; Edit -&gt; Schedule Templates</strong></p>
+<h3 id="ortho-cloud9_notes-b35">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Scheduling -&gt; Edit -&gt; Schedule Templates (Dolphin)</h3>
 <p>Page 1105 <a
 href="https://drive.google.com/file/d/147Rh_M60qVvYIu7X0Urghhr9bbnejwPp/view?usp=sharing">Dolphin
 Management User Guide (1).PDF</a></p>
@@ -2946,7 +2980,7 @@ Management User Guide (1).PDF</a></p>
 <li>Each day can have a separate schedule template applied</li>
 </ul></li>
 </ul>
-<p><strong>Need To Do R&amp;D for Scheduling:</strong></p>
+<h3 id="ortho-cloud9_notes-b36">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Need To Do R&amp;D for Scheduling: (Dolphin)</h3>
 <ul>
 <li><p>Create/Update/Delete Appointments</p></li>
 <li><p>Create/Update/Delete Blockouts</p></li>
@@ -3087,14 +3121,14 @@ href="https://app.asana.com/1/7153196700226/project/1211201621881831/task/121607
 <p>**<br />
 **</p>
 <h3 id="ortho-cloud9_notes-orthotrac">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Orthotrac</h3>
-<p><strong>Orthotrac</strong></p>
+<h3 id="ortho-cloud9_notes-b37">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Orthotrac</h3>
 <h2
 id="ortho-cloud9_notes-provider-list-standard-list-chairs-at-location-level-1"><strong>Provider
 List | Standard List | Chairs (at Location level)</strong></h3>
 <p><strong>Where to find in Orthotrac:</strong> **<br />
 ****Schedule Maintenance -&gt;**</p>
 <h3 id="ortho-cloud9_notes-time-unit-slot-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Time unit |
-Slot</h3>
+Slot (OrthoTrac)</h3>
 <p><strong>Where to find in Orthotrac:</strong> **<br />
 ****Available in a Standard (****add SS****)**</p>
 <h2
@@ -3110,7 +3144,7 @@ within the same day, also practices may have multiple Providers or
 Services and may apply individual Standards for each Provider or Types
 of Service.</p>
 <p><strong>Example of Multiple Standards-&gt;</strong></p>
-<p><strong>How to Set up Multiple Standards-&gt;</strong></p>
+<h3 id="ortho-cloud9_notes-b38">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): How to Set up Multiple Standards-&gt; (OrthoTrac)</h3>
 <ul>
 <li>When applying a Std to a day, there are 3 fields that need to be
 selected -&gt; Office. Std, Provider</li>
@@ -3152,7 +3186,7 @@ Office Name - Adit Loc A</p>
 <p>Std Name - SchedulingStd<br />
 Office Name - Adit Loc B</p>
 <h3 id="ortho-cloud9_notes-other-notes-1">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Other
-Notes:</h3>
+Notes: (OrthoTrac)</h3>
 <p><strong>How can we show Availability with Standards (same
 Location)?</strong>**<br />
 ****For New Patients:****<br />
@@ -3473,7 +3507,7 @@ applied.<br />
 Ans: This will be applied only to that Day (through backend)</p>
 <p>Default the slot view to match with the Standard</p>
 <p>______________________________________________________________________________</p>
-<p><strong>Orthotrac Key OS Changes / Variations / Logic:</strong></p>
+<h3 id="ortho-cloud9_notes-b39">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Orthotrac Key OS Changes / Variations / Logic:</h3>
 <ol type="1">
 <li><p>When enabling OS in Adit for Orthotrac, the
 “<strong><em>Operatory/Provider Hours in EHR</em></strong>” will be
@@ -3723,7 +3757,7 @@ avoid scheduling conflicts (refer: points 4 &amp; 5).<br />
 The webform however will still refer to the “Operatory/Provider Hours”
 AND “Adit App Business Hours” to show availability. Which is why we will
 need to disable the webforms for Orthotrac.</p>
-<p><strong>Decision: Disable Webforms in Ortho</strong></p>
+<h3 id="ortho-cloud9_notes-b40">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Decision: Disable Webforms in Ortho (OrthoTrac)</h3>
 <ol type="1">
 <li><strong>Availability</strong> - when Availability created in the EHR
 is synced from EHR to Adit, the Availability name will be of the Appt
@@ -3741,12 +3775,12 @@ OR Adit</li>
 **</p>
 <h3 id="ortho-cloud9_notes-ð-orthotrac-notes">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): ð¦· Orthotrac
 Notes</h3>
-<p><strong>Orthotrac is Not Worked On Yet</strong></p>
-<p><strong>Coming Soon</strong></p>
+<h3 id="ortho-cloud9_notes-b41">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Orthotrac is Not Worked On Yet</h3>
+<h3 id="ortho-cloud9_notes-b42">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Coming Soon (OrthoTrac)</h3>
 <p>**<br />
 **</p>
 <h3 id="ortho-cloud9_notes-do-not-use-multi-single">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): ⛔ Do Not
-Use (Multi-Single)**</h3>
+Use (Multi-Single)** (OrthoTrac)</h3>
 <p>**</p>
 <h1
 id="ortho-cloud9_notes-online-scheduling-multi-single-build-ortho"><strong>Online
@@ -3757,9 +3791,8 @@ locations.</p>
 <p><a
 href="https://www.figma.com/design/6Zyiez0IGZtr01IyCv0YCe/Orthodontics?node-id=4241-9&amp;t=NqXztqbPFlgJFgEH-1">Figma</a>
 for combined scheduled view</p>
-<p><strong>Online Scheduling</strong></p>
-<p>Ortho practices book New Patient Exams. E.g. Depew Ortho using
-Rooster Grin</p>
+<h3 id="ortho-cloud9_notes-b43">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Online Scheduling (OrthoTrac)</h3>
+<p>Ortho practices book New Patient Exams.</p>
 <p>In Adit, For practices to allow patients to book in respective
 locations based on real-time availability, they would need to do the
 following:</p>
@@ -3775,13 +3808,13 @@ mirror the location.</p></li>
 <li><p>We will show those operatories as closed when the staff is NOT at
 that location using Adit availabilities.</p></li>
 </ul>
-<p><strong>Product Requirement:</strong></p>
+<h3 id="ortho-cloud9_notes-b44">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Product Requirement: (OrthoTrac)</h3>
 <p>The final page of the Booking link has the Address.<br />
 Add a Check box to toggle Hide / Show the address details (refer
 Figma)</p>
-<p><strong>Notes:</strong></p>
+<h3 id="ortho-cloud9_notes-b45">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): Notes: (OrthoTrac)</h3>
 <ul>
-<li><p><strong>**Map in Booking link**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b46">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Map in Booking link** (OrthoTrac)</h3>
 <ul>
 <li>Encourage Practices to disable Map from booking link settings (for
 multiple locations synced to 1 Adit Location)</li>
@@ -3798,12 +3831,12 @@ practices, for e.g. “<strong>New Patient Child</strong>” or
 “<strong>Start Consult</strong>” or “<strong>Exam 40</strong>” (no
 change needed)</li>
 </ul></li>
-<li><p><strong>**Would we need Tx Codes?**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b47">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Would we need Tx Codes?** (OrthoTrac)</h3>
 <ul>
 <li>TX codes are added to the Treatment Card, not in the Appointments
 (no change needed)</li>
 </ul></li>
-<li><p><strong>**Do we need to show providers?**</strong></p>
+<li><h3 id="ortho-cloud9_notes-b48">Online Scheduling and Schedule Build for Ortho (Cloud 9 notes): **Do we need to show providers?** (OrthoTrac)</h3>
 <ul>
 <li>The Schedule View is by Operatories - There is a provider filter
 however it works the same way as in the Adit Patients Module &gt;
@@ -3812,59 +3845,74 @@ Scheduled view<br />
 </ul></li>
 </ul>
 
-<h2 id="lib-ortho-ref-orthotrac_ob">OrthoTrac Training for OB</h2><p><strong>Orthotrac Training</strong></p>
-<p><strong>Orthotrac</strong></p>
+<h2 id="lib-ortho-ref-orthotrac_ob">OrthoTrac Training for OB</h2><h3 id="ortho-orthotrac_ob-b1">OrthoTrac Training for OB: Orthotrac Training</h3>
+<h3 id="ortho-orthotrac_ob-b2">OrthoTrac Training for OB: Orthotrac</h3>
 <ol type="1">
 <li><strong>Schedule Maintenance screen:</strong><br />
-****</li>
+<strong><code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image1.webp" alt="OrthoTrac Training for OB"></code></strong></li>
 </ol>
-<p><strong><code>Standards Applied to Day(s):</code></strong></p>
-<p><strong><code>On Clicking a Std on a day, the Schedule opens up - Appts inside the Standard:</code></strong></p>
-<p><strong><code>Duration of an Appt in Units (when Creating Appts):</code></strong></p>
+<h3 id="ortho-orthotrac_ob-b3">OrthoTrac Training for OB: Standards Applied to Day(s): (OrthoTrac)</h3>
+<p>``</p>
+<p><strong><code>On Clicking a Std on a day, the Schedule opens up - Appts inside the Standard:</code></strong><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image3.webp" alt="OrthoTrac Training for OB"></code></p>
+<p><strong><code>Duration of an Appt in Units (when Creating Appts):</code></strong><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image4.webp" alt="OrthoTrac Training for OB"></code></p>
 <p><strong><code>Creating a Standard:</code></strong></p>
-<p><strong><code>Adding a Standard to a Day:</code></strong></p>
-<p><strong>Adit</strong></p>
+<p><code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image5.webp" alt="OrthoTrac Training for OB"></code></p>
+<p><code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image6.webp" alt="OrthoTrac Training for OB"></code></p>
+<h3 id="ortho-orthotrac_ob-b4">OrthoTrac Training for OB: Adding a Standard to a Day:
+
+Adit (OrthoTrac)</h3>
 <ul class="task-list">
 <li><p><label><input
 type="checkbox" /><strong><code>Adit can handle only 1 Standard (MVP phase) per day - per location</code></strong>
-<code>currently. We will be working on a build to handle multiple standards in the next phase.</code></label></p></li>
+<code>currently. We will be working on a build to handle multiple standards in the next phase.</code><br />
+``</label></p></li>
 <li><p><label><input
 type="checkbox" /><strong><code>Availabilities in Adit:</code></strong><br />
-<code>“Closures” and “Availabilities” in Adit can be created only within the working hours of the Standard applied in the EHR on that day. Meaning, if the Standard Start and End times are 9AM-5PM, the Availabilities in Adit can be only applied within 9AM-5PM.</code></label></p></li>
+<code>“Closures” and “Availabilities” in Adit can be created only within the working hours of the Standard applied in the EHR on that day. Meaning, if the Standard Start and End times are 9AM-5PM, the Availabilities in Adit can be only applied within 9AM-5PM.</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image9.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><strong><code>Recurring Closure or Availability</code></strong>
-<code>in the Adit App will NOT be available for Orthotrac. This is because different days can have different Standards applied.</code></label></p></li>
+<code>in the Adit App will NOT be available for Orthotrac. This is because different days can have different Standards applied.</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image10.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><code>Users will be able to create Closure &amp; Availabilities in the Adit App for any day if the slots, chairs &amp; working hours are available to create the Closure/Availability on that day.</code></label></p></li>
 <li><p><label><input
-type="checkbox" /><code>The Provider names in the Availability will be of the Provider associated to the Standard (only 1 option will be available)</code></label></p></li>
+type="checkbox" /><code>The Provider names in the Availability will be of the Provider associated to the Standard (only 1 option will be available)</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image11.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><code>Users cannot Move Closures and Availabilities for Orthotrac.</code><br />
 <code>In Orthotrac moving a Closure or Availability creates a new EHR_ID which limits syncing it back to the EHR</code></label></p></li>
 <li><p><label><input
-type="checkbox" /><code>Users will only have a Create and a Delete option for Closures and Availabilities. Edit Option is not available</code></label></p></li>
+type="checkbox" /><code>Users will only have a Create and a Delete option for Closures and Availabilities. Edit Option is not available</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image12.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><strong><code>Availability Name</code></strong>
 <code>- When an availability is created in the EHR and synced to Adit, the Availability Name in Adit will be set to the Appointment Type name.</code><br />
 <code>For Availabilities created in Adit, the name of the Availability will be retained in Adit however when this syncs to the EHR, the Availability will be created in the EHR using the Appointment Type name.</code></label></p></li>
 <li><p><label><input
 type="checkbox" /><strong><code>Appointments in Adit:</code></strong><br />
-<code>When creating Appointments in the Adit app, the Appt End time will be default selected based on the “unit” of the Appt. This will be an uneditable field. This is because the appointment duration is based on units and can differ based on slots in the Standards applied.</code></label></p></li>
+<code>When creating Appointments in the Adit app, the Appt End time will be default selected based on the “unit” of the Appt. This will be an uneditable field. This is because the appointment duration is based on units and can differ based on slots in the Standards applied.</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image13.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
-type="checkbox" /><code>In Orthotrac Appointment &amp; Service time duration will be based on units rather than fixed time. E.g. if Slot is of 10 mins and the Appt has 3 units, this will book the Appt time for 30 mins (10 x 3)</code></label></p></li>
+type="checkbox" /><code>In Orthotrac Appointment &amp; Service time duration will be based on units rather than fixed time. E.g. if Slot is of 10 mins and the Appt has 3 units, this will book the Appt time for 30 mins (10 x 3)</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image14.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><code>Users can move / reschedule Appts in Adit within the same day as well as on different days even if the Standards are different across the days.</code><br />
-<code>For days where Standards are not available in the EHR - we will show a validation message.</code></label></p></li>
+<code>For days where Standards are not available in the EHR - we will show a validation message.</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image15.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><code>If Appt is being moved to another day and the start time on that day is later than appt time - e.g. Std2 starts at 10:00AM, appt is 9:30AM in Std1, the slots would appear from 10:00AM.</code></label></p></li>
 <li><p><label><input
-type="checkbox" /><code>If The Operatory/Chair the Appt is being moved to is not available on a different day - Only the Chairs available on that day’s Standard will appear in the dropdown.</code></label></p></li>
+type="checkbox" /><code>If The Operatory/Chair the Appt is being moved to is not available on a different day - Only the Chairs available on that day’s Standard will appear in the dropdown.</code><br />
+<code><img src="/api/guides/doc-img/ortho/orthotrac_ob_image16.webp" alt="OrthoTrac Training for OB"></code></label></p></li>
 <li><p><label><input
 type="checkbox" /><code>While rescheduling an Appt in the Adit app to a different day, we will update the provider to match the provider in the Standard the Appt is being moved to.</code></label></p></li>
 </ul>
 
-<h2 id="lib-ortho-ref-contact_status">Contact Number and Patient Status: Ortho EHRs</h2><p><strong>DOLPHIN</strong></p>
-<p><strong>Contact Number in Dolphin:</strong></p>
+<h2 id="lib-ortho-ref-contact_status">Contact Number and Patient Status: Ortho EHRs</h2><h3 id="ortho-contact_status-b1">Contact Number and Patient Status: DOLPHIN</h3>
+<h3 id="ortho-contact_status-b2">Contact Number and Patient Status: Contact Number in Dolphin:</h3>
 <ul class="task-list">
 <li><label><input type="checkbox" />1st criteria - Pull the number in
 the EHR that has “Use for SMS” checked regardless of the number type (in
@@ -3882,8 +3930,8 @@ checked, pull the contact number based on the latest addition to the EHR
 </ul>
 <p><strong>Patient Status (Active / Inactive):</strong><br />
 ****</p>
-<hr />
-<p><strong>if “This is an Active Patient” checkbox is Checked = Active
+<p>** <img src="/api/guides/doc-img/ortho/contact_status_image4.webp" alt="Contact Number and Patient Status: Ortho EHRs"> **<br />
+<strong>if “This is an Active Patient” checkbox is Checked = Active
 Patient in Adit</strong><br />
 <strong>if “This is an Active Patient” checkbox is Unchecked = Inactive
 Patient in Adit</strong></p>
@@ -3900,14 +3948,15 @@ Patient</strong>” checkbox mapping</li>
 </ul>
 <p><strong>Communication Logs:</strong><br />
 ****</p>
-<hr />
-<hr />
+<p>** <img src="/api/guides/doc-img/ortho/contact_status_image6.webp" alt="Contact Number and Patient Status: Ortho EHRs"> **<br />
+** <img src="/api/guides/doc-img/ortho/contact_status_image7.webp" alt="Contact Number and Patient Status: Ortho EHRs"> **</p>
 <p><strong>Cloud9:</strong><br />
 <strong>Contact Number in Cloud9:</strong><br />
 We pull the mobile number as per the ranking. If there are 2 numbers
 available in the Patient profile Rank#1 &amp; Rank#2, Adit pulls the
 number in Rank#1.</p>
 <hr />
+<p><img src="/api/guides/doc-img/ortho/contact_status_image8.webp" alt="Contact Number and Patient Status: Ortho EHRs"></p>
 <ul>
 <li><p><label><input type="checkbox" />****</label></p></li>
 <li><p><label><input type="checkbox" />****</label></p></li>
@@ -3917,7 +3966,7 @@ number in Rank#1.</p>
 <li><p>[ ]</p></li>
 </ul>
 <p><strong>Communication Logs (Cloud9):</strong><br />
-****</p>
+** <img src="/api/guides/doc-img/ortho/contact_status_image10.webp" alt="Contact Number and Patient Status: Ortho EHRs"> **</p>
 <p><strong>Orthotrac:</strong></p>
 <p><strong>Condition:</strong> Adit has a Priority assigned to the phone
 types (<strong>Priority = Mobile &gt; Cell &gt; Mom’s Cell &gt; Dad’s
@@ -4133,10 +4182,11 @@ for multiple locations<br />
 <li><p>If Sales wants to create multiple deals in CRM they can, this
 would however be treated as Multiple Adit locations instead of a single
 location in Adit</p></li>
-<li><p><strong>Process for linking Multiple locations to a Single Adit
-Location:-</strong></p>
+<li><h3 id="ortho-multiloc_sales-b1">Multi-Location PMS into Single Adit Location: Process for linking Multiple locations to a Single Adit
+Location:-</h3>
 <p>AE would choose the Multiple Locations = “Yes” in the pre-agreement
-form</p>
+form<br />
+<img src="/api/guides/doc-img/ortho/multiloc_sales_image1.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"></p>
 <blockquote>
 <blockquote>
 <blockquote>
@@ -4150,7 +4200,8 @@ form</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<p>AE would link PMS locations to the Primary location</p></li>
+<p>AE would link PMS locations to the Primary location<br />
+<img src="/api/guides/doc-img/ortho/multiloc_sales_image2.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"></p></li>
 </ul>
 <p>⬇️</p>
 <p>This would create 1 deal in the CRM, “<em>EHR Locations Linked</em>”
@@ -4166,7 +4217,7 @@ E.g. -</p>
 <h2
 id="ortho-multiloc_sales-understanding---single-patient-database-setup-in-the-pms"><strong>Understanding
 - Single Patient Database setup in the PMS</strong></h3>
-<p><strong>How does a singular patient database work?</strong></p>
+<h3 id="ortho-multiloc_sales-b2">Multi-Location PMS into Single Adit Location: How does a singular patient database work?</h3>
 <ol type="1">
 <li><p>Patient data in the PMS is Centralized</p></li>
 <li><p>This means that all patient information - Demographics, Forms,
@@ -4196,41 +4247,51 @@ access both locations in the PMS through the same login</td>
 </tbody>
 </table>
 <hr />
-<p><strong>Screenshots of PMS</strong></p>
-<p><strong>Orthotrac Location view -</strong></p>
-<p><strong>Dolphin Location view -</strong></p>
-<hr />
-<p><strong>Cloud9 Location view -</strong></p>
-<hr />
-<p><strong>Officemate Location view -</strong></p>
+<h3 id="ortho-multiloc_sales-b3">Multi-Location PMS into Single Adit Location: Screenshots of PMS</h3>
+<h3 id="ortho-multiloc_sales-b4">Multi-Location PMS into Single Adit Location: Orthotrac Location view -</h3>
+<p><img src="/api/guides/doc-img/ortho/multiloc_sales_image5.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"></p>
+<h3 id="ortho-multiloc_sales-b5">Multi-Location PMS into Single Adit Location: Dolphin Location view -</h3>
+<p>** <img src="/api/guides/doc-img/ortho/multiloc_sales_image6.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"> **</p>
+<h3 id="ortho-multiloc_sales-b6">Multi-Location PMS into Single Adit Location: Cloud9 Location view -</h3>
+<p>** <img src="/api/guides/doc-img/ortho/multiloc_sales_image7.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"> **</p>
+<h3 id="ortho-multiloc_sales-b7">Multi-Location PMS into Single Adit Location: Officemate Location view - (Cloud 9)</h3>
+<p><img src="/api/guides/doc-img/ortho/multiloc_sales_image8.webp" alt="Multi-Location PMS into Single Adit Location: Sales Guide"></p>
 
-<h2 id="lib-ortho-ref-multiloc_os">Multi-Location PMS into Single Adit Location: Online Scheduling</h2><p><strong><code>Online Scheduling (Multi-Single) Build</code></strong></p>
+<h2 id="lib-ortho-ref-multiloc_os">Multi-Location PMS into Single Adit Location: Online Scheduling</h2><h3 id="ortho-multiloc_os-b1">Multi-Location PMS into Single Adit Location: Online Scheduling (Multi-Single) Build</h3>
 <p><code>The Adit scheduler would show appointments across all locations based on the operatories selected. Operatories would be associated with locations.</code></p>
 <p><code>[Figma](https://www.figma.com/design/6Zyiez0IGZtr01IyCv0YCe/Orthodontics?node-id=4241-9&amp;t=NqXztqbPFlgJFgEH-1) for combined scheduled view</code></p>
-<p><strong><code>Online Scheduling</code></strong></p>
-<p><code>Ortho practices book New Patient Exams.</code></p>
+<h3 id="ortho-multiloc_os-b2">Multi-Location PMS into Single Adit Location: Online Scheduling</h3>
+<p><code>Ortho practices book New Patient Exams.</code><br />
+``</p>
 <p><code>In Adit, For practices to allow patients to book in respective locations based on real-time availability, they would need to do the following:</code></p>
 <ul>
-<li><p><code>Practices would need to label the location in the services. (ex: New Patient Consult - Location 1, New Patient Consult - Location 2)</code></p>
+<li><p><code>Practices would need to label the location in the services. (ex: New Patient Consult - Location 1, New Patient Consult - Location 2)</code><br />
+<code><img src="/api/guides/doc-img/ortho/multiloc_os_image2.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p>
 <ul>
-<li><p><code>Associate these services to those specific operatories based on the location association.</code></p></li>
-<li><p><code>When patients go to the booking link, we would show the real-time availability based on the Operatory availability. The Operatories would mirror the location.</code></p></li>
-<li><p><code>We will show those operatories as closed when the staff is NOT at that location using Adit availabilities.</code></p></li>
+<li><p><code>Associate these services to those specific operatories based on the location association.</code><br />
+<code><img src="/api/guides/doc-img/ortho/multiloc_os_image3.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p></li>
+<li><p><code>When patients go to the booking link, we would show the real-time availability based on the Operatory availability. The Operatories would mirror the location.</code><br />
+<code><img src="/api/guides/doc-img/ortho/multiloc_os_image4.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p></li>
+<li><p><code>We will show those operatories as closed when the staff is NOT at that location using Adit availabilities.</code><br />
+<code><img src="/api/guides/doc-img/ortho/multiloc_os_image5.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p>
+<p><code><img src="/api/guides/doc-img/ortho/multiloc_os_image6.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p>
+<p><code><img src="/api/guides/doc-img/ortho/multiloc_os_image7.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p></li>
 </ul></li>
 </ul>
 <p><strong><code>Hide Address on Thank You Page in Booking Link</code></strong><br />
 <code>The final page of the Booking link has the Address. In the case of Practices on the Multi-Single build, this will always default to the Primary Location’s address.</code><br />
-<code>Practices can choose to Hide or Show the address details as per their preference by checking or unchecking this box.</code></p>
+<code>Practices can choose to Hide or Show the address details as per their preference by checking or unchecking this box.</code><br />
+<code><img src="/api/guides/doc-img/ortho/multiloc_os_image8.webp" alt="Multi-Location PMS into Single Adit Location: Online Scheduling"></code></p>
 
-<h2 id="lib-ortho-ref-multisingle_ob">Multi-Single Build: Onboarding Guide</h2><p><strong>Multi-Single Build (Onboarding Guide)</strong></p>
+<h2 id="lib-ortho-ref-multisingle_ob">Multi-Single Build: Onboarding Guide</h2><h3 id="ortho-multisingle_ob-b1">Multi-Single Build: Multi-Single Build (Onboarding Guide)</h3>
 <h1
-id="ortho-multisingle_ob-chrome-extension-cloud-9-for-locations-which-are-on-the-new-multi-single-location-build-meaning-an-adit-location-is-created-specifically-to-combine-multiple-pms-locations-to-1-adit-location-will-need-to-download-the-cloud-9-cnms-chrome-extension-for-locations-which-are-not-on-the-multi-single-location-build-continue-using-the-existing-chrome-extns."><strong>Chrome
+id="ortho-multisingle_ob-chrome-extension-cloud-9-for-locations-which-are-on-the-new-multi-single-location-build-meaning-an-adit-location-is-created-specifically-to-combine-multiple-pms-locations-to-1-adit-location-will-need-to-download-the-cloud-9-cnms-chrome-extension-imgimage1-for-locations-which-are-not-on-the-multi-single-location-build-continue-using-the-existing-chrome-extns."><strong>Chrome
 Extension (Cloud 9)</strong> For locations which are on the new
 multi-single location build, meaning an Adit location is created
 specifically to combine multiple PMS locations to 1 Adit location, will
-need to download the cloud 9 CNMS chrome extension **** For Locations
-which are not on the multi-single location build, continue using the
-existing Chrome Extns.</h3>
+need to download the cloud 9 CNMS chrome extension ** <img src="/api/guides/doc-img/ortho/multisingle_ob_image1.webp" alt="Multi-Single Build: Onboarding Guide"> **
+For Locations which are not on the multi-single location build, continue
+using the existing Chrome Extns.</h3>
 <h1
 id="ortho-multisingle_ob-server-ehr-clients-for-locations-which-are-on-the-new-multi-single-location-build-meaning-an-adit-location-is-created-specifically-to-combine-multiple-pms-locations-to-1-adit-location---the-sync-app-specific-to-the-multi-single-location-build-will-need-to-be-installed-in-the-clients-server"><strong>Server
 EHR Clients</strong> For locations which are on the new multi-single
@@ -4291,7 +4352,8 @@ Operatory Advance Filter. For e.g. Chair1_Austin belongs to the Austin
 Location. They can input the Location name manually in the text specific
 to a location.<br />
 For this, the Practice will need to rename the Chair/Operatory name to
-identify with a Location in their PMS</p>
+identify with a Location in their PMS<br />
+<img src="/api/guides/doc-img/ortho/multisingle_ob_image2.webp" alt="Multi-Single Build: Onboarding Guide"></p>
 <p><strong>How do we set up Recalls?</strong><br />
 For Recalls Adit refers to the due date available in the PMS. This will
 not be available by Location. The Practice can (i) manually add the
@@ -4320,7 +4382,8 @@ Operatory Advance Filter. For e.g. Chair1_Austin belongs to the Austin
 Location. They can input the Location name manually in the text specific
 to a location.<br />
 For EHRs where this is not yet available (Ortho), we are working on this
-to see if Auto-Assign can be enabled.</p>
+to see if Auto-Assign can be enabled.<br />
+<img src="/api/guides/doc-img/ortho/multisingle_ob_image3.webp" alt="Multi-Single Build: Onboarding Guide"></p>
 <h1
 id="ortho-multisingle_ob-what-happens-if-the-client-already-onboarded-with-a-singlemultiple-locations-but-needs-a-multi-single-build-both-server-cloud"><strong>What
 happens if the Client already Onboarded with a single/multiple locations

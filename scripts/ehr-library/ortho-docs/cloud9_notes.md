@@ -1097,7 +1097,7 @@ The Adit scheduler would show appointments across all locations based on the ope
 
 **Online Scheduling** 
 
-Ortho practices book New Patient Exams. E.g. Depew Ortho using Rooster Grin  
+Ortho practices book New Patient Exams.  
   
   
 In Adit, For practices to allow patients to book in respective locations based on real-time availability, they would need to do the following:
