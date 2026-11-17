@@ -20,7 +20,7 @@ describe('Adit Pay daily report (Batch 362)', () => {
     const r = await d.sessions('2026-11-13', ['a@x.com', 'b@x.com']);
     // Batch 371: short recorded calls tagged training, ticket follow-ups and untagged meetings are not sessions
     expect(r['a@x.com']).toMatchObject({ training: 1, total: 1 });
-    expect(r['a@x.com'].skipped.map((x) => x.why)).toEqual(['phone call, not a booked session', 'phone call, not a booked session', 'phone call, not a booked session']);
+    expect(r['a@x.com'].skipped.map((x) => x.why)).toEqual(['phone call, not a booked session', 'phone call, not a booked session']); // the plain support call is not listed
     expect(r['b@x.com']).toMatchObject({ training: 1, demo: 1, total: 2 });
     expect(r['b@x.com'].skipped.map((x) => x.why)).toEqual(['ticket follow-up', 'ticket follow-up', 'not a demo or training']);
     expect(sql).not.toMatch(/SELECT[^]*organizer_email[^]*FROM/i.test(sql.split('FROM')[0]) ? /x^/ : /x^/);
