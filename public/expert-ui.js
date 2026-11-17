@@ -20,6 +20,7 @@
     book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
     ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 5v12" stroke-dasharray="2 2"/>',
     phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+    mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
     rule: '<path d="M6 4h12v16l-6-4-6 4z"/>', news: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/>',
     up: '<path d="M7 11v9H4v-9zM7 11l4-7c1.3 0 2.3 1 2 2.4L12.5 10H18a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"/>',
     down: '<path d="M7 13V4H4v9zM7 13l4 7c1.3 0 2.3-1 2-2.4L12.5 14H18a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 16.8 4H7"/>',
@@ -257,12 +258,32 @@
       });
     }
     function paintRecent() { clear(recBox); var r = store.get('recent', []); if (!r.length) recBox.appendChild(h('p', { class: 'ax-muted', text: 'Nothing yet.' })); r.slice(0, 6).forEach(function (q) { recBox.appendChild(h('button', { type: 'button', text: q, onclick: function () { input.value = q; submit(); } })); }); }
+    // Batch 381: the biggest themes in your team's tickets today, as questions to try.
+    var todayBox = h('div', { class: 'ax-today', hidden: true });
+    function loadToday(tries) {
+      ctx.api('/api/guides/expert/top-today').then(function (r) {
+        if (!r || !r.items || !r.items.length) return;
+        clear(todayBox); todayBox.hidden = false;
+        var when = r.live ? (r.hours > 24 ? 'from the last 3 days of your team\'s tickets' : 'from your team\'s tickets today') : 'common questions for your team';
+        todayBox.appendChild(h('p', { class: 'ax-today-hd' }, [r.live ? 'Top issues today' : 'Try one of these', h('small', { text: when })]));
+        todayBox.appendChild(h('div', { class: 'ax-ex' }, r.items.map(function (x) { return h('button', { type: 'button', class: 'ax-excard', onclick: function () { input.value = x.q; submit(); } }, [h('span', { class: 'ax-extag', text: (x.topic || x.module || 'Today') + (r.live && x.n ? ' · ' + x.n + ' ticket' + (x.n === 1 ? '' : 's') : '') }), h('span', { text: x.q })]); })));
+        if (r.building && (tries || 0) < 3) setTimeout(function () { loadToday((tries || 0) + 1); }, 45000);
+      }).catch(function () {});
+    }
+    loadToday(0);
+    // Batch 381: the welcome tour in the tool puts a sample question in the box (never sends it).
+    window.addEventListener('message', function (e) {
+      if (e.origin !== location.origin || !e.data || e.data.type !== 'ax-prefill' || typeof e.data.q !== 'string') return;
+      if (location.hash && !/^#ask/.test(location.hash)) location.hash = 'ask';
+      input.value = e.data.q.slice(0, 600); input.dispatchEvent(new Event('input')); try { input.focus(); } catch (er) {}
+    });
     function heroPaint() {
       clear(intro); intro.hidden = S.thread.length > 0;
       var n = S.meta ? S.meta.articles : 369;
       intro.appendChild(h('div', { class: 'ax-hero-tx' }, [h('span', { class: 'ax-eyebrow' }, [icon('spark'), 'Adit Expert']), h('h1', { text: 'Ask anything about Adit, for any client scenario' }),
         h('p', { text: 'Answers come from ' + n + ' Help Center articles, the VoIP and AI guides, your team\'s rules, and how the team solved similar tickets, chats and calls. A second AI double-checks every answer against those sources.' })]));
       intro.appendChild(workloadPicker());
+      intro.appendChild(todayBox);
       intro.appendChild(h('div', { class: 'ax-ex' }, EXAMPLES.map(function (e) { return h('button', { type: 'button', class: 'ax-excard', onclick: function () { input.value = e[0]; submit(); } }, [h('span', { class: 'ax-extag', text: e[1] }), h('span', { text: e[0] })]); })));
     }
     function reset(keepFocus) {
@@ -296,16 +317,55 @@
       return { el: box, stop: function () { clearInterval(tm); } };
     }
     var TKRE = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i;
+    // Batch 381: the channel picker is a set of tiles. Each says what you get back, has a number key (1 to 4), and
+    // arrow keys move between them. The channel the question hints at is marked Suggested, the last one you used
+    // is marked Last used, and Esc puts the question back in the box to edit.
+    var CHAN = [
+      { k: 'call', ic: 'phone', t: 'On a call', d: 'A talk track to read out, plus the checks to do while they wait' },
+      { k: 'email', ic: 'mail', t: 'Ticket (email)', d: 'A ready to send email reply, plus a private note for the ticket' },
+      { k: 'chat', ic: 'chat', t: 'Live chat', d: 'Short messages to paste, one step at a time' },
+      { k: 'answer', ic: 'spark', t: 'Just for me', d: 'The answer and steps for you, no client message' }];
+    function hintChannel(q) {
+      var s = String(q || '').toLowerCase();
+      if (/\b(on the (phone|line|call)|calling|called (in|us)|caller|call(ing)? (in|back)|is on hold|talk track)\b/.test(s)) return 'call';
+      if (/\b(chat(ting)?|live chat|messag(e|ing) (us|in the app))\b/.test(s)) return 'chat';
+      if (/\b(e-?mail(ed)?|reply to (the|this) ticket|ticket reply|wrote (in|to us))\b/.test(s)) return 'email';
+      if (/^(how (do|does|can) (i|we)|what is|what does|why (do|does|is)|where (do|is)|can (i|we))\b/.test(s.trim())) return 'answer';
+      return '';
+    }
     function askChannel(q) {
       var old = thread.querySelector('.ax-pick'); if (old) old.remove();
       intro.hidden = true;
-      var opts = MODES.concat([['answer', 'Just answer me', 'An answer for you, without a client message']]);
-      var box = h('div', { class: 'ax-card ax-pick', role: 'group', 'aria-label': 'Where is the client?' }, [
-        h('p', { class: 'ax-pick-q', text: 'Where is the client, so the reply fits?' }),
-        h('p', { class: 'ax-pick-sub', text: q.length > 140 ? q.slice(0, 140) + '...' : q }),
-        h('div', { class: 'ax-row' }, opts.map(function (m) { return h('button', { type: 'button', class: 'gd-btn' + (m[0] === 'answer' ? '' : ' primary'), title: m[2], onclick: function () { box.remove(); S.mode = m[0] === 'answer' ? 'answer' : m[0]; paintModes(); submit(q); } }, [m[1]]); }))]);
+      var hint = hintChannel(q), last = store.get('lastChan', '');
+      var pick = function (k) { store.set('lastChan', k); box.remove(); S.mode = k; paintModes(); submit(q); };
+      var tiles = CHAN.map(function (c, i) {
+        var tags = [];
+        if (c.k === hint) tags.push(h('span', { class: 'ax-chan-tag sug', text: 'Suggested' }));
+        else if (c.k === last) tags.push(h('span', { class: 'ax-chan-tag', text: 'Last used' }));
+        return h('button', { type: 'button', role: 'radio', 'aria-checked': 'false', class: 'ax-chan-t' + (c.k === 'answer' ? ' me' : '') + (c.k === hint ? ' sug' : ''), 'data-k': c.k, 'aria-keyshortcuts': String(i + 1), onclick: function () { pick(c.k); } }, [
+          h('span', { class: 'ax-chan-ic' }, [icon(c.ic)]),
+          h('span', { class: 'ax-chan-tx' }, [h('b', { text: c.t }), h('span', { text: c.d })]),
+          h('span', { class: 'ax-chan-side' }, tags.concat([h('kbd', { text: String(i + 1) })]))]);
+      });
+      var grid = h('div', { class: 'ax-chan-grid', role: 'radiogroup', 'aria-label': 'How should Expert reply?' }, tiles);
+      var editB = h('button', { type: 'button', class: 'ax-mini', title: 'Put the question back in the box (Esc)', onclick: function () { cancel(); } }, [icon('edit', 'sm'), h('span', { text: 'Edit question' })]);
+      var box = h('div', { class: 'ax-card ax-pick ax-chan', role: 'group', 'aria-label': 'Where is the client?' }, [
+        h('div', { class: 'ax-chan-hd' }, [h('span', { class: 'ax-chan-badge' }, [icon('spark', 'sm')]), h('div', null, [h('p', { class: 'ax-pick-q', text: 'Where is the client, so the reply fits?' }), h('p', { class: 'ax-pick-sub', text: 'Expert keeps this channel for the rest of the conversation. You can switch any time below the answer.' })]), h('span', { class: 'ax-sp' }), editB]),
+        h('blockquote', { class: 'ax-chan-q', title: q, text: q.length > 220 ? q.slice(0, 220) + '...' : q }),
+        grid,
+        h('p', { class: 'ax-chan-keys', text: 'Press 1 to 4, or use the arrow keys and Enter.' })]);
+      function cancel() { box.remove(); input.value = q; if (!S.thread.length) intro.hidden = false; input.focus(); }
+      box.addEventListener('keydown', function (e) {
+        if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+        var n = Number(e.key); if (n >= 1 && n <= CHAN.length) { e.preventDefault(); pick(CHAN[n - 1].k); return; }
+        if (e.key === 'Escape') { e.preventDefault(); cancel(); return; }
+        var at = tiles.indexOf(document.activeElement); if (at < 0) return;
+        var mv = { ArrowRight: 1, ArrowDown: 2, ArrowLeft: -1, ArrowUp: -2 }[e.key];
+        if (mv) { e.preventDefault(); var to = at + mv; if (to < 0) to += tiles.length; tiles[to % tiles.length].focus(); }
+      });
       thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
-      var first = box.querySelector('button'); if (first) first.focus();
+      var start = tiles.filter(function (t) { return t.getAttribute('data-k') === (hint || last); })[0] || tiles[0];
+      start.focus({ preventScroll: true });
     }
     function didYouMean(q, c) {
       var old = thread.querySelector('.ax-pick'); if (old) old.remove(); intro.hidden = true;

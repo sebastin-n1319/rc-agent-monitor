@@ -238,6 +238,7 @@ html.widget .gd-nav button{padding:0 10px;font-size:13px}
 .ax.folded .ax-new span,.ax.folded .ax-rail>:not(.ax-rail-top){display:none} /* Batch 249: everything below the two buttons, scheduled questions included */
 .ax-col{max-width:1180px}
 .ax.folded .ax-col{max-width:1240px}
+@media (max-width:820px){.ax.folded{grid-template-columns:1fr}} /* Batch 381: the folded rail is hidden on phones, so the conversation takes the full width */
 @media (prefers-reduced-motion:reduce){.ax{transition:none}}
 
 /* Possible outage banner (Batch 186) */
@@ -738,6 +739,37 @@ html.ax-full .ax-cbar{top:0}
 .ax-pick{display:flex;flex-direction:column;gap:8px}
 .ax-pick-q{margin:0;font-weight:600;color:var(--t1)}
 .ax-pick-sub{margin:0;font-size:12.5px;color:var(--t3)}
+/* Batch 381: channel picker tiles */
+.ax-chan{gap:14px;padding:18px}
+.ax-chan-hd{display:flex;align-items:flex-start;gap:12px}
+.ax-chan-hd .ax-pick-q{font-size:15px}
+.ax-chan-badge{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--accent-soft);color:var(--accent-ink)}
+.ax-chan-q{margin:0;padding:10px 14px;border-left:3px solid var(--accent);border-radius:0 10px 10px 0;background:var(--surface-2);color:var(--t1);font-size:13.5px;line-height:1.5;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ax-chan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ax-chan-t{position:relative;display:flex;align-items:flex-start;gap:12px;min-height:72px;padding:12px 14px;text-align:left;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--t1);font:inherit;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s,background .15s}
+.ax-chan-t:hover{border-color:var(--accent);box-shadow:var(--shadow-2);transform:translateY(-1px)}
+.ax-chan-t:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-color:var(--accent)}
+.ax-chan-t.sug{border-color:var(--accent);background:var(--accent-soft)}
+.ax-chan-t.me{border-style:dashed}
+.ax-chan-ic{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--surface-3);color:var(--accent-ink)}
+.ax-chan-t.sug .ax-chan-ic{background:var(--surface)}
+.ax-chan-ic svg{width:18px;height:18px}
+.ax-chan-tx{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.ax-chan-tx b{font-size:14px;font-weight:600}
+.ax-chan-tx span{font-size:12.5px;line-height:1.4;color:var(--t2)}
+.ax-chan-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.ax-chan-side kbd{min-width:22px;padding:1px 6px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:6px;background:var(--surface-2);font:600 11px/18px inherit;color:var(--t2);text-align:center}
+.ax-chan-tag{padding:1px 8px;border-radius:999px;background:var(--surface-3);color:var(--t2);font-size:10.5px;font-weight:600;white-space:nowrap}
+.ax-chan-tag.sug{background:var(--accent);color:var(--on-accent)}
+.ax-chan-keys{margin:0;font-size:12px;color:var(--t3)}
+@media (max-width:640px){.ax-chan-grid{grid-template-columns:1fr}.ax-chan-keys{display:none}.ax-chan-hd .ax-mini span{display:none}}
+@media (prefers-reduced-motion:reduce){.ax-chan-t{transition:none}.ax-chan-t:hover{transform:none}}
+/* Batch 381: today's top issues for your team */
+.ax-today{margin:20px 0 4px}
+.ax-today-hd{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.ax-today-hd small{font-weight:500;letter-spacing:0;text-transform:none}
+.ax-today .ax-excard{border-color:var(--accent-soft)}
+.ax-today .ax-extag{color:var(--accent-ink)}
 .ax-rechan{margin-top:10px;align-items:center;flex-wrap:wrap;gap:6px}
 /* Batch 240: analyst-style ticket review (verdict, findings, cluster, limits) */
 .ax-tk-verdict{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 4px;font-size:14px;line-height:1.45;color:var(--t1)}

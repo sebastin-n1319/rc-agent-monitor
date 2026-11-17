@@ -678,6 +678,24 @@ body.ct-lock{overflow:hidden}
 .ct-btn{padding:9px 18px;border-radius:10px;border:1px solid var(--tka-border,#cfdbe5);background:var(--tka-surface,#fff);color:var(--tka-t1,#0b2233);font:500 13.5px 'Poppins',sans-serif;cursor:pointer}
 .ct-btn.primary{background:var(--tka-teal,#0b8f8e);border-color:var(--tka-teal,#0b8f8e);color:#fff}
 .ct-btn:disabled{opacity:.45;cursor:not-allowed}
+/* Batch 381: welcome tour (Expert and Breaks) */
+.ct-dots{flex-wrap:wrap;min-width:0}
+.ct-dots.many{gap:3px}.ct-dots.many i{width:5px;height:5px}.ct-dots.many i.on{width:14px}
+.ct-lanes{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.ct-lanes li{display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:baseline;font-size:12.5px;line-height:1.4;color:var(--tka-t2,#37506a)}
+.ct-lanes b{font-size:12px;color:var(--tka-t1,#0b2233)}
+.ct-lanes em{font-style:normal;font-weight:600;color:var(--tka-teal,#0b8f8e)}
+.ct-q{margin:0;padding:8px 10px;border-left:3px solid var(--tka-teal,#0b8f8e);border-radius:0 8px 8px 0;background:var(--tka-surface,#fff);font-size:13px;line-height:1.45;color:var(--tka-t1,#0b2233)}
+.ct-ans{margin:0;font-size:12.5px;line-height:1.5;color:var(--tka-t2,#37506a)}
+.ct-ans-steps{margin:2px 0 0;padding-left:18px;font-size:12.5px;line-height:1.45;color:var(--tka-t2,#37506a)}
+.ct-ans-steps li{margin:2px 0}
+.ct-wait{font-size:12.5px;color:var(--tka-t3,#6b7f8e);font-style:italic}
+.ct-mini{align-self:flex-start;padding:5px 10px;border-radius:8px;border:1px solid var(--tka-teal,#0b8f8e);background:var(--tka-surface,#fff);color:var(--tka-teal,#0b8f8e);font:500 12px 'Poppins',sans-serif;cursor:pointer}
+.ct-mini[aria-pressed="true"]{background:var(--tka-teal,#0b8f8e);color:#fff}
+.ct-qpick{display:flex;flex-direction:column;gap:6px}
+.ct-qpick button{text-align:left;padding:7px 10px;border-radius:8px;border:1px solid var(--tka-border,#cfdbe5);background:var(--tka-surface,#fff);color:var(--tka-t1,#0b2233);font:400 12.5px/1.4 'Poppins',sans-serif;cursor:pointer}
+.ct-qpick button[aria-pressed="true"]{border-color:var(--tka-teal,#0b8f8e);box-shadow:inset 3px 0 0 var(--tka-teal,#0b8f8e)}
+.ct-mini:focus-visible,.ct-qpick button:focus-visible{outline:2px solid var(--tka-teal,#0b8f8e);outline-offset:2px}
 .ct-btn:focus-visible{outline:2px solid var(--tka-teal,#0b8f8e);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.ct-card.in,.ct-ring{animation:none;transition:none}}
 

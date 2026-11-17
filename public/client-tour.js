@@ -58,7 +58,82 @@
     if (kind === 'qarule') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-guide' }, [h('small', { text: 'THE RULE THE AI WILL FOLLOW' }),
       h('p', { text: 'A missing survey pitch is never fatal. On first contact resolution calls the agent closed, mark Call Closing missed.' })]),
       h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-chip on', text: 'Confirm rule' }), h('span', { class: 'ct-chip', text: 'Not right, explain more' })])]);
+    if (kind === 'lanes') return h('div', { class: 'ct-sample' }, [h('ul', { class: 'ct-lanes' }, [
+      ['BRB', 'A quick step away, like water or the restroom.', 'BRB Out, then BRB In'],
+      ['Break', 'Your planned break.', 'Break Out, then Break In'],
+      ['Training', 'Training or a coaching session with your lead.', 'Training Out, then In'],
+      ['QA AUX', 'An audit review or calibration session.', 'QA Session Out, then In'],
+      ['Internal', 'An internal call or team huddle.', 'Internal Calls Out, then In']].map(function (l) { return h('li', null, [h('b', { text: l[0] }), h('span', null, [l[1] + ' ', h('em', { text: l[2] })])]); }))]);
+    if (kind === 'compose') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-guide' }, [
+      h('small', { text: 'TYPE THE QUESTION' }), h('p', { class: 'ct-q', text: isPay() ? 'Practice says the payout from last Friday has not reached their bank.' : 'Patients say they are not getting appointment reminder texts.' }),
+      h('small', { text: 'OR PASTE A TICKET NUMBER' }), h('p', { class: 'ct-q', text: '#412345   (Expert reads the ticket, the earlier tickets and the account)' })]),
+      h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag', text: 'Attach a screenshot' }), h('span', { class: 'ct-tag', text: 'Mic' }), h('span', { class: 'ct-tag', text: 'Auto, Fast or Thinking' })])]);
+    if (kind === 'channel') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-row' }, [['1', 'On a call', 'call'], ['2', 'Ticket (email)', 'email'], ['3', 'Live chat', 'chat'], ['4', 'Just for me', 'me']].map(function (c) {
+      var on = isPay() ? (c[2] === 'call' || c[2] === 'email') : c[2] === 'email';
+      return h('span', { class: 'ct-chip' + (on ? ' on' : ''), text: c[0] + '  ' + c[1] });
+    })), h('div', { class: 'ct-s-guide' }, [h('small', { text: 'WHAT YOU GET' }), h('p', { text: 'Call: a talk track to read out. Email: a ready to send reply. Chat: short messages. Just for me: the answer and steps only.' })])]);
+    if (kind === 'anatomy') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-row' }, ['Answer', 'Steps', 'What to say or send', 'Check first', 'Owner', 'Screenshots', 'Sources'].map(function (t, i) { return h('span', { class: 'ct-chip' + (i < 3 ? ' on' : ''), text: t }); })),
+      h('div', { class: 'ct-s-guide' }, [h('small', { text: 'PRIVATE NOTE' }), h('p', { text: 'Anything only you should see (internal steps, known issues) stays in a private note, never in the client reply.' })])]);
+    if (kind === 'after') return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-row' }, ['Ask a follow-up', 'For call', 'For email', 'Thumbs up or down', 'Share', 'Refresh answer'].map(function (t, i) { return h('span', { class: 'ct-chip' + (i === 0 ? ' on' : ''), text: t }); }))]);
+    var tm = /^today(\d)$/.exec(kind || '');
+    if (tm) return todaySample(Number(tm[1]));
+    if (kind === 'pickq') return pickSample();
     return null;
+  }
+  // Batch 381: welcome tour helpers. The sample questions are the biggest themes in the person's own team's tickets today.
+  function isPay() { return window.__ws === 'aditpay' || document.body.classList.contains('ws-aditpay'); }
+  var CHANS = [['email', 'Ticket (email)'], ['call', 'On a call'], ['answer', 'Just for me']];
+  T.prefill = '';
+  function loadToday() {
+    if (T._todayP) return T._todayP;
+    T._todayP = api('/api/guides/expert/top-today').then(function (r) {
+      if (r && r.success && r.items && r.items.length) { T.today = r; if (r.building || r.items.some(function (x) { return !x.answer; })) setTimeout(function () { T._todayP = null; }, 20000); }
+      else T._todayP = null;
+      return T.today;
+    }).catch(function () { T._todayP = null; return T.today; });
+    return T._todayP;
+  }
+  function prefillBtn(q) {
+    var b = h('button', { type: 'button', class: 'ct-mini', 'aria-pressed': String(T.prefill === q), onclick: function () { T.prefill = T.prefill === q ? '' : q; b.setAttribute('aria-pressed', String(T.prefill === q)); b.textContent = T.prefill === q ? 'Waiting in Expert after the tour' : 'Put this in Expert after the tour'; } });
+    b.textContent = T.prefill === q ? 'Waiting in Expert after the tour' : 'Put this in Expert after the tour';
+    return b;
+  }
+  function todaySample(n) {
+    var d = T.today, x = d && d.items && d.items[n];
+    if (!x) return h('div', { class: 'ct-sample' }, [h('p', { class: 'ct-wait', text: 'Loading today’s questions for your team...' })]);
+    var ch = CHANS[n % CHANS.length], a = x.answer;
+    var head = (d.live ? 'TOP ISSUE ' + (n + 1) + (d.hours > 24 ? ' THIS WEEK' : ' TODAY') : 'COMMON QUESTION ' + (n + 1)) + (x.topic ? ' · ' + x.topic.toUpperCase() : '') + (d.live && x.n ? ' · ' + x.n + ' TICKET' + (x.n === 1 ? '' : 'S') : '');
+    return h('div', { class: 'ct-sample' }, [h('div', { class: 'ct-s-guide' }, [
+      h('small', { text: head }),
+      h('small', { text: '1. YOU TYPE' }), h('p', { class: 'ct-q', text: x.q }),
+      h('small', { text: '2. YOU PICK' }), h('div', { class: 'ct-s-row' }, CHANS.map(function (c) { return h('span', { class: 'ct-chip' + (c === ch ? ' on' : ''), text: c[1] }); })),
+      h('small', { text: '3. EXPERT ANSWERS (SHORT VERSION)' }),
+      a && a.text ? h('p', { class: 'ct-ans', text: a.text }) : h('p', { class: 'ct-wait', text: 'Expert is still preparing today’s answer. Ask it yourself after the tour to see the full answer, with the reply written for your channel.' }),
+      a && a.steps && a.steps.length ? h('ol', { class: 'ct-ans-steps' }, a.steps.map(function (s) { return h('li', { text: s }); })) : null,
+      a && a.sources ? h('small', { text: 'BASED ON ' + a.sources + ' SOURCE' + (a.sources === 1 ? '' : 'S') + ', CHECKED BY A SECOND AI' }) : null]),
+      prefillBtn(x.q)]);
+  }
+  function pickSample() {
+    var d = T.today; if (!d || !d.items) return null;
+    var box = h('div', { class: 'ct-qpick', role: 'group', 'aria-label': 'Question to have ready in Expert' });
+    function paint() {
+      box.replaceChildren(h('small', { text: 'HAVE ONE READY IN EXPERT (OPTIONAL)' }));
+      d.items.forEach(function (x) { box.appendChild(h('button', { type: 'button', 'aria-pressed': String(T.prefill === x.q), text: x.q, onclick: function () { T.prefill = T.prefill === x.q ? '' : x.q; paint(); } })); });
+    }
+    paint();
+    return h('div', { class: 'ct-sample' }, [box]);
+  }
+  function onBreaks() { var p = document.getElementById('agent-section-breakbot'); if (!p || p.offsetParent === null) goBreaks(); }
+  function goBreaks() { try { if (typeof sbAgent === 'function') sbAgent('breakbot', document.getElementById('sb-agent-breakbot')); } catch (e) {} }
+  // After the tour: open Expert and put the chosen question in its box (it is not sent).
+  function openPrefill() {
+    var q = T.prefill; T.prefill = ''; if (!q) return;
+    goGuides();
+    var n = 0, tm = setInterval(function () {
+      var fr = document.querySelector('#agent-section-guides iframe');
+      try { if (fr && fr.contentDocument && fr.contentDocument.querySelector('.ax-comp textarea')) { fr.contentWindow.postMessage({ type: 'ax-prefill', q: q }, location.origin); clearInterval(tm); return; } } catch (e) {}
+      if (++n > 25) clearInterval(tm);
+    }, 800);
   }
   // Admins and named reviewers can replay the QA tour from the profile menu once they can see Teach AI.
   function canTeach() { var el = document.getElementById('sb-agent-qateach'); return !!(el && !el.classList.contains('ap-hidden')) || (typeof currentRole !== 'undefined' && currentRole === 'admin'); }
@@ -109,10 +184,35 @@
     { title: 'Call QA: check and correct', text: 'Call QA shows every AI audit with the transcript and the AI\u2019s reasons. If the AI got an item wrong, correct it and write why. Corrections teach it too.', target: '#sb-agent-callqa', side: 'right' },
     { title: 'Be specific and consistent', text: 'Teach the rule you actually apply, not the exception. Give numbers where they matter (for example how many seconds is dead air). Never paste a caller\u2019s phone number or email into an answer.', last: true }
   ];
+  // Batch 381: first sign-in tour for every agent (T1 and Adit Pay): pages, Breaks in detail, and Adit Expert in detail
+  // with three questions taken from the person's own team's tickets today.
+  var WX_STEPS = [
+    { title: 'Welcome to the tool', mark: 'WELCOME', text: function () { return 'This tour takes about 5 minutes. It shows where your pages are, how to log your shift and breaks, and how to get answers from Adit Expert, using real questions from ' + (isPay() ? 'the Adit Pay team’s' : 'your team’s') + ' tickets today. Each step pauses briefly so you have time to read it.'; } },
+    { title: 'Your pages', target: visibleSidebar, side: 'right', text: 'Everything you can open is in the sidebar. Home is your day at a glance, Breaks is your shift log, My Stats has your numbers, Tkt Alerts has ticket alerts and Client lookup, Updates has product and process news, Tests has your assessments, and Expert answers your questions.' },
+    { title: 'Your profile menu', target: '#hmMe', side: 'bottom', text: 'Click your name to replay this tour or any other, search the whole tool, see keyboard shortcuts, turn on dark mode or sign out.' },
+    { title: 'Breaks: your shift log', target: '#sb-agent-breakbot', side: 'right', text: 'Breaks (Break Bot) is where you log your shift: when you start, each time you step away, and when you finish. Your lead and the team see it live, so keep it accurate.' },
+    { title: 'Step 1: start with Logged In', before: goBreaks, target: '[data-break-action="LOGGED_IN"]', side: 'right', text: 'Every shift starts here. Until you press Logged In, every other button stays locked. Press it once when you are at your desk and ready to take work.' },
+    { title: 'Your status at a glance', before: onBreaks, target: '.bbn-status-card', side: 'bottom', text: 'This card shows the lane you are in (Logged In, BRB, Break and so on), since when, and what you can do next. If you press a button that is not allowed in your lane, the tool tells you which one to use instead.' },
+    { title: 'Stepping away: Out, then In', before: onBreaks, target: '.break-actions', side: 'right', sample: 'lanes', text: 'Each away lane has an Out button and an In button. Press Out when you leave and In as soon as you are back. You can move straight from one lane to another, for example from BRB to Break, without coming back first.' },
+    { title: 'Your daily break budget', before: onBreaks, target: '.bbn-budget-section', side: 'bottom', text: 'Today’s Break Budget fills as you use it: BRB has 10 minutes a day and Break has 30 minutes a day. Training, QA and internal call time is tracked separately and does not use your break budget.' },
+    { title: 'scrin.io keeps it in step', before: onBreaks, target: '#break-self-status', side: 'bottom', text: 'If scrin.io shows you away or offline while you are logged in, the tool moves you to Away (scrin.io) by itself. Start tracking in scrin.io again and you go back to Logged In automatically. Keep scrin.io running for your whole shift.' },
+    { title: 'Floor Signal and your log', before: onBreaks, target: '.bbn-right', side: 'bottom', text: 'Floor Signal shows who on your team is live or away right now. Your Break Log lists every button you pressed today with the time, so you can check your day.' },
+    { title: 'End of shift: Logged Out', before: onBreaks, target: '[data-break-action="LOGGED_OUT"]', side: 'right', text: 'When your shift ends, press Logged Out. You may be asked to leave a handoff note for the next shift. If you missed a button during the day, let your lead know.' },
+    { title: 'Meet Adit Expert', target: '#sb-agent-guides', side: 'right', text: function () { return 'Expert answers questions about every Adit product for any client situation. It reads the Help Center, the internal guides, your team’s rules and how similar tickets, chats and calls were solved, and a second AI checks every answer.' + (isPay() ? ' For the Adit Pay team it looks at Adit Pay first.' : ''); } },
+    { title: 'Ask it the way the client said it', before: goGuides, sample: 'compose', text: 'Type or paste what the client asked, in their words. Or paste a ticket number or a Desk link: Expert reads the ticket, the client’s earlier tickets and the account, then suggests the next step. You can attach a screenshot or a file, or use the mic.' },
+    { title: 'Pick where the client is', sample: 'channel', text: function () { return 'Without a ticket number, Expert asks where the client is so the reply fits. Press 1 to 4 or click a tile. With a ticket number, it uses the ticket’s channel by itself.' + (isPay() ? ' Your team works calls and tickets, so you will mostly pick On a call or Ticket (email).' : ''); } },
+    { title: 'How every answer is laid out', sample: 'anatomy', text: 'Each answer has the same parts: a short answer, the steps, what to say or send, what to check first, who owns it if it has to go further, and the sources it used. Screenshots from the guides appear when they help, and each part has a copy button.' },
+    { title: 'Try it: today’s top issue 1', sample: 'today0', text: 'This is one of the biggest themes in your team’s tickets today. Here is what you would type, the channel you would pick, and a short version of what Expert answered.' },
+    { title: 'Try it: today’s top issue 2', sample: 'today1', text: 'A second theme from today. Notice the answer gives steps you can follow while the client waits.' },
+    { title: 'Try it: today’s top issue 3', sample: 'today2', text: 'A third one. When you ask it yourself, the answer is written for the channel you pick, ready to say or send.' },
+    { title: 'Follow up, switch and rate', sample: 'after', text: 'Ask a follow-up in the same box; Expert keeps the conversation. Need it for another channel? Use For call or For email under the answer. Thumbs up or down teaches it, and with a thumbs down say what was wrong. Share copies a link for a colleague.' },
+    { title: 'Use it well', last: true, sample: 'pickq', text: 'Confirm details with the client before you act, and open the linked source for anything unusual. Never share internal notes, outages or app issues with clients. If Expert is not sure, it says so: follow the process and ask your lead. You can pick one of today’s questions to have it ready in Expert.' }
+  ];
   var TOURS = [
+    { id: 'welcome-expert', title: 'Expert and Breaks', blurb: 'Your shift log and how to use Adit Expert', icon: 'guides', agent: true, noQa: true, page: 'sb-agent-guides', steps: WX_STEPS, ack: ' I understand how to log my shift and breaks and how to use Adit Expert', toast: 'You are all set. Replay this tour any time from your profile menu.', after: openPrefill, prep: loadToday },
     { id: 'qa-teach', title: 'Teach the AI (QA)', blurb: 'What the QA role does and the daily task', icon: 'guides', agent: true, qa: true, steps: QA_STEPS, ack: ' I understand my daily Teach the AI task', toast: 'Teach AI is ready. About 30 minutes a day.' },
     { id: 'client-lookup', title: 'Client lookup', blurb: 'Find a client before you answer', icon: 'lookup', agent: true, noQa: true, steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
-    { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, page: 'sb-agent-guides', steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
+    { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, noPay: true, page: 'sb-agent-guides', steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
     { id: 'getting-around', title: 'Getting around', blurb: 'Header, profile menu and sidebar', icon: 'header', optional: true, steps: HD_STEPS, toast: 'Tour finished. Replay it any time from your profile menu.' }
   ];
 
@@ -120,11 +220,12 @@
     if (T.running || document.getElementById('ct-root')) return;
     T.running = true;
     var STEPS = tour.steps, ID = tour.id;
+    if (tour.prep) { try { tour.prep(); } catch (e) {} }
     var i = 0, timer = null;
     var ring = h('div', { class: 'ct-ring' });
     var back = h('div', { class: 'ct-back' });
     var title = h('h2', { id: 'ct-t' }), text = h('p', { class: 'ct-text' }), extra = h('div', { class: 'ct-extra' });
-    var dots = h('div', { class: 'ct-dots', 'aria-hidden': 'true' }, STEPS.map(function () { return h('i'); }));
+    var dots = h('div', { class: 'ct-dots' + (STEPS.length > 12 ? ' many' : ''), 'aria-hidden': 'true' }, STEPS.map(function () { return h('i'); }));
     var ack = h('input', { type: 'checkbox', id: 'ct-ack' });
     var ackRow = h('label', { class: 'ct-ack', for: 'ct-ack' }, [ack, tour.ack || ' I understand']);
     var err = h('p', { class: 'ct-err', role: 'alert' });
@@ -165,7 +266,9 @@
       var s = STEPS[i];
       clearTimeout(timer);
       if (s.before) { try { s.before(); } catch (e) {} }
-      title.textContent = s.title; text.textContent = s.text; extra.replaceChildren(); var sm = s.sample ? sample(s.sample) : null; if (sm) extra.appendChild(sm);
+      title.textContent = typeof s.title === 'function' ? s.title() : s.title; text.textContent = typeof s.text === 'function' ? s.text() : s.text; extra.replaceChildren(); var sm = s.sample ? sample(s.sample) : null; if (sm) extra.appendChild(sm);
+      // Batch 381: today's questions arrive after the tour opens; fill the sample in when they do.
+      if (s.sample && /^(today\d|pickq)$/.test(s.sample) && tour.prep) { var at = i; Promise.resolve(tour.prep()).then(function () { if (i !== at || !document.getElementById('ct-root')) return; var again = sample(s.sample); extra.replaceChildren(); if (again) extra.appendChild(again); place(); }); }
       card.querySelector('.ct-count').textContent = 'Step ' + (i + 1) + ' of ' + STEPS.length;
       Array.prototype.forEach.call(dots.children, function (d, n) { d.className = n === i ? 'on' : n < i ? 'past' : ''; });
       prev.style.visibility = i ? 'visible' : 'hidden';
@@ -195,6 +298,7 @@
       clearTimeout(timer); clearInterval(watch); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place);
       root.remove(); document.body.classList.remove('ct-lock'); T.running = false;
       if (completed) { try { if (typeof showToast === 'function') showToast(tour.toast, 'success'); } catch (e) {} }
+      if (completed && tour.after) { try { tour.after(); } catch (e) {} }
       if (then) setTimeout(then, 1200);
     }
     window.addEventListener('resize', place);
@@ -209,7 +313,7 @@
     show();
   }
 
-  T.list = function () { return TOURS.filter(function (t) { return isQa() ? !t.noQa : (!t.qa || canTeach()); }).map(function (t) { return { id: t.id, title: t.title, blurb: t.blurb, icon: t.icon, steps: t.steps.length, status: true }; }); };
+  T.list = function () { return TOURS.filter(function (t) { return (!t.noPay || !isPay()) && (isQa() ? !t.noQa : (!t.qa || canTeach())); }).map(function (t) { return { id: t.id, title: t.title, blurb: t.blurb, icon: t.icon, steps: t.steps.length, status: true }; }); };
   T.status = function (id) { return api('/api/tours/' + id + '/status').then(function (r) { return !!(r && r.success && r.done); }); };
   // Replay from the profile menu: can be closed at any time. Agent tours open agent view first.
   T.replay = function (id) {
@@ -239,6 +343,7 @@
       // The QA tour runs for the QA role only; agent-only tours are skipped for it.
       if (TOURS[k].qa && !isQa()) return next(k + 1);
       if (TOURS[k].noQa && isQa()) return next(k + 1);
+      if (TOURS[k].noPay && isPay()) return next(k + 1);
       // Batch 269: skip a tour whose page this person cannot open (it bounced them between pages). It runs once the page is given to them.
       if (TOURS[k].page) { var pg = document.getElementById(TOURS[k].page); if (!pg || pg.classList.contains('ap-hidden')) return next(k + 1); }
       api('/api/tours/' + TOURS[k].id + '/status').then(function (r) {

@@ -2414,6 +2414,10 @@ const expertErr = (res, e, msg) => res.status(e.status || 500).json({ success: f
 app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
   try { const ex = expertMod(); res.json({ success: true, ...ex.meta(), popular: await ex.popular(), ai: require('./lib/ai').anyConfigured() }); } catch (e) { expertErr(res, e, 'Could not load'); }
 });
+// Batch 381: today's top issues for the person's team (T1 or Adit Pay) as sample questions, with a short answer each.
+app.get('/api/guides/expert/top-today', requireAuth, (req, res) => {
+  try { res.json({ success: true, ...require('./lib/expert-today').get(req.workspace === 'aditpay' ? 'aditpay' : 't1') }); } catch (e) { expertErr(res, e, 'Could not load'); }
+});
 app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {}, ai = require('./lib/ai');
