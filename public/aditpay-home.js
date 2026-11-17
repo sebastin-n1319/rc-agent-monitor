@@ -154,7 +154,9 @@
       var KL = { training: 'Training / walkthrough', demo: 'Demo / sign-up', meeting: 'Calendar meeting' };
       var rows = j.people.map(function (p, i) {
         var c = p.calls, s = p.sessions || {};
-        var list = (s.list || []).map(function (m) { var t = new Date(m.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); return '<li>' + esc(t) + ' CT · ' + esc(KL[m.kind] || m.kind) + (m.onCall ? ' (call)' : '') + ': ' + esc(m.title || 'Meeting') + (m.practice ? ' · ' + esc(m.practice) : '') + (m.minutes ? ' · ' + m.minutes + ' min' : '') + '</li>'; }).join('');
+        var list = (s.list || []).map(function (m) { var t = new Date(m.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); return '<li>' + esc(t) + ' CT · ' + esc(KL[m.kind] || m.kind) + (m.onCall ? ' (call)' : '') + ': ' + esc(m.title || 'Meeting') + (m.practice ? ' · ' + esc(m.practice) : '') + (m.minutes ? ' · ' + m.minutes + ' min' : '') + '</li>'; }).join('')
+          // Batch 371: what Avoma had that was not counted (ticket follow-ups, short calls), so the number can be checked
+          + (s.skipped || []).map(function (m) { var t = new Date(m.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); return '<li style="opacity:.6">' + esc(t) + ' CT · Not counted (' + esc(m.why) + '): ' + esc(m.title || 'Meeting') + (m.minutes ? ' · ' + m.minutes + ' min' : '') + '</li>'; }).join('');
         var sp = c && c.split; // Batch 363: incoming split into queue calls and calls straight to the person's own number or ext
         var qs = sp ? Object.keys(sp.byQueue || {}).map(function (q) { return esc(q) + ' ' + sp.byQueue[q]; }).join(', ') : '';
         return '<tr><td><b>' + esc(p.name) + '</b>' + (sp && sp.ext ? '<small>Ext ' + esc(sp.ext) + '</small>' : '') + (p.tracked ? '' : '<small>Not in Manage Agents yet, so no calls</small>') + '</td>' +
@@ -164,7 +166,7 @@
           '<td><button type="button" class="aph-copy" data-i="' + i + '">Copy for Chat</button></td></tr>' +
           (list ? '<tr class="aph-sub"><td colspan="6"><ul>' + list + '</ul></td></tr>' : '');
       }).join('');
-      box.innerHTML = '<div class="aph-dh"><div><h3>Team daily report</h3><p class="sub">Calls from RingCentral (queue and direct calls; callbacks the person dials count as outgoing), sessions from Avoma (Google Calendar, Calendly bookings and recorded calls), tickets from Ticket Lifecycle</p></div>' +
+      box.innerHTML = '<div class="aph-dh"><div><h3>Team daily report</h3><p class="sub">Calls from RingCentral (queue and direct calls; callbacks the person dials count as outgoing), demos and trainings from Avoma (booked sessions and recorded calls of 30 minutes or more; ticket follow-ups are not sessions), tickets from Ticket Lifecycle</p></div>' +
         '<input type="date" class="aph-date" max="' + today + '" value="' + esc(j.date) + '" aria-label="Report date"></div>' +
         (j.sessionsOk ? '' : '<p class="aph-note">Avoma meetings could not be read just now, so sessions show 0.</p>') +
         (j.people.length ? '<table class="aph-t"><thead><tr><th>Person</th><th>Calls handled</th><th>Demos / training</th><th>New tickets</th><th>Follow-ups</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' : '<div class="aph-empty">No Adit Pay people yet. Add them in Manage Agents and Access Control.</div>');
