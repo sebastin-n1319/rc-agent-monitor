@@ -2550,7 +2550,7 @@ app.get('/api/admin/expert-eval', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').latest())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async (req, res) => {
-  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks', 'plan'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 // Batch 339: a lead answers a knowledge gap once (saved as an Expert team note), or dismisses it
 app.post('/api/admin/expert-eval/gap', requireAdmin, rateLimit(20, 60000), async (req, res) => {
