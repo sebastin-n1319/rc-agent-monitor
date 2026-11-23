@@ -286,15 +286,27 @@
   function tasksFor(email) { return (_tasks && _tasks.ok && _tasks.byEmail && _tasks.byEmail[String(email || '').toLowerCase()]) || null; }
   function hm(iso) { return shortTime(Date.parse(iso)); }
   function meetName(m, own) { return own && m.title ? m.title : m.kind; }
-  // One line on each card: the meeting now (or the video call app), the next one today, and open tasks.
+  // Each kind of call has its own colour, so a demo, a training, a ticket call and a follow-up read apart at a glance.
+  var KIND_CLS = { 'Demo': 'demo', 'Training': 'train', 'Walkthrough': 'walk', 'Ticket call': 'tick', 'Follow-up': 'fol', 'Client call': 'cli', 'Internal': 'int', 'Meeting': 'int' };
+  function kindChip(k, extra) { return `<span class="lf-k lf-k-${KIND_CLS[k] || 'int'}">${e(k)}${extra ? ' ' + e(extra) : ''}</span>`; }
+  function genuine(m) { return m && m.kind !== 'Internal' && m.kind !== 'Meeting'; }
+  // How many of each kind of call are still to come today (the one in progress counts).
+  function leftToday(m) {
+    const c = {}; ((m && m.list) || []).filter(genuine).forEach(x => { c[x.kind] = (c[x.kind] || 0) + 1; });
+    return Object.keys(KIND_CLS).filter(k => c[k]).map(k => `<span class="lf-k lf-k-${KIND_CLS[k]}"><b>${c[k]}</b> ${e(k)}</span>`);
+  }
+  // One line on each card: the call now (or the video call app), the next one, what else is left today by kind, and Asana tasks.
   function calLine(email, own) {
     if (!isPay()) return '';
     const m = meetFor(email), v = videoNow(m), t = tasksFor(email), parts = [];
-    if (m && m.now) parts.push(`<span class="lf-cal-now" title="${e((own && m.now.title ? m.now.title + ' · ' : '') + 'Google Calendar, from Avoma')}">Now <b>${e(m.now.kind)}</b> to ${e(hm(m.now.end))}</span>`);
+    const full = (x) => (own && x.title ? x.title + ' · ' : '') + x.kind + ' ' + hm(x.start) + ' to ' + hm(x.end);
+    if (m && m.now) parts.push(`<span class="lf-cal-now" title="${e(full(m.now) + ' · Google Calendar, from Avoma')}">Now ${kindChip(m.now.kind, m.now.ticket ? '#' + m.now.ticket : '')} <span class="lf-dim">to ${e(hm(m.now.end))}</span></span>`);
     else if (v) parts.push(`<span class="lf-cal-now" title="Seen in scrin.io ${e(hm(v.at))}">On <b>${e(v.app)}</b></span>`);
-    if (m && m.next) parts.push(`<span title="${e((own && m.next.title ? m.next.title + ' · ' : '') + 'Google Calendar, from Avoma')}">Next <b>${e(m.next.kind)}</b> ${e(hm(m.next.start))}</span>`);
-    if (!parts.length && _meet) parts.push('<span class="lf-dim">No meetings left today</span>');
-    if (t && t.open) parts.push(`<span title="Open tasks in the Adit Pay Asana project">Tasks <b class="lf-mono">${t.open}</b>${t.overdue ? ` <span class="lf-neg">${t.overdue} overdue</span>` : ''}</span>`);
+    if (m && m.next) parts.push(`<span title="${e(full(m.next) + ' · Google Calendar, from Avoma')}">Next ${kindChip(m.next.kind, m.next.ticket ? '#' + m.next.ticket : '')} <span class="lf-dim">${e(hm(m.next.start))}</span></span>`);
+    const left = leftToday(m);
+    if (left.length) parts.push(`<span class="lf-left" title="${e(((m && m.list) || []).filter(genuine).map(full).join('\n'))}">Left today ${left.join(' ')}</span>`);
+    if (!parts.length && _meet) parts.push('<span class="lf-dim">No calls scheduled left today</span>');
+    if (t && t.open) parts.push(`<span title="Open tasks assigned to them in the Adit Pay Asana project">Asana tasks <b class="lf-mono">${t.open}</b>${t.overdue ? ` <span class="lf-neg">${t.overdue} overdue</span>` : ''}</span>`);
     return parts.length ? `<div class="lf-cal">${parts.join('<span class="lf-sep"></span>')}</div>` : '';
   }
   // The agent's own calendar and tasks, under their card.
@@ -302,10 +314,13 @@
     if (!isPay()) return '';
     const m = meetFor(email), v = videoNow(m), t = tasksFor(email);
     const cal = [];
-    if (m && m.now) cal.push(`<li class="on"><b>Now</b><span>${e(meetName(m.now, true))}</span><em>${e(hm(m.now.start))} to ${e(hm(m.now.end))}</em></li>`);
-    else if (v) cal.push(`<li class="on"><b>Now</b><span>On ${e(v.app)} (scrin.io)</span><em>${e(hm(v.at))}</em></li>`);
-    if (m && m.next) cal.push(`<li><b>Next</b><span>${e(meetName(m.next, true))}</span><em>${e(hm(m.next.start))} to ${e(hm(m.next.end))}</em></li>`);
-    const calBox = `<section class="lf-myday-c" aria-label="My calendar today"><h4>My calendar today${m && m.today ? ` <span class="lf-dim">${m.today} meeting${m.today === 1 ? '' : 's'}</span>` : ''}</h4>${cal.length ? `<ul class="lf-myday-l">${cal.join('')}</ul>` : `<p class="lf-sub">${_meet ? 'Nothing else on your calendar today.' : 'Loading...'}</p>`}<p class="lf-fine">From your Google Calendar as Avoma has it${_meet && _meet.avomaError ? ' (not available right now)' : ''}.</p></section>`;
+    if (!(m && m.now) && v) cal.push(`<li class="on"><b>Now</b><span>On ${e(v.app)} (scrin.io)</span><em>${e(hm(v.at))}</em></li>`);
+    // Every call still to come today, each with its kind, so a demo, a training, a ticket call and a follow-up are told apart.
+    ((m && m.list) || []).forEach((x) => {
+      const on = m.now && x.start === m.now.start && x.title === m.now.title;
+      cal.push(`<li${on ? ' class="on"' : ''}><b>${on ? 'Now' : e(hm(x.start))}</b><span>${kindChip(x.kind, x.ticket ? '#' + x.ticket : '')} ${x.title && x.kind !== 'Meeting' ? e(x.title) : ''}</span><em>${e(hm(x.start))} to ${e(hm(x.end))}</em></li>`);
+    });
+    const calBox = `<section class="lf-myday-c" aria-label="My calendar today"><h4>My scheduled calls today${m && m.today ? ` <span class="lf-dim">${m.today} on the calendar</span>` : ''}</h4>${cal.length ? `<ul class="lf-myday-l">${cal.join('')}</ul>` : `<p class="lf-sub">${_meet ? 'No more scheduled calls today.' : 'Loading...'}</p>`}<p class="lf-fine">From your Google Calendar as Avoma has it${_meet && _meet.avomaError ? ' (not available right now)' : ''}.</p></section>`;
     let taskBox = '';
     if (_tasks) {
       const list = t && t.list ? t.list.slice(0, 5) : [];

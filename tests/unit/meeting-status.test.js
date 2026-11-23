@@ -6,9 +6,13 @@ describe('meeting-status', () => {
   it('names the kind of meeting from its title, then the purpose', () => {
     expect(ms._kindOf('Adit Pay Training - Smile Dental', '')).toBe('Training');
     expect(ms._kindOf('Adit Demo', '')).toBe('Demo');
-    expect(ms._kindOf('Follow up on #430296', '')).toBe('Client follow-up');
-    expect(ms._kindOf('Team huddle', '')).toBe('Internal meeting');
-    expect(ms._kindOf('Call with practice', 'Product walkthrough')).toBe('Training');
+    expect(ms._kindOf('Follow up on #430296', '')).toBe('Ticket call');
+    expect(ms._kindOf('Check in with the practice', '', 'Follow-up')).toBe('Follow-up');
+    expect(ms._kindOf('Smile Dental', '', 'Support')).toBe('Ticket call');
+    expect(ms._kindOf('Smile Dental', '', 'Adit Pay Training / Walkthrough')).toBe('Walkthrough');
+    expect(ms._kindOf('Smile Dental', '', 'Adit Pay Demo/Signups')).toBe('Demo');
+    expect(ms._kindOf('Team huddle', '')).toBe('Internal');
+    expect(ms._kindOf('Call with practice', 'Product walkthrough')).toBe('Walkthrough');
   });
   it('finds the meeting now and the next one, skips lunch, and reads scrin.io apps without image links', async () => {
     const now = Date.now(), iso = (m) => new Date(now + m * 60e3).toISOString();
@@ -27,7 +31,7 @@ describe('meeting-status', () => {
     expect(r.data['a@x.com'].now.kind).toBe('Training');
     expect(r.data['a@x.com'].next.kind).toBe('Demo');
     expect(r.data['a@x.com'].today).toBe(2);
-    expect(r.data['b@x.com'].next.kind).toBe('Internal meeting');
+    expect(r.data['b@x.com'].next.kind).toBe('Internal');
     expect(r.data['b@x.com'].video.app).toBe('Zoom');
     expect(ms._appStrings({ imageUrl: 'https://s/z.png', title: 'Meet - abc' })).toEqual(['Meet - abc']);
   });

@@ -143,3 +143,16 @@ html.dark-mode .lf-root{
 @media (max-width:640px){.lf-myday-l li{grid-template-columns:42px minmax(0,1fr)}.lf-myday-l li em{grid-column:2}}
 .lf-fine{margin:6px 0 0;font-size:11px;color:var(--lf-t3)}
 .lf-myday-l li.late b{color:var(--lf-red)}
+
+/* Batch 396: each kind of scheduled call has its own colour */
+.lf-k{display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--lf-t2,#3A5068);background:rgba(107,132,154,.14)}
+.lf-k b{color:inherit!important}
+.lf-k-demo{color:#B45309;background:rgba(244,137,31,.16)}
+.lf-k-train{color:#1D6FA3;background:rgba(30,141,187,.15)}
+.lf-k-walk{color:#0F766E;background:rgba(20,184,166,.16)}
+.lf-k-tick{color:#6D3FC0;background:rgba(124,77,214,.14)}
+.lf-k-fol{color:#9A3412;background:rgba(234,88,12,.12)}
+.lf-k-cli{color:#1F7A4D;background:rgba(31,157,87,.14)}
+.lf-k-int{color:var(--lf-t3,#6B849A);background:rgba(107,132,154,.12)}
+.lf-left{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}
+html.dark-mode .lf-k-demo{color:#F5B25C}html.dark-mode .lf-k-train{color:#7CC8EE}html.dark-mode .lf-k-walk{color:#5FD8CB}html.dark-mode .lf-k-tick{color:#B79BF0}html.dark-mode .lf-k-fol{color:#F4A173}html.dark-mode .lf-k-cli{color:#6FD39B}

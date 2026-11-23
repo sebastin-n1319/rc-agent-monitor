@@ -883,7 +883,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
     // Batch 195: the Roster follows the T1 CS Team Roster Google Sheet: the current and previous month every hour,
     // the last 12 months every night (02:30 Central), and once 2 minutes after start.
-    require('./lib/scrin').setDeps({ roster: require('./lib/roster') }); // Batch 212: scrin.io (read only)
+    require('./lib/scrin').setDeps({ roster: require('./lib/roster'), agents: async () => (await getMonitoredAgents()).map((a) => ({ name: a.name, email: a.email })) }); // Batch 212: scrin.io (read only). Batch 396: the live floor's own agents too (the Adit Pay team is not in the Roster)
     // Batch 212: Logged In here but away or offline in scrin.io for 2 minutes moves the agent to Away (scrin.io), and back
     // when scrin.io shows them online. Every minute. SCRIN_AUTO_AUX=off switches it off.
     { const sa = require('./lib/scrin-aux');
@@ -9425,8 +9425,8 @@ app.get('/api/live-floor/meetings', requireAuth, async (req, res) => {
     const admin = await isAdminSession(req), me = String(req.session.email || '').toLowerCase();
     const data = {};
     for (const [em, x] of Object.entries(r.data || {})) {
-      const own = admin || em === me, strip = (m) => m ? (own ? m : Object.assign({}, m, { title: '' })) : null;
-      data[em] = { now: strip(x.now), next: strip(x.next), today: x.today, video: x.video };
+      const own = admin || em === me, strip = (m) => m ? (own ? m : Object.assign({}, m, { title: '', ticket: null })) : null;
+      data[em] = { now: strip(x.now), next: strip(x.next), today: x.today, list: (x.list || []).map((m) => own ? m : Object.assign({}, m, { title: '', ticket: null })), video: x.video };
     }
     const out = { success: true, data, avomaError: r.avomaError, scrinError: r.scrinError, at: r.at };
     if (req.query.debug && admin) out.debug = { scrinSample: ms.scrinSample() };
