@@ -20,7 +20,7 @@ describe('ai usage meter', () => {
     await usage.record({ feature: 'voip-project', model: 'gpt-4.1-mini', usage: { input_tokens: 1e6, output_tokens: 0 } });
     const r = await usage.report({ days: 1 });
     expect(r.features[0].feature).toBe('call-qa');
-    expect(r.byProvider).toEqual({ claude: 2, openai: 0.4 });
+    expect(r.byProvider).toEqual({ claude: 2, openai: 0.4, fireworks: 0 });
   });
   it('compares short fields only, and turns a drifting light feature back to the main model', async () => {
     expect(usage.agreement({ voip: true, category: 'Phones', summary: 'a long text '.repeat(10) }, { voip: true, category: 'phones', summary: 'other' })).toBe(1);
