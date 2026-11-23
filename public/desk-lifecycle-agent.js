@@ -432,7 +432,7 @@
         ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
         ${click('assist', stat('chat', 'teal', tv('tickets_assist'), 'Call notes on others\' tickets', 'assist', s, prevS, d('tickets_assist')))}
         ${click('created_away', stat('swap', 'purple', tv('tickets_created_away'), 'Created by you, now with others', 'created_away', s, prevS, d('tickets_created_away')))}
-        ${c ? dt('calls:all', stat('phone', 'green', c.totalCalls || 0, 'Calls')) : stat('phone', 'green', '-', 'Calls')}
+        ${c && !c.unavailable ? dt('calls:all', stat('phone', 'green', c.totalCalls || 0, 'Calls')) : stat('phone', 'green', '-', 'Calls')}
         ${cs ? dt('chats:chats', stat('chat', 'amber', cs.chatCount || 0, 'Chats')) : stat('chat', 'amber', '-', 'Chats')}
       </div>
       ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} · call notes on ${s.tickets_assist || 0} tickets someone else created and owns, created ${s.tickets_created_away || 0} that are now with someone else (a ticket can be in more than one, and all of them count in Tickets handled). Click any card to see the exact tickets, calls or chats behind it.</div>`
@@ -483,6 +483,7 @@
       return panel('Call Activity', 'RingCentral call stats for this range.',
         emptyState('Not linked yet', 'No RingCentral extension linked to your account yet, ask your admin to add you under Agents.'));
     }
+    if (c.unavailable) return panel('Call Activity', 'RingCentral call stats for this range.', emptyState('Monthly totals only', c.unavailable));
     const body = `
       <div class="av2-stat-grid">
         ${dt('calls:inbound', stat('phoneIn',  'teal',   c.inboundCalls || 0, 'Inbound'))}

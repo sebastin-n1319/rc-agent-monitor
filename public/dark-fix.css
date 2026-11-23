@@ -159,3 +159,7 @@ html.dark-mode [style*="color:rgba(178,219,240,.45)"],html.dark-mode .nav-tab,ht
 html.dark-mode .card th,html.dark-mode #mainApp th{color:#A9BECF!important}
 html.dark-mode [style*="c2470a" i]{color:#FBA05C!important}
 html.dark-mode .tka-vb-i{color:#06202F!important}
+/* Batch 397: dark mode audit fixes (agent home team count, selected review chips) */
+html.dark-mode .av2 .av2-hero-chip strong{color:#E8F4FC!important}
+html.dark-mode .tka-chip.on{color:#7FD6D9!important;background:rgba(54,175,180,.16)!important}
+html.dark-mode .tka-chip.on b,html.dark-mode .tka-chip.on span{color:inherit!important}

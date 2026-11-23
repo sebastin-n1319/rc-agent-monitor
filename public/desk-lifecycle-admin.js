@@ -445,6 +445,7 @@
         return 'Follow-ups\n\nTickets handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
       case 'calls': {
         const c = a.callStats;
+        if (c && c.unavailable) return 'Calls\n\n' + c.unavailable;
         return c ? `Calls (RingCentral)\n\nInbound ${c.inboundCalls || 0} · Outbound ${c.outboundCalls || 0} · Missed ${c.missedCalls || 0}` : 'Calls\n\nNo RingCentral extension linked.';
       }
       case 'chats':
@@ -557,7 +558,7 @@
       pillHtml('tkt-pill-good', ready ? (a.tickets_handled || 0) : '…', 'Tickets handled', 'handled', a),
       pillHtml('', ready ? (a.tickets_handled_new || 0) : '…', 'New', 'handled_new', a),
       pillHtml('', ready ? (a.tickets_handled_followup || 0) : '…', 'Follow-ups', 'handled_followup', a),
-      pillHtml('', a.callStats ? (a.callStats.totalCalls || 0) : '-', 'Calls', 'calls', a),
+      pillHtml('', a.callStats && !a.callStats.unavailable ? (a.callStats.totalCalls || 0) : '-', 'Calls', 'calls', a),
       pillHtml('', a.chatStats ? (a.chatStats.chatCount || 0) : '-', 'Chats', 'chats', a),
     ].join('');
     const flowPills = [

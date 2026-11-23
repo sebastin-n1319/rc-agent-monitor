@@ -66,7 +66,7 @@ describe('Live chats', () => {
     expect(s.basis).toBe('m3');
     expect(seen[0].user).toContain('[phone]');
     expect(seen[0].user).toContain('[email]');
-    expect(seen[0].user).toContain('T1 cannot make outbound calls');
+    expect(seen[0].system).toContain('T1 cannot make outbound calls'); // Batch 398: the rules travel with the cached system prompt
     expect(seen[0].user).toContain('Texting fix released');
     await lc.suggest('32350', { email: 'sky@adit.com' });
     expect(seen.length).toBe(1); // cached for the same client message

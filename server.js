@@ -1432,7 +1432,7 @@ async function agentWorkload(agent, period) {
     return { handled: s.tickets_handled || 0, newT: s.tickets_handled_new || 0, followup: s.tickets_handled_followup || 0, replied: s.tickets_replied || 0, closed: s.closed_count || 0,
       transferred: s.transferred || 0, reassigned: s.reassigned || 0, handedOff: s.handed_off_internal || 0, open: s.currently_handling || 0, avgHandleHours: s.avg_handle_hours ?? null, fcr: s.fcr_pct ?? null, csat: s.csat_pct ?? null };
   })();
-  const callP = (async () => { if (!(agent.rc_id || agent.extension)) return null; const c = await statsAlign.applyMonthCalls(email, fromIso, toIso, await getAgentCallStatsRange({ agentId: agent.rc_id || agent.extension, from: fromIso, to: toIso })); return c ? { total: c.totalCalls || 0, inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, missed: c.missedCalls || 0, voicemails: c.voicemails || 0, talkSec: c.totalTalkSeconds || 0, ahtIn: c.ahtInboundSeconds || 0 } : null; })();
+  const callP = (async () => { if (!(agent.rc_id || agent.extension)) return null; const c = await statsAlign.applyMonthCalls(email, fromIso, toIso, await getAgentCallStatsRange({ agentId: agent.rc_id || agent.extension, from: fromIso, to: toIso })); return c && !c.unavailable ? { total: c.totalCalls || 0, inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, missed: c.missedCalls || 0, voicemails: c.voicemails || 0, talkSec: c.totalTalkSeconds || 0, ahtIn: c.ahtInboundSeconds || 0 } : null; })();
   const chatP = (async () => {
     if (!salesiqService.isConfigured()) return null;
     const [c, pr] = await Promise.all([salesiqLifecycle.agentChatStats({ email, from: fromIso, to: toIso }).then(x => statsAlign.applyMonthChats(email, fromIso, toIso, x)), salesiqLifecycle.agentChatPresenceStats({ email, from: fromIso, to: toIso }).catch(() => null)]);
@@ -2550,7 +2550,7 @@ app.get('/api/admin/expert-eval', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').latest())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async (req, res) => {
-  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: (req.body || {}).compare === 'cost' ? 'cost' : '', by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 // Batch 339: a lead answers a knowledge gap once (saved as an Expert team note), or dismisses it
 app.post('/api/admin/expert-eval/gap', requireAdmin, rateLimit(20, 60000), async (req, res) => {

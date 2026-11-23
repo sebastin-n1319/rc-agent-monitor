@@ -1234,6 +1234,18 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
   const xfer = needLogs ? await get(`SELECT SUM(COALESCE(transferred,0)) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`, [agentId, logsFrom, to]) : { total: 0 };
 
   const monthly = { inbound: 0, outbound: 0, missed: 0, voicemails: 0, inbound_talk_time: 0, outbound_talk_time: 0, hold_time: 0, transfers: 0, answered_inbound: 0, answered_outbound: 0 };
+  // Batch 397: days before the call log retention exist only as whole-month totals. A range that starts or ends inside such
+  // a month used to show that month's whole total (Sky Gibson: 270 inbound calls "on Sep 28"). Now it shows no count and
+  // says why, unless the range is whole months.
+  if (needSummary) {
+    const atMonthStart = (d) => { const u = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1), n = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); return Math.min(Math.abs(d - u), Math.abs(n - d)) <= 12 * 3600e3; };
+    const summaryEnd = toDate < boundary ? toDate : boundary;
+    if (!atMonthStart(fromDate) || !atMonthStart(summaryEnd)) {
+      const until = boundary.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+      return { inboundCalls: 0, inboundOffered: 0, outboundCalls: 0, totalCalls: 0, missedCalls: 0, voicemails: 0, totalTalkSeconds: 0, ahtInboundSeconds: 0, ahtOutboundSeconds: 0, totalHoldSeconds: 0, transferCount: 0,
+        unavailable: `Calls before ${until} are kept only as monthly totals, so single days and part months cannot be counted. Pick whole months to see them.` };
+    }
+  }
   if (needSummary) {
     const fromMonth = from.slice(0, 7);
     const boundaryMonth = boundaryIso.slice(0, 7);

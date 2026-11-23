@@ -1641,7 +1641,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
         var t = find(active); if (!t) return; var q = quietState(t), k = q ? q.mins + ':' + q.due : '';
         if (k !== t.quietKey) { t.quietKey = k; if (!t.edit) paintSide(); wantFollowup(t); }
       }, 5000);
-      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && active) { var t = find(active); if (t) loadChat(t); } });
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState !== 'visible') return; loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }); // Batch 397: the chat list too, so a chat that came in while the tab was hidden shows at once
     }
     paint(); loadMine().then(function () { tabs.forEach(function (t) { if (!t.chat && !t.error) loadChat(t); }); }); start();
     return { reload: function () { loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }, open: function (ref) { var t = find(ref); if (!t) { t = tab(ref, true); tabs.push(t); save(); } select(t.ref); } };

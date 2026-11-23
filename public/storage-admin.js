@@ -10,7 +10,8 @@
     root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading storage…</div>';
     let d; try { d = await api('/api/admin/storage'); } catch (e) { root.innerHTML = `<div class="stg-error">Could not load storage: ${esc(e.message)}</div>`; return; }
     const v = d.volume || {}, b = d.band || { low: 50, high: 60 }, B = d.budget || {};
-    const state = v.pct <= b.high ? ['In the band', '#1F7A4D'] : v.livePct <= b.high ? ['Data is in the band; the file shrinks at the next compaction', '#C3640A'] : ['Above the band', '#B42318'];
+    const dk = document.documentElement.classList.contains('dark-mode'); // Batch 397: readable status colours in dark mode
+    const state = v.pct <= b.high ? ['In the band', dk ? '#6FD39B' : '#1F7A4D'] : v.livePct <= b.high ? ['Data is in the band; the file shrinks at the next compaction', dk ? '#F5B25C' : '#C3640A'] : ['Above the band', dk ? '#F08A90' : '#B42318'];
     const bar = (pct, color) => `<div style="height:10px;border-radius:6px;background:var(--stg-line,#eee);overflow:hidden" role="img" aria-label="${pct}% used"><div style="width:${Math.min(100, pct)}%;height:100%;background:${color}"></div></div>`;
     const sheetUrl = d.archive && d.archive.sheetId ? 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(d.archive.sheetId) : '';
     root.innerHTML = `

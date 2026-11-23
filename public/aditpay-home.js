@@ -50,7 +50,16 @@
     '.aph-tip{position:fixed;pointer-events:none;background:#072B40;color:#fff;font-size:11.5px;padding:6px 8px;border-radius:8px;z-index:50;white-space:nowrap}',
     '.aph-sec{margin-bottom:14px}.aph-grid{font-size:11.5px;min-width:1100px}.aph-grid th small{display:block;font-weight:500;color:#9BAFC0}.aph-grid td{padding:4px 6px;white-space:nowrap}.aph-grid td.ex{background:#F2FAFA;color:#4C6378;font-style:italic}.aph-grid tr.tot td{font-weight:700;border-top:2px solid #E6ECF4}.aph-grid th.fc{color:#1F7F84}',
     '@media print{body *{visibility:hidden}.aph-rev,.aph-rev *{visibility:visible}.aph-rev{position:absolute;left:0;top:0;width:100%}.aph-rev .aph-seg,.aph-rev .aph-nav{display:none}.aph-c{break-inside:avoid}}',
-    '@media(max-width:900px){.aph-kpis{grid-template-columns:repeat(2,1fr)}.aph-g2{grid-template-columns:1fr}}'
+    '@media(max-width:900px){.aph-kpis{grid-template-columns:repeat(2,1fr)}.aph-g2{grid-template-columns:1fr}}',
+    // Batch 397: dark mode (the cards stayed white with light text on them)
+    'html.dark-mode .aph-c,html.dark-mode .aph-k,html.dark-mode .aph-hd button,html.dark-mode .aph-seg button{background:#0E2B40;border-color:rgba(255,255,255,.09);color:#E8F4FC}',
+    'html.dark-mode .aph-hd h2,html.dark-mode .aph-c h3,html.dark-mode .aph-k b,html.dark-mode .aph-stats b,html.dark-mode .aph-bar span:last-child,html.dark-mode .aph-t td,html.dark-mode .aph-bar span{color:#E8F4FC}',
+    'html.dark-mode .aph-hd p,html.dark-mode .aph-c .sub,html.dark-mode .aph-k label,html.dark-mode .aph-k small,html.dark-mode .aph-stats label,html.dark-mode .aph-stats small,html.dark-mode .aph-t th,html.dark-mode .aph-t td small,html.dark-mode .aph-empty,html.dark-mode .aph-note,html.dark-mode .aph-grid th small{color:#8FB0C6}',
+    'html.dark-mode .aph-leg,html.dark-mode .aph-legend,html.dark-mode .aph-sub ul,html.dark-mode .aph-how li,html.dark-mode .aph-t tr.fc td,html.dark-mode .aph-nav button,html.dark-mode .aph-seg button{color:#B4C8D8}',
+    'html.dark-mode .aph-split,html.dark-mode .aph-bar i,html.dark-mode .aph-nav,html.dark-mode .aph-chip{background:#143650}html.dark-mode .aph-chip{color:#B4C8D8}html.dark-mode .aph-chip.old{background:rgba(237,102,107,.16);color:#F08A90}',
+    'html.dark-mode .aph-stats div,html.dark-mode .aph-t th,html.dark-mode .aph-t td,html.dark-mode .aph-grid tr.tot td{border-color:rgba(255,255,255,.08)}',
+    'html.dark-mode .aph-t tr.cur td,html.dark-mode .aph-grid td.ex,html.dark-mode .aph-copy{background:rgba(54,175,180,.12);color:#7FD6D9;border-color:rgba(54,175,180,.3)}html.dark-mode .aph-t a,html.dark-mode .aph-grid th.fc{color:#5FD8CB}',
+    'html.dark-mode .aph-date{background:#0E2B40;color:#E8F4FC;border-color:rgba(255,255,255,.14);color-scheme:dark}html.dark-mode .aph-seg button[aria-pressed=true]{background:rgba(54,175,180,.16);color:#7FD6D9}'
   ].join('\n');
 
   function css() { if (!document.getElementById('aph-css')) { var s = document.createElement('style'); s.id = 'aph-css'; s.textContent = CSS; document.head.appendChild(s); } }
