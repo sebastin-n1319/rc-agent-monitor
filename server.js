@@ -845,6 +845,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const dn = require('./lib/ticket-doc-note'); dn.setDB(db); await dn.initSchema().catch((e) => console.warn('doc notes schema:', e.message)); dn.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
         setTimeout(() => { const t = async () => { if (!inWorkHours() || !require('./lib/expert-desk-draft').canWrite()) return; try { const owners = (await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents())).map((a) => a.id); const r = await dn.sweep({ ownerIds: owners }); if (r && (r.created || r.updated || r.errors)) console.log('🗒️ Ticket notes:', JSON.stringify(r)); } catch (e) { console.warn('doc notes sweep:', e.message); } }; t(); setInterval(t, 5 * 60 * 1000); }, 4 * 60 * 1000); }
       { const au = require('./lib/ai-usage'); au.setDB(db); await au.initSchema().catch((e) => console.warn('ai usage schema:', e.message)); }
+      { const ft = require('./lib/fw-trial'); ft.setDB(db); await ft.initSchema().catch((e) => console.warn('fw trial schema:', e.message)); }
       { const ow = require('./lib/outage-watch'); ow.setDB(db); await ow.initSchema(); ow.setDeps({ query: (sql, n) => require('./lib/aditkb-service').query(sql, n) });
         setTimeout(() => { const t = () => ow.check().then(r => { if (r && r.opened) console.log('🚨 Outage watch opened alert', r.opened); }).catch(e => console.warn('outage watch:', e.message)); t(); setInterval(t, 5 * 60 * 1000); }, 90 * 1000); }
       // Batch 351: repeated-issue watch across tickets, live chats and call recordings (10+ reports of one problem in 30 minutes).
@@ -2550,7 +2551,7 @@ app.get('/api/admin/expert-eval', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').latest())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async (req, res) => {
-  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks', 'plan'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks', 'plan'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', tickets: !!(req.body || {}).tickets, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 // Batch 339: a lead answers a knowledge gap once (saved as an Expert team note), or dismisses it
 app.post('/api/admin/expert-eval/gap', requireAdmin, rateLimit(20, 60000), async (req, res) => {
@@ -2665,6 +2666,13 @@ app.get('/api/admin/ai-keys', requireAdmin, rateLimit(6, 60000), async (req, res
     if (aria.valid) { try { const r = await P.aria('list_tables', {}, { timeoutMs: 15000, maxChars: 4000 }); aria.ok = !r.isError; aria.tablesChars = String(r.text || '').length; if (r.isError) aria.error = String(r.text || '').slice(0, 200); } catch (e) { aria.ok = false; aria.error = String(e.message || e).slice(0, 160); } }
     res.json({ success: true, fireworks: fw, aria, lookupMode: String(process.env.EXPERT_LOOKUP_MODE || 'loop') });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 403: DeepSeek trial on real work: per job, how its answers compare with Claude's; grade a batch; read the weakest notes
+app.get('/api/admin/fireworks-trial', requireAdmin, async (req, res) => {
+  try { const T = require('./lib/fw-trial'); const out = await T.status(); if (req.query.feature) out.notes = await T.notes(String(req.query.feature), 12); res.json(Object.assign({ success: true }, out)); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/fireworks-trial/grade', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/fw-trial').grade({ feature: String(b.feature || ''), n: Number(b.n) || 20 }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.get('/api/admin/busy', requireAdmin, async (req, res) => {
   try {
