@@ -653,6 +653,8 @@ Aria facts in Expert (Batch 406): for a ticket question, Expert can read Aria's 
 
 Aria facts fixes (Batch 407): open EHR issues are grouped (one line per issue with how many practices have it open), and Aria's issue tag finds its link to the ticket by itself. /api/admin/aria/facts?columns=<table> shows a table's column names (no values).
 
+Aria facts, past fixes (Batch 408): Aria does not share which ticket each of its issue tags belongs to, so "how the same kind of ticket was fixed before" now uses Desk's own categories (the narrowest one set), on the same EHR first.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.
