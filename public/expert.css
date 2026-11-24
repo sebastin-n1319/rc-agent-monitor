@@ -903,3 +903,25 @@ html.ax-full .ax-cbar{top:0}
 .ax-note-img{position:relative;width:96px;height:64px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface-3)}
 .ax-note-img img{width:100%;height:100%;object-fit:cover}
 .ax-note-img button{position:absolute;top:2px;right:2px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:1;font-size:14px}
+
+/* Batch 413: tables, bar charts and flowcharts in answers */
+.ax-vis{display:grid;gap:14px;margin:14px 0 4px}
+.ax-vfig{margin:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
+.ax-vfig figcaption{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t2);margin-bottom:8px}
+.ax-vscroll{overflow-x:auto}
+.ax-vtab{width:100%;border-collapse:collapse;font-size:13px;line-height:1.4}
+.ax-vtab th{text-align:left;font-weight:600;color:var(--t3);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap}
+.ax-vtab td{padding:7px 10px 7px 0;border-bottom:1px solid var(--border);color:var(--t1);vertical-align:top}
+.ax-vtab tr:last-child td{border-bottom:0}
+.ax-vbars{display:grid;gap:6px}
+.ax-vbar{display:grid;grid-template-columns:minmax(48px,max-content) 1fr 36px;align-items:center;gap:10px;font-size:13px}
+.ax-vbl{color:var(--t2)}
+.ax-vtrack{height:12px;border-radius:6px;background:var(--surface-3);overflow:hidden}
+.ax-vfill{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.ax-vval{text-align:right;font-variant-numeric:tabular-nums;color:var(--t1);font-weight:600}
+.ax-vflow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.ax-vflow li{position:relative;display:flex;gap:8px;align-items:flex-start;flex:1 1 150px;max-width:240px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2,var(--surface));font-size:13px;line-height:1.4;color:var(--t1)}
+.ax-vflow li.ax-vq{border-color:var(--accent);background:var(--accent-soft)}
+.ax-vflow li:not(:last-child)::after{content:"\2192";position:absolute;right:-8px;top:50%;transform:translate(50%,-50%);color:var(--t3);font-size:14px}
+.ax-vn{flex:none;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:700;background:var(--t1);color:var(--bg)}
+@media (max-width:640px){.ax-vflow{flex-direction:column}.ax-vflow li{max-width:none}.ax-vflow li:not(:last-child)::after{content:"\2193";right:50%;top:auto;bottom:-8px;transform:translate(50%,50%)}}

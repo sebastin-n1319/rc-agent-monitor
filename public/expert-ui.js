@@ -482,6 +482,26 @@
       }).catch(function () {});
       return box;
     }
+  // Batch 413: tables, bar charts and flowcharts Expert returns with an answer (account audits, processes, comparisons).
+  function visualsBox(vs) {
+    var wrap = h('div', { class: 'ax-vis' });
+    vs.forEach(function (v) {
+      var fig = h('figure', { class: 'ax-vfig' }, [h('figcaption', { text: v.title || '' })]);
+      if (v.type === 'table') {
+        var tb = h('table', { class: 'ax-vtab' }, [h('thead', null, [h('tr', null, v.columns.map(function (c) { return h('th', { scope: 'col', text: c }); }))]),
+          h('tbody', null, v.rows.map(function (r) { return h('tr', null, r.map(function (c) { return h('td', null, [linkTickets(String(c))]); })); }))]);
+        fig.appendChild(h('div', { class: 'ax-vscroll' }, [tb]));
+      } else if (v.type === 'bar') {
+        var max = Math.max.apply(null, v.values.concat([1]));
+        fig.appendChild(h('div', { class: 'ax-vbars', role: 'img', 'aria-label': (v.title || 'Chart') + ': ' + v.labels.map(function (l, i) { return l + ' ' + v.values[i]; }).join(', ') },
+          v.labels.map(function (l, i) { return h('div', { class: 'ax-vbar' }, [h('span', { class: 'ax-vbl', text: l }), h('span', { class: 'ax-vtrack' }, [h('span', { class: 'ax-vfill', style: 'width:' + Math.max(2, Math.round(100 * v.values[i] / max)) + '%' })]), h('span', { class: 'ax-vval', text: String(v.values[i]) })]); })));
+      } else if (v.type === 'flow') {
+        fig.appendChild(h('ol', { class: 'ax-vflow' }, v.steps.map(function (st, i) { return h('li', { class: /\?\s*$/.test(st) ? 'ax-vq' : '' }, [h('span', { class: 'ax-vn', text: String(i + 1) }), h('span', null, [linkTickets(st)])]); })));
+      }
+      wrap.appendChild(fig);
+    });
+    return wrap;
+  }
     function section(ic, title, kids, cls) { return h('section', { class: 'ax-sec ' + (cls || '') }, [h('h4', null, [icon(ic), title])].concat(kids)); }
     function copyBtn(text, label, rich) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { (rich ? copyRich : copy)(text, b); }); return b; }
     function reportBox(R) {
@@ -526,6 +546,7 @@
       if (B) {
         if (B.bottom_line) card.appendChild(h('p', { class: 'ax-lead ax-bl' }, [linkTickets(B.bottom_line)]));
         if (B.found && B.found.length) card.appendChild(section('search', 'What I found', [h('ul', { class: 'ax-found' }, B.found.map(function (f) { return h('li', null, [linkTickets(f)]); }))]));
+        if (a.visuals && a.visuals.length) card.appendChild(visualsBox(a.visuals)); // Batch 413
         if (B.reply) card.appendChild(section('chat', B.reply_label || 'Reply', [h('blockquote', { class: 'ax-say' }, [B.reply]), h('div', { class: 'ax-row' }, [copyBtn(B.reply, 'Copy reply', true)])], 'say'));
         (B.replies || []).forEach(function (r) { card.appendChild(section('chat', r.label || 'Message', [h('blockquote', { class: 'ax-say' }, [r.text]), h('div', { class: 'ax-row' }, [copyBtn(r.text, 'Copy', true)])], 'say')); });
         if (B.unknown && B.unknown.length) card.appendChild(h('p', { class: 'ax-unk' }, [h('b', { text: 'Could not check: ' }), B.unknown.join(' ')]));
