@@ -59,6 +59,27 @@
     if (running && document.body.contains(box)) setTimeout(() => { if (document.body.contains(box)) paintEval(box); }, 20000);
   }
 
+  // Batch 417: the Drive folder Expert reads every hour (new and changed SOPs, process docs and sheets)
+  async function paintSources(box) {
+    if (!box) return;
+    let d; try { d = await api('/api/admin/expert-sources'); } catch (e) { box.innerHTML = `<div class="stg-card-title">Expert sources folder</div><div class="stg-error">${esc(e.message)}</div>`; return; }
+    const live = d.files.filter((f) => !f.removed);
+    const conf = live.filter((f) => f.conflicts && f.conflicts.length);
+    box.innerHTML = `<div class="aiu-head"><div><div class="stg-card-title">Expert sources folder</div>
+        <div class="stg-card-sub">Put an SOP, process update, guide or sheet in this Google Drive folder (or update one already there) and Expert reads it within the hour: no push, no restart. Only this folder is read. Emails, phone numbers and login details are removed, and HR documents are left out. When a document disagrees with a team rule, it is listed below for a lead to decide; the rule still wins until then.</div></div>
+        <button type="button" class="stg-btn elib-src-check" ${d.folder ? '' : 'disabled'}>Check now</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0">
+        <label class="stg-card-sub" for="elib-src-folder">Folder link</label>
+        <input id="elib-src-folder" type="text" value="${esc(d.folder ? 'https://drive.google.com/drive/folders/' + d.folder : '')}" placeholder="https://drive.google.com/drive/folders/..." style="flex:1;min-width:260px">
+        <button type="button" class="stg-btn stg-btn-ghost elib-src-save">Save folder</button><span class="stg-card-sub elib-src-msg" role="status"></span></div>
+      <p class="stg-card-sub">Share the folder (Viewer is enough) with <b>${esc(d.serviceAccount || 'the tool service account')}</b>. ${d.checkedAt ? 'Last checked ' + esc(day(d.checkedAt)) + '.' : 'Not checked yet.'}${d.error ? ` <span style="color:#C3640A">${esc(d.error)}</span>` : ''}</p>
+      ${conf.length ? `<div style="margin:10px 0"><b>Needs a decision (${conf.length})</b>${conf.map((f) => `<div style="padding:6px 0;border-bottom:1px solid var(--stg-line,#eee)"><b>${esc(f.name)}</b>${f.conflicts.map((c) => `<div class="stg-card-sub">Rule "${esc(c.rule)}" says: ${esc(c.rule_says)}. The document says: ${esc(c.document_says)}.</div>`).join('')}</div>`).join('')}</div>` : ''}
+      ${d.files.length ? `<table class="stg-table" style="width:100%"><thead><tr><th>Document</th><th>Status</th><th>Changed in Drive</th><th>Read</th></tr></thead><tbody>${d.files.map((f) => `<tr><td>${f.link ? `<a href="${esc(f.link)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : esc(f.name)}</td><td>${esc(f.status || '')}${f.note ? `<div class="stg-card-sub">${esc(f.note)}</div>` : ''}</td><td>${esc(day(f.modified))}</td><td>${esc(day(f.readAt))}</td></tr>`).join('')}</tbody></table>` : (d.folder ? '<p class="stg-card-sub">No documents read yet.</p>' : '')}`;
+    const msg = box.querySelector('.elib-src-msg');
+    box.querySelector('.elib-src-save').addEventListener('click', async (e) => { e.target.disabled = true; try { await api('/api/admin/expert-sources/folder', { method: 'POST', body: JSON.stringify({ folder: box.querySelector('#elib-src-folder').value }) }); msg.textContent = 'Saved. Reading the folder now…'; setTimeout(() => paintSources(box), 8000); } catch (er) { msg.textContent = er.message; e.target.disabled = false; } });
+    const ck = box.querySelector('.elib-src-check');
+    if (ck) ck.addEventListener('click', async () => { ck.disabled = true; ck.textContent = 'Checking…'; try { const r = await api('/api/admin/expert-sources/check', { method: 'POST', body: '{}' }); msg.textContent = `${r.files || 0} files, ${r.read || 0} read now${r.errors && r.errors.length ? ', ' + r.errors[0] : ''}`; paintSources(box); } catch (er) { ck.textContent = er.message; } });
+  }
   window.renderExpertLibraryAdmin = async function (root) {
     root.innerHTML = '<div class="stg-loading"><div class="stg-spinner"></div>Loading the Expert library…</div>';
     let d;
@@ -80,12 +101,14 @@
           ${d.pages.map((p) => `<tr class="elib-row" tabindex="0" data-slug="${esc(p.slug)}" aria-expanded="false" style="cursor:pointer"><td><b>${esc(p.title)}</b>${p.summary ? `<div class="stg-card-sub">${esc(p.summary)}</div>` : ''}${p.ready ? '' : '<div class="stg-card-sub">Waiting for its first build</div>'}</td><td>${esc(p.module || '')}</td><td>${p.version || 0}</td><td>${num(p.hits)}</td><td>${num(p.saved)}</td><td>${num(p.confirmed)}</td><td>${p.issues.length ? `<span style="color:#C3640A;font-weight:600">${p.issues.length}</span>` : '0'}</td><td>${esc(day(p.built))}</td></tr>`).join('')}
         </tbody></table>` : '<p class="stg-card-sub">No pages yet. The first build runs about 10 minutes after the server starts, or press Update pages now.</p>'}
       </div>
+      <div class="stg-card elib-src"><div class="stg-card-title">Expert sources folder</div><div class="stg-loading"><div class="stg-spinner"></div>Loading…</div></div>
       <div class="stg-card elib-eval"><div class="stg-card-title">Before and after test</div><div class="stg-loading"><div class="stg-spinner"></div>Loading…</div></div>
       <div class="stg-card"><div class="stg-card-title">What changed</div>
         ${(d.log || []).length ? `<ul style="list-style:none;padding:0;margin:0">${d.log.map((l) => `<li style="padding:6px 0;border-bottom:1px solid var(--stg-line,#eee)"><b>${esc(KIND[l.kind] || l.kind)}</b>${l.slug ? ' · ' + esc(l.slug.replace(/-/g, ' ')) : ''} <span class="stg-card-sub">${esc(day(l.at))}</span><div class="stg-card-sub">${esc(l.detail)}</div></li>`).join('')}</ul>` : '<p class="stg-card-sub">Nothing yet.</p>'}
       </div>`;
     const busy = (b, t) => { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; };
     paintEval(root.querySelector('.elib-eval'));
+    paintSources(root.querySelector('.elib-src'));
     root.querySelector('.elib-run').addEventListener('click', async (e) => { busy(e.target, 'Updating…'); try { await api('/api/admin/expert-library/run', { method: 'POST', body: '{}' }); e.target.textContent = 'Started, refresh in a few minutes'; } catch (er) { e.target.textContent = er.message; } });
     root.querySelector('.elib-lint').addEventListener('click', async (e) => { busy(e.target, 'Checking…'); try { await api('/api/admin/expert-library/run', { method: 'POST', body: JSON.stringify({ lint: true }) }); e.target.textContent = 'Started, refresh in a few minutes'; } catch (er) { e.target.textContent = er.message; } });
     root.querySelectorAll('.elib-row').forEach((tr) => {

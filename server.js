@@ -835,6 +835,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // build runs 10 minutes after the first start), with a weekly health check.
       { const lib = require('./lib/expert-library'); lib.setDB(db); await lib.initSchema().catch((e) => console.warn('expert library schema:', e.message)); lib.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') });
         { const ev = require('./lib/expert-eval'); ev.setDB(db); await ev.initSchema().catch((e) => console.warn('expert eval schema:', e.message)); ev.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert') }); }
+        // Batch 417: the Expert sources Drive folder is read every hour (only new or changed files cost anything)
+        { const es = require('./lib/expert-sources'); es.setDB(db); await es.initSchema().catch((e) => console.warn('expert sources schema:', e.message)); es.setDeps({ ai: require('./lib/ai'), expert: require('./lib/expert'), library: lib });
+          const esRun = () => es.check().then((r) => { if (r && (r.read || r.removed)) console.log('📂 Expert sources:', JSON.stringify({ read: r.read, removed: r.removed, changed: r.changed })); }).catch((e) => console.warn('expert sources:', e.message));
+          setTimeout(esRun, 3 * 60 * 1000); setInterval(esRun, 60 * 60 * 1000); }
         setInterval(() => lib.refreshForUpdates().then((r) => { if (r && r.rebuilt) console.log('📚 Expert library, new updates:', JSON.stringify(r)); }).catch((e) => console.warn('expert library updates:', e.message)), 30 * 60 * 1000); // Batch 340
         let libLast = 0;
         const libRun = async (first) => { if (!lib.enabled() || (!first && inWorkHours()) || Date.now() - libLast < 20 * 3600 * 1000) return; libLast = Date.now(); try { const r = await lib.maintain(); console.log('📚 Expert library:', JSON.stringify(r)); } catch (e) { console.warn('expert library:', e.message); } };
@@ -2692,6 +2696,16 @@ app.get('/api/admin/doc-note/audit', requireAdmin, rateLimit(4, 60000), async (r
 });
 app.post('/api/admin/doc-note/audit', requireAdmin, rateLimit(2, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/ticket-doc-note').audit({ days: Number(b.days) || 7, apply: b.apply === true }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 417: Expert sources folder (Settings > Expert library): status, set the folder, check now
+app.get('/api/admin/expert-sources', requireAdmin, async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-sources').status())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/expert-sources/folder', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const ES = require('./lib/expert-sources'); const id = await ES.setFolder((req.body || {}).folder); res.json({ success: true, folder: id }); ES.check().catch(() => {}); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/expert-sources/check', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-sources').check({ force: !!(req.body || {}).force }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 406: preview the Aria facts Expert would get for one ticket (read-only)
 app.get('/api/admin/aria/facts', requireAdmin, rateLimit(20, 60000), async (req, res) => {
