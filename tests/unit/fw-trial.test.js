@@ -4,7 +4,7 @@ const sqlite3 = require('sqlite3');
 
 describe('DeepSeek trial on real work (Batch 403)', () => {
   let db;
-  beforeEach(async () => { db = new sqlite3.Database(':memory:'); T.setDB(db); await T.initSchema(); delete process.env.FIREWORKS_TRIAL; });
+  beforeEach(async () => { db = new sqlite3.Database(':memory:'); T.setDB(db); await T.initSchema(); process.env.FIREWORKS_TRIAL = 'on'; });
   it('compares short fields only and says when there are none', () => {
     expect(T.agreeN({ score: 4, pass: true, note: 'x'.repeat(80) }, { score: 4, pass: false, note: 'y'.repeat(80) })).toEqual({ agree: 0.5, n: 2 });
     expect(T.agreeN({ text: 'x'.repeat(80) }, { text: 'y'.repeat(80) }).agree).toBe(null);
