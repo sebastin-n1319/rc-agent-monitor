@@ -2676,6 +2676,14 @@ app.post('/api/admin/fireworks-trial/grade', requireAdmin, rateLimit(4, 60000), 
   try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/fw-trial').grade({ feature: String(b.feature || ''), n: Number(b.n) || 20 }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 405: read-only look at one Aria table's columns, or Aria's glossary and rules, to plan how Expert uses Aria's data
+// Batch 411 (#432551): case notes of the last 7 days whose "Client's Query" came from our own automation notes, or whose
+// escalation line stayed after the account check found another practice. GET lists them; POST { apply: true } corrects them.
+app.get('/api/admin/doc-note/audit', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try { res.json(Object.assign({ success: true }, await require('./lib/ticket-doc-note').audit({ days: Number(req.query.days) || 7 }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/admin/doc-note/audit', requireAdmin, rateLimit(2, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/ticket-doc-note').audit({ days: Number(b.days) || 7, apply: b.apply === true }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 // Batch 406: preview the Aria facts Expert would get for one ticket (read-only)
 app.get('/api/admin/aria/facts', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try { if (req.query.columns) return res.json(Object.assign({ success: true }, await require('./lib/aria-facts').columnsOf(String(req.query.columns))));
