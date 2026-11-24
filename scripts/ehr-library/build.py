@@ -4,10 +4,10 @@ W=os.path.dirname(os.path.abspath(__file__)); J=lambda *p: os.path.join(W,*p)
 RB=json.load(open(J('work','rulebook.json'))); TK=json.load(open(J('tickets.json'))); DF=json.load(open(J('work','dentalfields.json'))); MAN=json.load(open(J('doc-images.json'))); DOCMAP={'revolution':'revolution','dentrix-ascend':'ascend','opendental':'opendental','curve':'curve'}; PMS=json.load(open(J('work','pms.json'))); KB=json.load(open(J('work','kb_ehr.json')))
 E=lambda s: html.escape(str(s),quote=False)
 LIB=[ # id, title, specialty, rulebook keys, pms keys, notes file, kb key, deep guide name
- ('dentrix','Dentrix (G6, G7)','Dental',['Dentrix'],['Dentrix'],'dentrix','dentrix',None),
+ ('dentrix','Dentrix (G6, G7)','Dental',['Dentrix'],['Dentrix'],'dentrix','dentrix','Dentrix (G6, G7)'),
  ('dentrix-ascend','Dentrix Ascend','Dental',['Dentrix Ascend'],['Dentrix Ascend'],'dentrixascend','ascend','Dentrix Ascend'),
  ('opendental','Open Dental (server and Open Dental Cloud)','Dental',['OpenDental','Opendental Cloud'],['OpenDental'],'opendental','opendental','Open Dental'),
- ('eaglesoft','Eaglesoft','Dental',['Eaglesoft'],['D:Eaglesoft'],'eaglesoft','eaglesoft',None),
+ ('eaglesoft','Eaglesoft','Dental',['Eaglesoft'],['D:Eaglesoft'],'eaglesoft','eaglesoft','Eaglesoft'),
  ('cleardent','ClearDent','Dental',['Cleardent'],['D:Cleardent'],'cleardent','cleardent',None),
  ('softdent','SoftDent','Dental',['Softdent'],[],'softdent','softdent',None),
  ('tracker','Tracker','Dental',['Tracker'],['D:Tracker'],'tracker','tracker',None),

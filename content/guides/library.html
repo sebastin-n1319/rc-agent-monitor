@@ -10512,10 +10512,10 @@ lifetime)</p></li>
 <li><p>Follow-up scheduled, if needed</p></li>
 </ol>
 
-<h1 id="lib103b5rufvf">Adit Pay Dispute Handling SOP (Adit Pay, updated 2026-07-29)</h1><p><strong>ADIT PAY</strong></p>
+<h1 id="lib103b5rufvf">Adit Pay Dispute Handling SOP (Adit Pay, updated 2026-11-18)</h1><p><strong>ADIT PAY</strong></p>
 <p><strong>Dispute Handling SOP</strong></p>
-<p><em>A guide for T2 Support agents handling card disputes on Adit Pay,
-for active and off-boarded practices.</em></p>
+<p><em>A guide for T2 Support - Adit Pay agents handling card disputes
+on Adit Pay, for active and off-boarded practices.</em></p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -10530,7 +10530,7 @@ for active and off-boarded practices.</em></p>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Version</td>
-<td style="text-align: left;">1.0 (Draft)</td>
+<td style="text-align: left;">1.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Owner</td>
@@ -31427,6 +31427,969 @@ is created, edited, or a field updates.</td>
 <p><em>- End of Document - Adit Technologies Zoho Desk SOP v3.0 (2025)
 -</em></p>
 
+<h1 id="lib18bda9f3zr">Tech Support Portal: T1 Training Guide (Process, updated 2026-11-19)</h1><h2 id="lib18bda9f3zr-tech-support-portal-t1-training-guide">Tech
+Support Portal: T1 Training Guide</h2>
+<p>For T1 SMEs and Team Leads. This guide goes with the four training
+videos, one per module. Every example in it was run on the live portal
+on 19 Nov, read only, except the notification test, which was published
+on Beta to a dummy channel. Ticket numbers are real so you can open them
+in Desk and compare.</p>
+<h2 id="lib18bda9f3zr-what-the-portal-is-for"><strong>What the portal is
+for</strong></h2>
+<p>The Tech Support Portal (techsupport.aditadv.com) puts the checks T2
+and Engineering used to run behind an escalation into T1’s hands. Each
+module answers one question a client asks us every day, using the
+client’s own IDs, while the client is still on the call.</p>
+<ul>
+<li>Notification Dashboard: are notifications reaching this practice,
+and if not, where do they stop?<br />
+</li>
+<li>Pozative Dashboard: what is Google actually returning for this
+location’s reviews and opening hours?<br />
+</li>
+<li>Package Support: what package and add-ons does this location have,
+and which modules should they see?<br />
+</li>
+<li>Form Investigation Tool: why did this submitted patient form not
+import, or import to the wrong place?</li>
+</ul>
+<h2 id="lib18bda9f3zr-how-it-helps-t1"><strong>How it helps
+T1</strong></h2>
+<p>In the last 90 days, by subject keyword, we had 336 notification
+tickets (114 now with T2 or T3, median 16.3 business hours to resolve),
+247 form import tickets (161 with T2 or T3, median 25.4 hours) and 62
+Google review or hours tickets (median 36.4 hours since October). Ticket
+398360, a Google hours complaint, took about 12 days. These numbers are
+directional, but the pattern is clear: much of this wait is time spent
+getting an answer the portal now gives in seconds.</p>
+<p>The goal is not to stop escalating. It is to escalate less often, and
+when we do, to hand over proof: the IDs, the result, the verdict and the
+raw data, so T2 or T3 starts where we stopped instead of starting
+over.</p>
+<h2 id="lib18bda9f3zr-before-you-start"><strong>Before you
+start</strong></h2>
+<ul>
+<li>Sign in with your Adit Google account. If a module says the sign-in
+expired, sign out of the portal and back in.<br />
+</li>
+<li>Check the environment on every module. Live is for real client
+tickets. Beta is for practice.<br />
+</li>
+<li>Keep the Desk ticket open beside the portal. Every module has a copy
+or export button for the ticket.<br />
+</li>
+<li>Never paste patient details into the portal or into a ticket note
+copied from it. The portal only needs IDs and URLs.</li>
+</ul>
+<h2 id="lib18bda9f3zr-the-training-videos"><strong>The training
+videos</strong></h2>
+<p>There is one short video for each module, about four minutes each,
+with on-screen captions. They are in the same Drive folder as this
+guide: Notification Dashboard, Pozative Dashboard, Package Support and
+Form Investigation Tool. Watch the video first, then use this guide on a
+real ticket.</p>
+<h2 id="lib18bda9f3zr-module-1-notification-dashboard"><strong>Module 1:
+Notification Dashboard</strong></h2>
+<p>Use it when a client says appointment reminders, chat alerts or other
+desktop notifications are not showing up. It connects you to the exact
+notification channel of that practice and user, lets you send a test of
+the same type the client complained about, and counts what happened to
+it.</p>
+<h2 id="lib18bda9f3zr-step-1-get-the-ids"><strong>Step 1: Get the
+IDs</strong></h2>
+<p>Expand “Where do I find these IDs?” in the Connection panel. You need
+three:</p>
+<ul>
+<li>Location ID: Adit App, Settings, select the client location. The
+last ID in the URL.<br />
+</li>
+<li>User ID: same page, select the user missing notifications. The last
+ID in the URL.<br />
+</li>
+<li>Organization ID: DevTools, Network tab, the checklogin call. Its
+response holds org_id.<br />
+</li>
+<li>On a screen share, all three are also in Local Storage under
+desktop_app_notification_v2. In the desktop app, press Ctrl + Shift +
+L.</li>
+</ul>
+<p><em>Connection panel with the ID help expanded.</em></p>
+<h2 id="lib18bda9f3zr-step-2-connect-and-test"><strong>Step 2: Connect
+and test</strong></h2>
+<ol type="1">
+<li>Pick the environment. Live for a real ticket, Beta for
+practice.<br />
+</li>
+<li>Paste the Organization ID (required), then Location and User ID to
+watch that exact user.<br />
+</li>
+<li>Click Connect / Subscribe. Both pills turn green: WebSocket
+connected and Subscription active.<br />
+</li>
+<li>Find the notification type the client reported, for example
+Appointment Reminder, and double-click it. A single click only selects
+it.<br />
+</li>
+<li>The popup appears exactly as it would in the desktop app. Ask the
+client whether they saw it too.</li>
+</ol>
+<p><em>Connected and subscribed. The publish buttons are
+unlocked.</em></p>
+<p><em>A test notification arriving on the Beta practice
+channel.</em></p>
+<h2 id="lib18bda9f3zr-step-3-read-the-result"><strong>Step 3: Read the
+result</strong></h2>
+<p>The counters read X attempted, Y confirmed by the publisher and Z
+received by a listener. If all three match, delivery on our side is
+working for that channel. If X is higher than Y, the message was never
+confirmed. If Y is higher than Z, it was confirmed but not received.
+Export the trace for the ticket either way.</p>
+<ul>
+<li>Portal did not receive it, client did not either: the issue is on
+our side. Attach the trace and escalate to Engineering.<br />
+</li>
+<li>Portal received it, client did not: most likely the client’s network
+or device. Tell them, and collect details before escalating.<br />
+</li>
+<li>Both received it: the system is working. If the client still reports
+gaps, collect more examples before escalating.</li>
+</ul>
+<p><em>X, Y and Z counters with the three-row playbook.</em></p>
+<h2 id="lib18bda9f3zr-step-4-use-it-safely"><strong>Step 4: Use it
+safely</strong></h2>
+<p>On Live, every test you send pops up at the client’s front desk.
+Publish only while they are on the call with you. Never use Rapid
+Publish or the Duration Test (which can run up to 48 hours) on a client
+channel; those are for Beta only. Click Disconnect before you close the
+ticket.</p>
+<p><em>Rapid Publish and Duration Test controls. Beta only.</em></p>
+<h2 id="lib18bda9f3zr-module-2-pozative-dashboard"><strong>Module 2:
+Pozative Dashboard</strong></h2>
+<p>Use it when a client says their Google reviews are missing or wrong,
+or Google shows the wrong opening hours. It calls the same Google
+endpoints Adit uses for that location and shows the answer in plain
+English.</p>
+<h2 id="lib18bda9f3zr-step-1-get-the-ids-1"><strong>Step 1: Get the
+IDs</strong></h2>
+<p>Expand “Where do I find these IDs?” under Lookup. Location ID comes
+from Adit App, Settings, the last ID in the URL. Organization ID comes
+from the checklogin call in DevTools. Reviews need only the Location ID;
+business hours need both. Keep the environment on Live for real tickets.
+A 404 result usually means the wrong environment.</p>
+<p><em>Lookup panel with the ID help expanded.</em></p>
+<h2 id="lib18bda9f3zr-step-2-run-the-check"><strong>Step 2: Run the
+check</strong></h2>
+<p>Paste both IDs and click Fetch all. Reviews only and Hours only check
+one side if you need to. The header fills in with the review count,
+average rating and number of hours rows, and the What this means card
+gives a verdict with the next step. In our live example, a dental
+practice, everything came back normally: 151 reviews at an average of 5,
+seven hours rows.</p>
+<p><em>IDs pasted, ready to fetch.</em></p>
+<p><em>After Fetch all: header counters and the What this means
+verdict.</em></p>
+<h2 id="lib18bda9f3zr-step-3-read-the-results"><strong>Step 3: Read the
+results</strong></h2>
+<p>For reviews, HTTP 200 with API status true means Google answered.
+Compare the rating and count with the client’s public listing; if they
+differ, Google is not returning fresh data and the What this means card
+says what to do. For hours, the Open or Closed now badge uses your own
+browser clock, not the client’s timezone, so check before you quote it.
+Google stores a closed day as 00:00 to 00:00, and Closed in the table is
+exactly what the client’s listing shows.</p>
+<p><em>Review aggregates.</em></p>
+<p><em>Opening hours table with closed days.</em></p>
+<h2 id="lib18bda9f3zr-step-4-hand-it-over"><strong>Step 4: Hand it
+over</strong></h2>
+<p>Copy cURL and Copy response give T2 the exact call and answer, so
+nobody has to rerun it. The cURL leaves your Google sign-in token as a
+placeholder on purpose; it is yours and it expires. Copy ticket summary
+puts the IDs, results and verdict on your clipboard for the Desk ticket,
+and Export snapshot saves a file to attach. Clear results before the
+next client.</p>
+<p><em>Raw data with Copy cURL and Copy response.</em></p>
+<h2 id="lib18bda9f3zr-module-3-package-support"><strong>Module 3:
+Package Support</strong></h2>
+<p>Use it when a client asks what their package includes, or why they
+cannot see a module. It has three tabs: Fetch Package Details, Module
+Access and Modules &amp; Packages.</p>
+<h2 id="lib18bda9f3zr-step-1-look-it-up"><strong>Step 1: Look it
+up</strong></h2>
+<p>On Fetch Package Details, choose Deal ID for one location or Account
+ID for every location on the account. Paste the ID from the CRM deal or
+account and click Fetch Existing Package. Check the environment says
+Live.</p>
+<p><em>Fetch Package Details by Deal ID.</em></p>
+<h2 id="lib18bda9f3zr-step-2-read-one-location"><strong>Step 2: Read one
+location</strong></h2>
+<p>A Deal ID lookup returned one location with Adit Core as the primary
+package, the Adit Voice add-on and 14 modules granted. Confirm the
+location name matches the client on the call. If the module they are
+asking about is not in the list, it is not part of their package. If it
+is listed but missing in the app, troubleshoot, then escalate with this
+screen as proof.</p>
+<p><em>One location: package, add-ons and modules granted.</em></p>
+<h2 id="lib18bda9f3zr-step-3-every-location-on-the-account"><strong>Step
+3: Every location on the account</strong></h2>
+<p>An Account ID lookup returned two locations, each with its own Deal
+ID. Here both have the same package and modules. When they differ, that
+usually explains a “works at one office but not the other” ticket.</p>
+<p><em>Lookup by Account ID with two locations.</em></p>
+<h2
+id="lib18bda9f3zr-step-4-module-access-the-what-if-calculator"><strong>Step
+4: Module Access, the what-if calculator</strong></h2>
+<p>Pick a primary package and tick add-ons to see the final module list.
+Adit Core alone grants 13 modules. Adding Adit Voice and AI Front Desk
+brings the total to 15; the highlighted chips, Call Tracking and AI
+Agent, come from the add-ons.</p>
+<p><em>Module Access with two add-ons selected.</em></p>
+<h2 id="lib18bda9f3zr-step-5-modules-packages"><strong>Step 5: Modules
+&amp; Packages</strong></h2>
+<p>The catalog of every package and add-on and the modules each grants,
+with a filter and All, Primary and Add-Ons views. Some rows are
+currently identical, for example the two verification add-ons. Confirm
+with the CSM before quoting a difference between them to a client.</p>
+<p><em>Modules &amp; Packages catalog.</em></p>
+<h2 id="lib18bda9f3zr-module-4-form-investigation-tool"><strong>Module
+4: Form Investigation Tool</strong></h2>
+<p>Use it when a client says a submitted patient form did not import,
+landed in the wrong folder, or did not auto import. It replays the
+import for that one submission and ends with a verdict and next steps.
+The form details are fetched for that run only and never stored.</p>
+<h2 id="lib18bda9f3zr-step-1-get-the-form-url"><strong>Step 1: Get the
+form URL</strong></h2>
+<ol start="6" type="1">
+<li>Impersonate or log in to the client’s account in Adit.<br />
+</li>
+<li>Go to Patient Form, then Submitted.<br />
+</li>
+<li>Open the form the client is reporting and copy the URL from the
+address bar. It looks like
+app.adit.com/patient-form/submissions/detail/&lt;location&gt;/&lt;form&gt;.<br />
+</li>
+<li>Paste it into Form submission URL. Organization, Location and Form
+ID resolve when you investigate.<br />
+</li>
+<li>Pick the reported issue and click Investigate.</li>
+</ol>
+<p><em>Form URL steps, from ticket 407463.</em></p>
+<h2 id="lib18bda9f3zr-step-2-pick-the-issue"><strong>Step 2: Pick the
+issue</strong></h2>
+<p>There are three: Form Stuck in Importing, Document Synced to
+Incorrect Folder, and Auto Importing. Each runs only the checks it
+needs; the progress bar shows which ran and which were skipped. Copy
+report and Download report save the result for the ticket.</p>
+<h3 id="lib18bda9f3zr-form-stuck-in-importing"><strong>Form Stuck in
+Importing</strong></h3>
+<p>Example ticket 407463: no issue found in the last sync, final action
+further investigation. Next steps: check the Sync Error Log for errors
+during syncing, attach the log or a screenshot to the ticket, and assign
+to T3.</p>
+<p><em>Stuck in Importing verdict and next steps.</em></p>
+<h3
+id="lib18bda9f3zr-document-synced-to-incorrect-folder"><strong>Document
+Synced to Incorrect Folder</strong></h3>
+<p>Example ticket 429023: the tool names the folder the form should have
+landed in, here Patient Information. Check the client’s EHR. If the
+document is in that folder, the mapping is correct and the ticket goes
+back to the client. If it is in a different folder, assign to T3.</p>
+<p><em>Expected folder identified.</em></p>
+<h3 id="lib18bda9f3zr-auto-importing"><strong>Auto
+Importing</strong></h3>
+<p>Example ticket 419160: all eight checks passed and the auto-import
+setting was not changed after the form was submitted. When everything
+checks out and the client still sees the problem, escalate to T3 with
+the report.</p>
+<p><em>Auto Importing with all eight checks passing.</em></p>
+<h2 id="lib18bda9f3zr-step-3-technical-details-for-t2"><strong>Step 3:
+Technical details for T2</strong></h2>
+<p>Expand Technical details for T2 to see each step and its result. Pass
+means the step worked, for example login and the last sync time, which
+you should quote in the ticket. Skipped means the step does not apply to
+the chosen issue; it is not a failure.</p>
+<p><em>Technical details with passed and skipped steps.</em></p>
+<h2 id="lib18bda9f3zr-when-to-escalate"><strong>When to
+escalate</strong></h2>
+<p>The rule across all four modules is the same: run the module, attach
+its output, and escalate only when the verdict or playbook says so.</p>
+<ul>
+<li>Notifications: escalate to Engineering only when the portal itself
+did not receive the test. Attach the exported trace and the three
+IDs.<br />
+</li>
+<li>Pozative: escalate to T2 when What this means says Google or the API
+is failing. Attach the ticket summary, snapshot and raw data.<br />
+</li>
+<li>Package Support: escalate when a listed module is missing in the app
+after basic troubleshooting. Attach the location, package and module
+list.<br />
+</li>
+<li>Form Investigation: follow the next steps exactly. They say when to
+return to the client and when to assign to T3. Attach the downloaded
+report.</li>
+</ul>
+<h2 id="lib18bda9f3zr-faq"><strong>FAQ</strong></h2>
+<p><strong>Can I break anything by using the portal?</strong> Pozative,
+Package Support and Form Investigation only read data. The Notification
+Dashboard can send real popups on Live, which is why you publish only
+while the client is on the call, and never use Rapid Publish or the
+Duration Test on Live.</p>
+<p><strong>Which environment should I use?</strong> Live for every real
+ticket. Beta for practice and training. A 404 or an empty result is
+often just the wrong environment.</p>
+<p><strong>The module says my sign-in expired.</strong> Sign out of the
+portal and back in with your Adit Google account, then run the check
+again.</p>
+<p><strong>I cannot find the Organization ID.</strong> In DevTools,
+Network tab, find the checklogin call and read org_id from its response.
+On a screen share with the desktop app, Ctrl + Shift + L shows the
+stored IDs.</p>
+<p><strong>The Pozative hours look right but the client says Google is
+wrong.</strong> Compare with the public listing and get a screenshot
+from the client. If they disagree, Google is not returning up-to-date
+data; the What this means card tells you whether to reconnect the
+location’s Google integration or escalate.</p>
+<p><strong>A client sees a module that is not in their package, or the
+reverse.</strong> Screenshot the Package Support result and attach it. A
+module listed but missing in the app is a support issue; a module not
+listed is a sales conversation, not a fix.</p>
+<p><strong>The form tool says everything checks out, but the client
+insists.</strong> That is exactly the case to escalate to T3, with the
+downloaded report attached so they can see all eight checks passed.</p>
+<p><strong>Do I paste patient details anywhere?</strong> No. The portal
+needs IDs and form URLs only. Keep patient names and details out of
+ticket notes copied from the portal.</p>
+
+<h1 id="lib1pk6x1uj6k">Ticket Automation Rule Book - T1 CS (Process, updated 2026-11-19)</h1><h2 id="lib1pk6x1uj6k-ticket-automation-rule-book---t1-cs">Ticket
+Automation Rule Book - T1 CS</h2>
+<p>What each Desk ticket automation does for T1 CS, what it relies on,
+what it never does, and what the agent checks. Example ticket numbers
+are Desk tickets.</p>
+<h2
+id="lib1pk6x1uj6k-linking-a-ticket-to-the-right-practice-email-and-web-tickets">1.
+Linking a ticket to the right practice (email and web tickets)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AS-01</td>
+<td>Email from someone who is a contact in CRM</td>
+<td>The ticket keeps the practice of that CRM contact. For a
+single-location practice the deal is filled automatically.</td>
+<td>Sender email matched to CRM Contacts</td>
+<td>Does not guess a deal for a multi-location practice</td>
+<td>Correct location (deal) is set</td>
+<td>Desk: T1 agent. CRM: OB or CSM</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>AS-02</td>
+<td>Sender is not on any CRM contact, but the ticket shows a
+practice</td>
+<td>Adds a private Practice check note: the practice came only from the
+Desk contact, confirm it before replying. Tag t1-check-practice.</td>
+<td>CRM Contacts search by sender email; Desk contact account</td>
+<td>Does not change the account on its own</td>
+<td>Practice confirmed from the email before replying; OB or CSM
+informed to add the contact in CRM</td>
+<td>Desk: T1 agent. CRM: OB or CSM</td>
+<td>Rolling out</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>AS-03</td>
+<td>Sender is a CRM contact, but under a different practice than the
+ticket shows</td>
+<td>Adds a Practice check note listing both practices so the agent picks
+the right one. Tag t1-check-practice.</td>
+<td>CRM Contacts search by sender email</td>
+<td>Does not pick between the two on its own</td>
+<td>Right account and deal set before replying</td>
+<td>Desk: T1 agent</td>
+<td>Rolling out</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>AS-04</td>
+<td>Agency or vendor partner writes in for one of several practices (for
+example a marketing agency)</td>
+<td>Adds a Practice check note: agency sender, the practice on the
+ticket may be from an earlier email. Agency domains are kept in a list
+(currently marketingd4y.com).</td>
+<td>Agency domain list; subject and body of the email</td>
+<td>Does not trust the account on the agency’s Desk contact</td>
+<td>Practice confirmed from the subject or body; Desk contact for the
+agency is not tied to one practice; agency person is not added as a
+practice contact in CRM</td>
+<td>Desk: T1 agent</td>
+<td>Rolling out</td>
+<td>431093</td>
+</tr>
+<tr class="odd">
+<td>AS-05</td>
+<td>Multi-location practice (one account, several deals)</td>
+<td>Links the account. The location is not chosen automatically.</td>
+<td>CRM account and its deals</td>
+<td>Does not pick a location</td>
+<td>Right location (deal) is set; ask the client if the email does not
+say</td>
+<td>Desk: T1 agent</td>
+<td>Live</td>
+<td>431093</td>
+</tr>
+<tr class="even">
+<td>AS-06</td>
+<td>Client sends an automatic reply (out of office, we have received
+your message, read receipt)</td>
+<td>No Expert draft is prepared for these.</td>
+<td>Sender and subject patterns</td>
+<td>Does not draft a reply</td>
+<td>Ticket closed or merged into the real one</td>
+<td>Desk: T1 agent</td>
+<td>Live</td>
+<td>430593</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-ringcentral-missed-calls-and-voicemails">2.
+RingCentral missed calls and voicemails</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RC-01</td>
+<td>Caller’s number is on exactly one CRM contact with an email</td>
+<td>Links the ticket to that contact and practice and sends an
+acknowledgement email (with support hours if the call came after
+hours).</td>
+<td>Caller number from the notification, matched in 14 formats to CRM
+Phone, Mobile, Other Phone and Account phone</td>
+<td>Does not use the caller ID name to link</td>
+<td>Contact is the right person</td>
+<td>Desk: automation</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>RC-02</td>
+<td>Same number is on contacts in more than one practice</td>
+<td>Uses the caller ID name to narrow it down. If it still matches more
+than one practice, the ticket is not linked and the candidates are
+listed in a note.</td>
+<td>CRM contacts and accounts with that number; caller ID name</td>
+<td>Does not guess a practice and sends no email</td>
+<td>Right practice linked</td>
+<td>Desk: T1 agent. CRM: OB or CSM to clean up duplicates</td>
+<td>Live</td>
+<td>430012 (two accounts with the same number)</td>
+</tr>
+<tr class="odd">
+<td>RC-03</td>
+<td>Several contacts in the same practice share the number</td>
+<td>Links to the contact with the most past conversations and says so in
+the note.</td>
+<td>Desk conversation count per contact</td>
+<td></td>
+<td>Contact changed if it is the wrong person</td>
+<td>Desk: T1 agent</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>RC-04</td>
+<td>Caller’s number is not in CRM</td>
+<td>Not linked, no email sent. The random account the ticket inherits
+from the shared RingCentral contact is cleared. Note asks for the number
+to be added to the right CRM contact.</td>
+<td>Exact phone match only</td>
+<td>Does not guess a practice from names or partial numbers</td>
+<td>Who called is confirmed; OB or CSM informed to add the number in
+CRM</td>
+<td>CRM: OB or CSM</td>
+<td>Live</td>
+<td>430014 (Island’s Edge, number not in CRM)</td>
+</tr>
+<tr class="odd">
+<td>RC-05</td>
+<td>Same caller calls again within 30 minutes</td>
+<td>Merged into the first open ticket, with a note. No second
+email.</td>
+<td>Phone number, contact’s recent tickets</td>
+<td>Does not create a second ticket or email</td>
+<td></td>
+<td>Desk: automation</td>
+<td>Live</td>
+<td>428239 / 428238</td>
+</tr>
+<tr class="even">
+<td>RC-06</td>
+<td>Contact has Email Opt Out in CRM</td>
+<td>Linked, but no acknowledgement email.</td>
+<td>CRM Email Opt Out</td>
+<td>Does not email the client</td>
+<td>Call back the client</td>
+<td></td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>RC-07</td>
+<td>No caller number in the notification, or CRM could not be
+searched</td>
+<td>Not linked. Note asks the agent to link it manually.</td>
+<td></td>
+<td>Does not link</td>
+<td>Link the ticket manually</td>
+<td>Desk: T1 agent</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>RC-08</td>
+<td>Call to the VoIP support queue</td>
+<td>Sent to the T1 - VoIP CSM team queue.</td>
+<td>Queue extension in the notification</td>
+<td></td>
+<td></td>
+<td>Desk: automation</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>RC-09</td>
+<td>Missed call or voicemail on a TechOB specialist’s line</td>
+<td>Sent to that specialist’s TechOB pod queue, Google Chat alert
+posted, no acknowledgement email. A voicemail copy sent to a
+co-recipient is merged.</td>
+<td>Agent name in the notification; TechOB pod list</td>
+<td>Does not send the client an email</td>
+<td>Specialist follows up directly</td>
+<td>TechOB</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>RC-10</td>
+<td>Caller was trying to reach a TechOB specialist but chose
+support</td>
+<td>Stays with support, Google Chat alert to the specialist.</td>
+<td>Forwarded name in the notification</td>
+<td></td>
+<td>Check the ticket before calling back</td>
+<td>Desk: support</td>
+<td>Live</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-case-notes">3. Case notes</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CN-01</td>
+<td>Every new ticket</td>
+<td>A private case note is added: client name, practice, account number,
+deal stage, callback number, email, any open escalation, the client’s
+query, troubleshooting so far and next steps. It is updated as the
+ticket moves.</td>
+<td>Ticket, CRM and Help Center</td>
+<td>Is not visible to the client</td>
+<td>Note is accurate before relying on it</td>
+<td>Automation</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>CN-02</td>
+<td>Practice details on a RingCentral call</td>
+<td>Practice, account number and deal stage are filled only when the
+caller’s number exactly matches CRM, the caller gave their account
+number, or an agent wrote the account number on the ticket. Otherwise it
+says Not identified.</td>
+<td>Exact phone match; account number from the caller or agent</td>
+<td>Never uses the ticket’s Desk account or contact, other numbers in
+the notification, names, or the Overflow Of Customer Service
+account</td>
+<td>Practice confirmed with the caller</td>
+<td>Automation</td>
+<td>Live</td>
+<td>430014</td>
+</tr>
+<tr class="odd">
+<td>CN-03</td>
+<td>Practice details on an email ticket from someone not in CRM</td>
+<td>Reads the practice or doctor named in the email and matches it to
+CRM.</td>
+<td>Practice and contact names in CRM</td>
+<td></td>
+<td>Practice confirmed (see AS-02 and AS-04)</td>
+<td>Automation</td>
+<td>Live</td>
+<td>431093</td>
+</tr>
+<tr class="even">
+<td>CN-04</td>
+<td>Number or sender matches more than one account</td>
+<td>Says it is on more than one account instead of picking one.</td>
+<td></td>
+<td>Does not pick one</td>
+<td>Right practice set</td>
+<td>Desk: T1 agent</td>
+<td>Live</td>
+<td>430012</td>
+</tr>
+<tr class="odd">
+<td>CN-05</td>
+<td>Any Escalation Ticket Open line</td>
+<td>Shows Yes - Tier N when the ticket has an escalation alert or an
+escalated-tier-1 or escalated-tier-2 tag.</td>
+<td>Escalation alert note and tags</td>
+<td></td>
+<td></td>
+<td>Automation</td>
+<td>Live</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-expert-reply-drafts">4. Expert reply drafts</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EX-01</td>
+<td>New client email in the pilot group</td>
+<td>Prepares a draft reply in the reply box and a private note. The
+agent reads it, edits it and sends it.</td>
+<td>Ticket, CRM, Help Center, related past tickets</td>
+<td>Never sends a reply on its own</td>
+<td>Account, facts and tone checked before sending</td>
+<td>Agent</td>
+<td>Live (pilot)</td>
+<td>428969, 427538</td>
+</tr>
+<tr class="even">
+<td>EX-02</td>
+<td>Ticket is not a client email, is closed, or already has a reply or a
+draft</td>
+<td>No draft is prepared.</td>
+<td>Channel, status, threads</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Live (pilot)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>EX-03</td>
+<td>Ticket changes while the draft is being written (moved to another
+team, closed, or an agent replied)</td>
+<td>The draft is not saved, or is removed. The note is kept as a
+reference.</td>
+<td>Live ticket re-check before saving</td>
+<td>Does not leave an outdated draft</td>
+<td></td>
+<td></td>
+<td>Live (pilot)</td>
+<td>429169, 426401</td>
+</tr>
+<tr class="even">
+<td>EX-04</td>
+<td>Account found by email or by account number in the email</td>
+<td>Links the right account automatically and uses it in the draft.</td>
+<td>CRM contact email; account number</td>
+<td></td>
+<td>Account checked</td>
+<td>Automation</td>
+<td>Live (pilot)</td>
+<td>429235, 428726</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-escalations-desk-and-crm">5. Escalations (Desk and
+CRM)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ES-01</td>
+<td>New ticket from a client with an open Tier 1 or Tier 2
+escalation</td>
+<td>Private note tagging the escalation owner, tag escalated-tier-N, and
+an alert in ESC Tickets with T1 CS. Mike Norris is copied; for Tier 2
+Sebastin, Ronnie G and Kushal Joshi are also copied.</td>
+<td>Ticket’s deal and CRM Escalations</td>
+<td></td>
+<td>Ticket handled on priority</td>
+<td>Escalation owner and T1 agent</td>
+<td>Live</td>
+<td>429537</td>
+</tr>
+<tr class="even">
+<td>ES-02</td>
+<td>Escalation owner creates or owns the ticket themselves</td>
+<td>Only the escalation tag is added. No alert note or Chat post.</td>
+<td>Escalation owner vs ticket owner and creator</td>
+<td>Does not notify people about their own ticket</td>
+<td></td>
+<td></td>
+<td>Live</td>
+<td>430278</td>
+</tr>
+<tr class="odd">
+<td>ES-03</td>
+<td>Escalation is raised after the ticket already exists</td>
+<td>Not alerted on the existing ticket. The next new ticket from that
+client is alerted.</td>
+<td></td>
+<td></td>
+<td>Escalation owner informed by whoever raised it</td>
+<td></td>
+<td>Known gap</td>
+<td>ESC-6309 / 424475</td>
+</tr>
+<tr class="even">
+<td>ES-04</td>
+<td>T1 agent raises an escalation in CRM</td>
+<td>Posted in ESC Tickets with T1 CS for anyone in the CSM team to take
+ownership. If still with the T1 agent after 1 hour, the owner moves to
+Kushal Joshi with a note on the record and a post copying Mike Norris
+and Ronald Jacob.</td>
+<td>CRM Escalations: Created By Role, Owner</td>
+<td>Does not change escalations raised by other teams</td>
+<td></td>
+<td>CSM team</td>
+<td>Live</td>
+<td>ESC-6309</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-routing-to-other-teams">6. Routing to other
+teams</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RT-01</td>
+<td>Email clearly about RCM</td>
+<td>Moved to the RCM team with an acknowledgement and a note. Once
+routed, it is not routed again.</td>
+<td>Subject, body, CRM deal</td>
+<td>Does not route on a single weak keyword</td>
+<td></td>
+<td>RCM team</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>RT-02</td>
+<td>Email about billing</td>
+<td>Moved to the Billing team with a note.</td>
+<td>Subject and body</td>
+<td></td>
+<td></td>
+<td>Billing team</td>
+<td>Live</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="lib1pk6x1uj6k-data-responsibility">7. Data responsibility</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule ID</th>
+<th>Scenario</th>
+<th>What the automation does</th>
+<th>Data it relies on</th>
+<th>What it never does</th>
+<th>What the agent checks</th>
+<th>Who updates the record</th>
+<th>Status</th>
+<th>Example ticket</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DR-01</td>
+<td>A new staff member, wrong contact or duplicate is found on a
+ticket</td>
+<td>T1 fixes the Desk side and informs the OB or CSM, who updates
+CRM.</td>
+<td></td>
+<td>T1 does not edit CRM records by process</td>
+<td></td>
+<td>CRM: OB or CSM</td>
+<td>Live</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>DR-02</td>
+<td>Two CRM accounts or contacts are duplicates (same name or same
+number)</td>
+<td>Automations will not pick between them and will flag the ticket
+instead.</td>
+<td></td>
+<td></td>
+<td>Report the duplicate</td>
+<td>CRM: OB or CSM</td>
+<td>Live</td>
+<td>430012</td>
+</tr>
+</tbody>
+</table>
+
 <h1 id="lib1wgct4dzxn">CSR Automation - Process Document (Product, updated 2025-11-24)</h1><h2
 id="lib1wgct4dzxn-csr-automation-process-document-zoho-crm-asana"><strong>CSR
 Automation - Process Document (Zoho CRM → Asana)</strong></h2>
@@ -33624,7 +34587,7 @@ requires additional authorization, the appropriate support/escalation
 process should be followed rather than making an unsupported
 configuration change.</p>
 
-<h1 id="lib1u7p7lyvoe">Adit Voice : Master Document (Voice, updated 2026-09-16)</h1><p><strong>Introduction to Adit Voice - <a href="">Link</a></strong></p>
+<h1 id="lib1u7p7lyvoe">Adit Voice : Master Document (Voice, updated 2026-11-18)</h1><p><strong>Introduction to Adit Voice - <a href="">Link</a></strong></p>
 <p><strong>Getting Started</strong></p>
 <ol type="1">
 <li><p><a href="">What is Adit Voice and how does it works</a><br />

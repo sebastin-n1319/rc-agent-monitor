@@ -7,7 +7,7 @@
    "title": "Adit Integration Rulebook",
    "feeds": "content/guides/ehr-library.html",
    "how": "scripts/ehr-library/README.md steps 1 and 2 (also open every link inside it)",
-   "imported_at": "2026-11-17T15:00:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1j7Td_thcn_UUk6DwqzkjlTckmSh95Mjyz6iHnrMxA4k",
@@ -15,7 +15,7 @@
    "title": "Patient Form PMS field integration",
    "feeds": "content/guides/ehr-library.html",
    "how": "scripts/ehr-library/README.md step 3",
-   "imported_at": "2026-11-17T15:00:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "11lRwVlOOScGRyoAf0BQN8wv09omyWYCcehsxxtVQGPc",
@@ -23,15 +23,15 @@
    "title": "Patient Forms EHR Fields List (Dental)",
    "feeds": "content/guides/ehr-library.html",
    "how": "scripts/ehr-library/README.md step 2 (pms.py)",
-   "imported_at": "2026-11-17T16:00:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1L2tV1O4pcGTIsxRpnbTjbOBAjLYCHaf4",
    "kind": "folder",
-   "title": "Adit EHR technical documentation (9 docs)",
+   "title": "Adit EHR technical documentation (11 docs)",
    "feeds": "content/guides/ehr-integrations.html and content/guides/ehr-library.html (screenshots)",
    "how": "scripts/ehr-library/README.md step 5",
-   "imported_at": "2026-11-17T15:00:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1LRthqEnvZIOvfLAxyE1qXUJBM5XXFBbYBKA9cwjZqqk",
@@ -135,7 +135,7 @@
    "title": "Links (Adit Pay knowledge pack index)",
    "feeds": "content/guides/adit-pay.html",
    "how": "a new link in it is a new source: read it and add it to adit-pay.html",
-   "imported_at": "2026-11-16T12:00:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1JNSU1LdEOSEATtl6Tt_qXlC5zoHuwXxVeFj6_VFZ-z4",
@@ -223,7 +223,7 @@
    "title": "Adit Pay MFA OTP Agent SOP",
    "feeds": "content/guides/adit-pay.html section 14 and the seeded rule 'Adit Pay verification code (MFA) for payout and ownership changes' in lib/expert.js",
    "how": "update section 14; a seeded rule is only inserted once, so change the live rule on the Rules page (with approval) as well",
-   "imported_at": "2026-11-17T03:50:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1mcpHjg8N6w2EFNQq7dU9yMTEJoYFosuE4K4oSIT-PDg",
@@ -254,10 +254,10 @@
   {
    "id": "scripts/drive-library/sources.json",
    "kind": "list",
-   "title": "Team documents library (57 Drive documents)",
+   "title": "Team documents library (59 Drive documents)",
    "feeds": "content/guides/library.html (doc id 'library')",
    "how": "follow scripts/drive-library/README.md: re-export changed documents, look for new product and process documents, run build.py",
-   "imported_at": "2026-11-18T09:40:00Z"
+   "imported_at": "2026-11-24T07:35:07Z"
   }
  ]
 }

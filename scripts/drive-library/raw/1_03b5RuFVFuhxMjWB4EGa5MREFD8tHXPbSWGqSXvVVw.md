@@ -2,11 +2,11 @@
 
 **Dispute Handling SOP**
 
-*A guide for T2 Support agents handling card disputes on Adit Pay, for active and off-boarded practices.*
+*A guide for T2 Support \- Adit Pay agents handling card disputes on Adit Pay, for active and off-boarded practices.*
 
 | Field | Detail |
 | :---- | :---- |
-| Version | 1.0 (Draft) |
+| Version | 1.0  |
 | Owner | Adit Pay Team (Manager: Sebastin) |
 | Applies to | All Adit Pay support agents (Calls Wing & Chat Wing) |
 | Status | Interim guidance: Part 3 (off-boarded clients) reflects current system behaviour, pending a product decision on the notification gap (see Section 6\) |

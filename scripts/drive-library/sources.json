@@ -183,8 +183,8 @@
    "title": "Adit Voice : Master Document",
    "area": "Voice",
    "mime": "doc",
-   "modified": "2026-09-16T17:36:05.615Z",
-   "imported_at": "2026-11-18T09:40:00Z"
+   "modified": "2026-11-18T17:58:13.242Z",
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "19F544KvqTuUOvXCp8YbmewBHzrDKTX0fj8iGs8fHxNQ",
@@ -311,8 +311,8 @@
    "title": "Adit Pay Dispute Handling SOP",
    "area": "Adit Pay",
    "mime": "doc",
-   "modified": "2026-07-29T14:09:53.402Z",
-   "imported_at": "2026-11-18T09:40:00Z"
+   "modified": "2026-11-18T16:06:57.816Z",
+   "imported_at": "2026-11-24T07:35:07Z"
   },
   {
    "id": "1C8gylG6zGabvP8x7vikzEZjpnZT3XgOrnnmyCeAs1cQ",
@@ -489,6 +489,40 @@
    "mime": "pdf",
    "modified": "2025-12-18T21:44:54Z",
    "imported_at": "2026-11-18T09:40:00Z"
+  },
+  {
+   "id": "18BdA9f3ZRqTcOEWsczTbpGFDgn7025CHR0PtaFh1amg",
+   "title": "Tech Support Portal: T1 Training Guide",
+   "area": "Process",
+   "mime": "doc",
+   "imported_at": "2026-11-24T07:35:07Z",
+   "modified": "2026-11-19T17:19:48.465Z",
+   "note": "deal and account IDs and the client location names in the examples left out"
+  },
+  {
+   "id": "1pk6x1UJ6KPUuPHQPcQFgfsejQiAZ0tSDT1C3QT6hmEg",
+   "title": "Ticket Automation Rule Book - T1 CS",
+   "area": "Process",
+   "mime": "sheet",
+   "imported_at": "2026-11-24T07:35:07Z",
+   "modified": "2026-11-19T00:46:07.172Z",
+   "note": "written from the sheet (CSV export): every column except Reviewer Notes; client practice names in the examples left out"
+  },
+  {
+   "id": "1RB4psdsXKY3hw5spSoXX2L8j7dgXgYk0wK_E5a_U95A",
+   "title": "Tech_Support_Portal_Talking_Points_and_FAQs",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-11-19T16:03:21.154Z",
+   "skip": "meeting talking points for a review call (real client names and ticket figures); the T1 Training Guide covers how to use the portal"
+  },
+  {
+   "id": "19rkYXssdR7RaAuSytvBeMVhckopR-fRL7Y5swfTKfbM",
+   "title": "Tech Support Portal: Talking Points and FAQs (Monday call)",
+   "area": "Process",
+   "mime": "doc",
+   "modified": "2026-11-19T15:59:46.379Z",
+   "skip": "same text as Tech_Support_Portal_Talking_Points_and_FAQs; meeting talking points"
   }
  ]
 }

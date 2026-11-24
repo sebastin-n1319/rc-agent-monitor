@@ -701,7 +701,457 @@
 <p>• Dev POC:</p>
 <p>• QA POC:</p>
 <p>• Dev Lead:</p>
-<p>• QA Lead:</p>
+<p>• QA EHR Lead:</p>
+<h1 id="dentrix">Dentrix (G6, G7) integration</h1>
+<h2 id="dentrix-how-dentrix-ehrs-work">How Dentrix EHRs Work</h2>
+<p>Dentrix G6 and Dentrix G7 are on-premise Dental Practice Management Systems (PMS) developed by Henry Schein One.</p>
+<p>They are primarily designed for dental clinics to manage their complete practice operations, including:</p>
+<p>• Patient registration and management</p>
+<p>• Appointment scheduling</p>
+<p>• Dental clinical charting</p>
+<p>• Treatment planning</p>
+<p>• Billing and payments</p>
+<p>• Insurance claims</p>
+<p>• Patient communication</p>
+<p>• Recall and follow-up management</p>
+<p>• Practice reporting and analytics</p>
+<p>Important: Dentrix G6/G7 and Dentrix Ascend are different products. G6/G7 use a locally installed, server-and-workstation architecture, whereas Ascend is a cloud-based product.</p>
+<h2 id="dentrix-1-how-dentrix-works">1. How Dentrix works</h2>
+<p>Dentrix acts as the central system for managing dental practice operations.</p>
+<p>A typical workflow looks like this:</p>
+<p>• Patient Registration: the front desk creates a patient profile with demographics, contact details, insurance information and medical history.</p>
+<p>• Appointment Scheduling: staff schedule appointments based on provider availability, operatory availability and appointment type.</p>
+<p>• Patient Check-in: staff check in the patient and update the appointment status.</p>
+<p>• Clinical Examination: the dentist opens the patient chart and records diagnoses, clinical notes, tooth conditions and treatment requirements.</p>
+<p>• Treatment Planning: the dentist creates a treatment plan with procedures, CDT codes, estimated costs and planned visits.</p>
+<p>• Procedure Completion: completed procedures are posted to the patient&#x27;s clinical history and financial ledger.</p>
+<p>• Billing and Insurance: staff generate claims, record insurance payments, post patient payments and manage outstanding balances.</p>
+<p>• Recall and Follow-up: the practice tracks patients due for routine follow-ups, such as hygiene and prophylaxis appointments.</p>
+<h2 id="dentrix-2-major-dentrix-modules">2. Major Dentrix modules</h2>
+<p>Module | Purpose | Important information<br>Family File | Patient management | Patient demographics, family details, contact information<br>Appointment Book | Appointment management | Appointment date, time, provider, operatory, status<br>Patient Chart | Clinical management | Tooth chart, diagnoses, procedures, clinical history<br>Treatment Planner | Treatment management | Planned procedures, CDT codes, estimated costs<br>Ledger | Financial management | Charges, payments, adjustments, balances<br>Insurance | Insurance management | Coverage, claims, insurance payments<br>Document Center | Document management | Patient-related documents<br>Perio Chart | Periodontal management | Periodontal measurements and examinations<br>Recall | Patient follow-ups | Recare dates, recall types and due patients<br>Reports | Practice analytics | Production, collections, appointments and patient reports</p>
+<h2 id="dentrix-3-technical-architecture-how-dentrix-is-deployed">3. Technical architecture - How Dentrix is deployed</h2>
+<p>Dentrix generally follows a client-server architecture .</p>
+<p>Component | Function<br>Dentrix Server | Hosts the central practice database<br>Dentrix Workstations | Windows computers used by front-desk staff, dentists and billing teams<br>Local Network | Connects all workstations to the central server<br>Imaging Software | Integrates with Dentrix for dental X-rays and clinical images<br>Third-party integrations | Connect external applications for reminders, analytics, payments, etc.</p>
+<h3 id="dentrix-how-data-is-stored-and-accessed">How data is stored and accessed</h3>
+<p>• Dentrix is installed on the practice server and required workstations.</p>
+<p>• The central database is hosted on the practice&#x27;s server.</p>
+<p>• Workstations access and update patient information through the Dentrix application.</p>
+<p>• Changes made by one workstation become available to other connected workstations through the shared database.</p>
+<p>• External integrations can access relevant information through supported integration mechanisms or other configured access methods.</p>
+<p>Dentrix G7 system documentation specifically describes the server as the database server for connected workstations.</p>
+<h2 id="dentrix-4-difference-between-dentrix-g6-and-g7">4. Difference between Dentrix G6 and G7</h2>
+<p>High-level product comparison</p>
+<p>Feature | Dentrix G6 | Dentrix G7<br>Deployment | On-premise | On-premise<br>Architecture | Client-server | Client-server<br>Patient management | Supported | Supported<br>Appointment scheduling | Supported | Supported<br>Clinical charting | Supported | Supported<br>Treatment planning | Supported | Supported<br>Billing and ledger | Supported | Supported<br>Health history | Existing capabilities | Enhanced Health History module<br>Imaging integration | Imaging integrations | Smart Image enhancements<br>Payment agreements | Existing financial workflows | Enhanced Payment Agreement Manager<br>Workflow improvements | Earlier generation | Improved office and clinical workflows</p>
+<p>G7 introduced improvements such as Smart Image, expanded health history, payment agreement management and other workflow enhancements.</p>
+<h2 id="dentrix-5-how-dentrix-g6-g7-differs-from-dentrix-ascend">5. How Dentrix G6/G7 differs from Dentrix Ascend</h2>
+<p>This distinction is particularly important when evaluating integrations.</p>
+<p>Parameter | Dentrix G6/G7 | Dentrix Ascend<br>Product type | Desktop PMS | Cloud PMS<br>Installation | Local installation | Browser-based<br>Database | Local practice server | Cloud-hosted<br>Workstations | Connect to local server | Access through internet<br>Network dependency | Local network + internet for services | Internet connectivity<br>Integration approach | Depends on local access, supported interfaces and integration setup | Cloud APIs and browser-based workflows, depending on available access<br>RPA feasibility | Desktop UI automation | Browser automation</p>
+<h2 id="dentrix-14-how-pozative-integrates-with-dentrix">14. How Pozative integrates with Dentrix</h2>
+<p>Dentrix is the most complete integration in the build: about 80 business methods, 150 data methods and more than 20 timers.</p>
+<h3 id="dentrix-connecting">Connecting</h3>
+<p>• Find Dentrix. Read Software\Dentrix Dental Systems, Inc.\Dentrix\General from the registry and the installed-products list. Classify the install as DTX G5, G6 or G6.2+.</p>
+<p>• Register with the Dentrix API. Call DENTRIXAPI_Initialize, then DENTRIXAPI_RegisterUser with Adit&#x27;s developer key file Adit.dtxkey. This uses the vendor DLLs Dentrix.API.dll, Dtxdb32.dll and dtxhelp.dll.</p>
+<p>• Get database credentials. DENTRIXAPI_GetConnectionString returns the c-tree ACE SQL connection. G6.2+ uses GetDentrixG62ConnectionString over TLS and needs the ddxdesktopspc.pfx certificate installed. Without it, Pozative asks to be run as administrator.</p>
+<p>• Fallback. The Dentrix setup screen accepts host, port, user and password manually and has a Test Connection button.</p>
+<h3 id="dentrix-reading-dentrix-data">Reading Dentrix data</h3>
+<p>Queries run against Dentrix&#x27;s admin schema through DtxDataProvider / CTreeProvider. Examples from the compiled SQL:</p>
+<p>• Appointments and changes: admin.appt, admin.v_appointment, admin.v_appt_book_events</p>
+<p>• Patients and families: admin.patient, admin.address, admin.payment_view, admin.claiminfo</p>
+<p>• Schedules: stored procedures sp_getproviderschedule, sp_getprovschedexceptions, sp_getoperatoryschedexceptions, sp_getpracticeschedexceptions</p>
+<p>• Recalls: sp_getallpatientrecalls. Appointment types: admin.v_Appointment_Types. Document folders: admin.doccat.</p>
+<h3 id="dentrix-writing-an-online-booking-into-dentrix">Writing an online booking into Dentrix</h3>
+<p>Step | Who | What happens<br>1 | Patient → Adit cloud | Patient books an appointment online.<br>2 | Adit cloud → AditEventListener | Adit sends a booking event to this location.<br>3 | AditEventListener → Pozative.exe | Listener triggers an immediate pull.<br>4 | Pozative.exe → Adit cloud | Pozative pulls the booking and queues it in Appointment_Write.db.<br>5 | Pozative.exe → DTX_Appointment_Write.exe | Pozative launches the Dentrix writer.<br>6 | Writer → Dentrix DB | Find the patient by name, email, phone and date of birth.<br>7 | Writer → Dentrix DB | If the patient is not found: create address, patient, chart number and insurance.<br>8 | Writer → Dentrix DB | Check the operatory slot for existing appointments and blockouts.<br>9 | Writer → Dentrix DB | Insert into admin.appt, add notes and appointment history.<br>10 | Writer → Pozative.exe | Store the new Dentrix apptid in the local cache.<br>11 | Pozative.exe → Adit cloud | Push the appointment with its Dentrix ID. The booking shows as confirmed.</p>
+<p>Details from DTX_Appointment_Write:</p>
+<p>• Duplicates. CheckDuplicatePatient and CheckSSNDuplicate run before any patient is created. CheckDuplicateAppointment runs before any appointment is created.</p>
+<p>• Chart numbers follow the practice&#x27;s own Dentrix numbering setting: numeric, padded or alphanumeric (GetDentrixChartNumberSettingsData, BuildAlphaNumericChartNum).</p>
+<p>• New patients get a primary provider, guarantor and family links. If insurance was supplied, the carrier, insured record and a default coverage table are created too.</p>
+<p>• Conflicts with existing appointments or blockouts in the same operatory and time are detected before insert (CheckConflict, GetOperatoryDatetimeWiseBlockout).</p>
+<p>• Updates and deletions from Adit follow the same path through Update_Appointment_Local_To_Dentrix and Delete_Appointment_Write_Local_To_Dentrix.</p>
+<p>DTX_Blockout_Write.exe does the same for blockouts, writing to admin.rscuse with its own duplicate and conflict checks.</p>
+<h3 id="dentrix-other-write-backs-from-the-main-app">Other write-backs from the main app</h3>
+<p>Item from Adit | Lands in Dentrix as<br>Appointment confirmation | Appointment status update on admin.appt<br>Medical history form | Health-history items and patient links (admin.hhitem, admin.hhlinkpat_item), prescriptions (admin.RxDef, admin.RxPatient)<br>SMS and call logs | Patient notes in admin.fullnotes<br>Text-message opt-in | admin.patient.privacyflags<br>Payment | Ledger entry in admin.fullproclog<br>Form PDF, treatment or insurance document | Attachment in Dentrix Document Center</p>
+<h3 id="dentrix-documents">Documents</h3>
+<p>PDFs reach Dentrix Document Center through a separate tool chain, because Document Center has its own password and libraries:</p>
+<p>• SynchDentrixDAL.Save_Document_in_Dentrix, Save_Treatment_Document_in_Dentrix and Save_InsuranceCarrier_Document_in_Dentrix prepare the attachment for the right patient and folder.</p>
+<p>• DentrixPDFupdate.exe and DocumentDLL\Document.CenterDoc.exe do the import using Dentrix&#x27;s Document Center libraries.</p>
+<p>• DTX_Helper.exe wraps DENTRIXAPI_ImportFileToDocumentCenter and reads or restores the Document Center password.</p>
+<p>• AditPDF.exe configures that password. Pozative keeps it as DentrixPDFPassword and syncs it with fncSynchDentrixDocPwd.</p>
+<h2 id="dentrix-15-pozative-startup-watchdog-and-updates">15. Pozative startup, watchdog and updates</h2>
+<p>• Windows boots and the PozativeAppStatus service starts.</p>
+<p>• The service reads Location and Organization from Pozative.sdf.</p>
+<p>• If Pozative.exe isn&#x27;t running, the service launches it in the logged-in user&#x27;s session, then keeps checking on a timer.</p>
+<p>• Pozative.exe&#x27;s splash timer loads the configuration and connects to the EHR.</p>
+<p>• Pozative.exe starts the per-entity sync timers and AditEventListener.exe.</p>
+<p>• tmrCheckApplicationUpdate periodically runs VersionUpdate.exe.</p>
+<p>• Install. InstallWinService.exe or UnInstallWindowService.bat registers the service with installutil and starts it.</p>
+<p>• Keep-alive. The service runs as SYSTEM and starts the app in the logged-in user&#x27;s desktop session. This uses the Windows terminal-services token APIs, so the app can show its tray UI and use the Dentrix APIs as the user.</p>
+<p>• Watchdogs. ExeRun.exe and SyncServerAppCheck.exe look at the last sync time and the appointment sync interval in SyncModule, then restart the app when sync has stalled.</p>
+<p>• Updates. VersionUpdate.exe compares versions, downloads the full package, stops the service, copies files, restarts it, and can roll back.</p>
+<h2 id="dentrix-16-pozative-logs-and-troubleshooting">16. Pozative logs and troubleshooting</h2>
+<p>Each log folder holds one text file per day, under a yyyy-MM subfolder (for example SyncLogFile\2026-11\2026_11_16.txt).</p>
+<p>Folder | Look here when<br>SyncLogFile | Data isn&#x27;t moving. Shows each sync start and end, record counts, and app restarts.<br>ErrorLogFile | Something failed. Exceptions from every sync method.<br>ConnectionLogFile | Pozative can&#x27;t reach the EHR database.<br>ServiceLogsFile | The app keeps closing or never starts. Shows service start, location lookup and relaunch decisions.</p>
+<h3 id="dentrix-quick-checks">Quick checks</h3>
+<p>• Is the PozativeAppStatus service running? Is Pozative.exe in Task Manager?</p>
+<p>• Does today&#x27;s ServiceLogsFile show a Location and Organization? If not, finish setup in Pozative.</p>
+<p>• Does today&#x27;s ConnectionLogFile show EHR connection errors? Fix the EHR credentials. For Dentrix, check the key file and certificate.</p>
+<p>• Is AditEventListener.exe running? If not, changes still sync, but only on the timers.</p>
+<p>• Are bookings stuck? Check the ...Write error lines in ErrorLogFile for conflicts or duplicate-patient rejections.</p>
+<h2 id="dentrix-18-important-points-for-qa">18. Important points for QA</h2>
+<p>For a Dentrix G6/G7 integration, I would prioritize these test areas:</p>
+<p>• Multi-workstation testing: Changes made on one workstation should be reflected correctly in other workstations.</p>
+<p>• Database connectivity: Verify integration behavior when the server is unavailable.</p>
+<p>• Application performance: Check Dentrix performance while background sync is running.</p>
+<p>• Duplicate prevention: Verify duplicate patient and appointment creation does not occur.</p>
+<p>• Data consistency: Validate patient, appointment, provider and operatory mappings.</p>
+<p>• Appointment conflicts: Test concurrent appointment updates from Dentrix and Adit.</p>
+<p>• Version compatibility: Test G6 and supported G7 versions separately.</p>
+<p>• Recovery: Validate sync recovery after network interruption, server restart or workstation shutdown.</p>
+<h2 id="dentrix-19-glossary">19. Glossary</h2>
+<p>Term | Meaning<br>EHR / PMS | The practice&#x27;s own management system (Dentrix, Open Dental …), which holds the authoritative schedule and patient records.<br>Local cache | Pozative.sdf and the *.db files on the practice PC.<br>Live database | Adit&#x27;s cloud, reached through the sync API. The code calls it &quot;LiveDB&quot;.<br>Push / Pull | Push sends local data to Adit. Pull brings Adit data down to the PC.<br>Write-back | Writing pulled data into the EHR.<br>EHR_ID / Web_ID | A record&#x27;s ID in the EHR and in Adit. Both are stored locally to keep the systems linked.<br>Location / Organization | The Adit practice location and its parent account that this install belongs to.<br>Service_Installation | Local row describing this install: which EHR, its settings, and options such as auto-booking.<br>Blockout / Operatory event | A blocked time range on a chair or provider&#x27;s schedule.<br>.dtxkey | Dentrix API developer key file that identifies Adit as a registered integration.</p>
+<h2 id="dentrix-dentrix-on-premise-common-issues-internal-task-revie">Dentrix on-premise common issues (internal task review, Nov 2026)</h2>
+<p>A review of the Dentrix (on-premise) development tasks. Practice names and ticket numbers are left out; search Desk for the EHR and the symptom to find the live tickets.</p>
+<h3 id="dentrix-1-patient-forms-and-pdfs-not-importing-about-20-task">1. Patient forms and PDFs not importing (about 20 tasks, the biggest group)</h3>
+<p>• Forms stuck on &quot;Importing&quot; or never reaching the Dentrix Document Center.</p>
+<p>• PDF not attached, or saved to the wrong Document Center folder. One cause was found: the PDF attachment connection string is not created when the EHR is set up. A general &quot;PDF import issue - Dentrix&quot; task was still open.</p>
+<p>• Form data written back wrongly: Dentrix allows only 1 character for the middle name but Adit wrote back more; a LocalDB value spelled &quot;Spose&quot; instead of &quot;Spouse&quot;; forms stuck because of the patient&#x27;s status in the EHR; incorrect form details written to Dentrix.</p>
+<h3 id="dentrix-2-adit-pay-payment-posting-about-13-tasks-several-st">2. Adit Pay payment posting (about 13 tasks, several still open)</h3>
+<p>• Payments posted twice to the Dentrix ledger (duplicate posting was the active problem in November 2026, with three open tasks that month).</p>
+<p>• Payments not posted or posted late.</p>
+<h3 id="dentrix-3-appointment-and-patient-sync-about-10-tasks">3. Appointment and patient sync (about 10 tasks)</h3>
+<p>• Appointments booked in Adit saved in the Adit database but not showing in Dentrix; scheduler appointments not syncing to the EHR; duplicate appointments.</p>
+<p>• Patients not syncing, and preferred language not updating.</p>
+<p>• New Dentrix patient statuses mishandled: new patients marked as non-patients.</p>
+<p>• In progress: a manual patient sync button for Dentrix.</p>
+<h3 id="dentrix-4-connection-setup-and-ehr-user-several-open-for-mon">4. Connection, setup and EHR user (several open for months)</h3>
+<p>• Users are not created automatically in Dentrix (open since Feb 2026).</p>
+<p>• Writing back to Dentrix fails when no &quot;Default user&quot; is selected in Settings (open since Apr 2026).</p>
+<p>• Syncing the Pozative exe creates a new Adit user in Dentrix.</p>
+<p>• Auto-configuration fails and asks for database credentials.</p>
+<p>• The connected/disconnected status was wrong (fixed in May 2026).</p>
+<h3 id="dentrix-5-treatment-plans-about-7-tasks">5. Treatment plans (about 7 tasks)</h3>
+<p>• Bugs: no treatment plan opens from the listing page; phases show wrong and priority shows 0; folders do not show; the Refresh button does nothing.</p>
+<p>• Requests: planned vs. unplanned treatment logic, adding the PDF to the assigned attachment category, treatment plans by phase.</p>
+<h3 id="dentrix-6-online-scheduling-and-patient-card-about-6-tasks">6. Online Scheduling and patient card (about 6 tasks)</h3>
+<p>• Online Scheduling: appointment type &quot;&lt;none&gt;&quot; shows under Services; AI online booking picks an inactive patient profile; custom hours disappear once an operatory is selected (open since Dec 2025).</p>
+<p>• Patient card: allow blank optional fields.</p>
+<p>• Insurance details on new patients: member ID treated as SSN, subscriber relationship, insurance-holder name (open since Jul 2025).</p>
+<h3 id="dentrix-takeaways">Takeaways</h3>
+<p>• Forms/PDF import and payment posting make up about half of all Dentrix on-premise tasks and keep recurring.</p>
+<p>• Some setup bugs (the default write-back user and automatic user creation) have been open for 6 to 9 months and likely cause other tickets.</p>
+<p>• Not every payment-posting task is confirmed as Dentrix on-premise (some matched on &quot;Dentrix&quot; in the description only, and one practice had an earlier Dentrix Ascend ticket), so check the account&#x27;s EHR before quoting a known issue.</p>
+<h1 id="eaglesoft">Eaglesoft integration</h1>
+<h2 id="eaglesoft-how-eaglesoft-ehr-works">How Eaglesoft EHR works</h2>
+<p>Eaglesoft is a dental Practice Management System (PMS) from Patterson. Practice staff use the Eaglesoft desktop application, and the practice&#x27;s own server hosts the relevant Eaglesoft services and data.</p>
+<p>Third-party applications connect to Eaglesoft through Patterson&#x27;s authorized integration mechanism, Eaglesoft Innovation Connection , rather than relying on direct database connections.</p>
+<h2 id="eaglesoft-1-how-eaglesoft-works-overall-workflow">1. How Eaglesoft works - overall workflow</h2>
+<p>A dental practice generally uses Eaglesoft across the following workflow:</p>
+<p>1. Patient Registration</p>
+<p>• Create a new patient profile.</p>
+<p>• Store patient demographics and contact information.</p>
+<p>• Maintain patient account and insurance details.</p>
+<p>• Associate the patient with the appropriate policy holder and account guarantor.</p>
+<p>• Assign the patient to the appropriate practice location.</p>
+<p>2. Appointment Scheduling</p>
+<p>• Schedule patient appointments.</p>
+<p>• Assign the provider, date, time, and relevant appointment details.</p>
+<p>• Review patient insurance coverage before appointments.</p>
+<p>• Check patient account information and outstanding balances.</p>
+<p>Note: Specific appointment status values, scheduling fields, and API support should be verified in the installed Eaglesoft version.</p>
+<p>3. Patient Check-in</p>
+<p>• Review patient information.</p>
+<p>• Verify active dental insurance coverage.</p>
+<p>• Review outstanding patient balances.</p>
+<p>• Confirm any required insurance or account information.</p>
+<p>4. Clinical Examination and Treatment</p>
+<p>• Dentist examines the patient.</p>
+<p>• Record applicable clinical information and procedures.</p>
+<p>• Review treatment plans and associated procedure details.</p>
+<p>• Confirm procedure codes, tooth, quadrant, and surface information.</p>
+<p>Note: The supplied RCM guide confirms charge and coding review, but does not fully document Eaglesoft&#x27;s clinical charting workflow.</p>
+<p>5. Insurance Verification and Treatment Plan</p>
+<p>• Verify active dental insurance coverage.</p>
+<p>• Maintain payer and employer plan information.</p>
+<p>• Review coinsurance, deductibles, annual maximums, and benefit-year specifications.</p>
+<p>• Confirm the appropriate fee schedule.</p>
+<p>• Update existing treatment plan estimates when applicable plan or fee schedule details change.</p>
+<p>6. Billing and Claims</p>
+<p>• Review production and procedure charges.</p>
+<p>• Validate provider and location information.</p>
+<p>• Submit primary and secondary insurance claims.</p>
+<p>• Review clearinghouse errors and rejected claims.</p>
+<p>• Follow up on outstanding insurance claims.</p>
+<p>7. Payment and Ledger Management</p>
+<p>• Post insurance payments.</p>
+<p>• Record patient payments.</p>
+<p>• Apply applicable adjustments.</p>
+<p>• Maintain patient account balances.</p>
+<p>• Process refunds and returned-check adjustments where applicable.</p>
+<p>8. Follow-up and Reporting</p>
+<p>• Review outstanding insurance claims.</p>
+<p>• Review patient accounts receivable.</p>
+<p>• Generate patient billing statements.</p>
+<p>• Monitor production, collections, and account balances.</p>
+<p>Source: d4cpracticedevelopment.com</p>
+<h2 id="eaglesoft-2-major-modules-of-eaglesoft">2. Major modules of Eaglesoft</h2>
+<p>The following list separates the functional areas confirmed by the supplied guide from areas that need further product-level verification.</p>
+<p>A. Patient Management</p>
+<p>• Maintains patient details, account information, insurance information, policy-holder details, and account guarantor information.</p>
+<p>B. Appointment Management</p>
+<p>• Used for patient appointment scheduling. Exact appointment fields and integration coverage need validation.</p>
+<p>C. Insurance Verification</p>
+<p>• Supports Real Time Eligibility (RTE) when payer and employer plan profiles are correctly configured.</p>
+<p>D. Payer Management</p>
+<p>• Maintains payer information and payer IDs required for claims submission and RTE.</p>
+<p>E. Employer Plan Management</p>
+<p>• Maintains coinsurance, deductibles, annual maximums, benefit-year specifications, and plan details.</p>
+<p>F. Treatment Plan</p>
+<p>• Maintains proposed treatment and fee-related estimates. The guide notes that existing treatment plans may need updating when employer plans or fee schedules change.</p>
+<p>G. Charge / Coding Review</p>
+<p>• Reviews provider, procedure code, tooth, quadrant, surface, fee, and location before claims submission.</p>
+<p>H. Claims Management</p>
+<p>• Supports primary and secondary claims submission workflows.</p>
+<p>I. Clearinghouse</p>
+<p>• Used to review claim validation errors, duplicate claims, pending claims, claims requiring attachments, and payer rejections.</p>
+<p>J. Insurance A/R</p>
+<p>• Supports tracking and follow-up of outstanding insurance claims.</p>
+<p>K. Account Ledger</p>
+<p>• Maintains patient account entries, payments, adjustments, and outstanding balances.</p>
+<p>L. Payment Posting</p>
+<p>• Supports insurance and patient payment posting workflows.</p>
+<p>M. Billing Statements</p>
+<p>• Generates patient billing statements through the Statement Wizard.</p>
+<p>N. Ledger Adjustments</p>
+<p>• Maintains credit and debit adjustments and their applicable reporting categories.</p>
+<p>O. Refund Management</p>
+<p>• Supports patient and insurance refund request workflows.</p>
+<p>The RCM guide specifically describes insurance verification, plan setup, charge review, claims, clearinghouse errors, insurance A/R, payments, statements, ledger adjustments, refunds, and returned checks.</p>
+<p>Source: d4cpracticedevelopment.com</p>
+<h3 id="eaglesoft-additional-areas-to-investigate">Additional areas to investigate</h3>
+<p>The following areas are relevant to a complete dental EHR integration assessment, but are not fully documented in the supplied RCM guide:</p>
+<p>• Clinical Charting</p>
+<p>• Tooth Chart</p>
+<p>• Periodontal Charting</p>
+<p>• Clinical Notes</p>
+<p>• Patient Documents / Attachments</p>
+<p>• Imaging</p>
+<p>• Recall Management</p>
+<p>• Provider and Operatory Management</p>
+<p>• Appointment Availability</p>
+<p>QA note: Do not mark these areas as integration-supported until their actual Eaglesoft screens, data objects, and API methods are confirmed.</p>
+<h3 id="eaglesoft-eaglesoft-screen-reference">Eaglesoft screen reference</h3>
+<p>The Eaglesoft screens that matter most for Adit: the schedule, appointment details, patient details, patient documents and the payment ledger (described from a test patient on a test schedule).</p>
+<p>A. Appointment screen (Schedule)</p>
+<p>The Eaglesoft Schedule opens on a day view (here: Thursday, November 19, 2026, Default View). Operatories are shown as columns (OP1 to OP4), a Go To Day calendar sits on the left, and appointments appear as coloured blocks in the time grid. Lunch blocks and hatched areas show blocked or non-working time.</p>
+<p>B. Appointment detail screen</p>
+<p>Opening an appointment shows the Patient Appointment window: patient, date, start/end time, duration, Appointment Type (for example Prophy Appointment), chair (for example OP1), Confirmation Status (for example Unconfirmed), confirmation note, notes, Services and Other Appointments. For an appointment Adit wrote, the header shows Scheduled By / Last Modified By as ADIT ADIT.</p>
+<p>C. Patient details screen</p>
+<p>The Edit patient window holds demographics (name, date of birth, sex, phone, email, address), the e-mail and text-message consent checkboxes, responsible party, primary/secondary insurance, HIPAA items, and the Next Prev appointment date. The buttons on the right open Registration, Preferences, History, Alerts, Memo, Prompts, Account, SmartDoc, CareCredit, and Patient Photo.</p>
+<p>D. Opening the patient documents from patient details</p>
+<p>The patient documents are reached from the SmartDoc button in the Edit patient window.</p>
+<p>E. Patient documents screen (SmartDoc - PDF)</p>
+<p>SmartDoc lists the patient&#x27;s saved documents (for example form and note PDFs) under Recent Documents. Letters and Documents By Group are available from the lower left panel.</p>
+<p>F. Payment screen (patient Account)</p>
+<p>The Account window shows the patient&#x27;s ledger. A payment taken through Adit appears as a PM Note and an Acct Payment entry described as &quot;Adit Cash&quot; (user ADT, provider ADIT ADIT), each carrying a [UQID:...] tag in the description. The tabs at the bottom are Account, Walkout, Account Payment, Insurance Payment and Adjustment.</p>
+<p>Field names and labels can differ between Eaglesoft versions, so confirm them against the installed version.</p>
+<h2 id="eaglesoft-3-how-its-architecture-works">3. How its architecture works</h2>
+<p>This is particularly important when evaluating an integration with Adit.</p>
+<h3 id="eaglesoft-eaglesoft-innovation-connection">Eaglesoft Innovation Connection</h3>
+<p>Patterson provides an authorized integration mechanism called Eaglesoft Innovation Connection .</p>
+<p>Patterson describes Innovation Connection as an API for Eaglesoft. It is intended to provide licensed and authorized third-party vendors with a secure way to access required data, rather than relying on direct database connections.</p>
+<p>Source: pattersonsupport.custhelp.com+1</p>
+<h3 id="eaglesoft-high-level-architecture">High-level architecture</h3>
+<p>The integration can be understood at a high level as follows:</p>
+<p>• Eaglesoft Application: Practice staff use the Eaglesoft desktop application.</p>
+<p>• Eaglesoft Server: The practice&#x27;s server hosts the relevant Eaglesoft services and data.</p>
+<p>• Innovation Connection API: An authorized third-party application communicates through the Eaglesoft API.</p>
+<p>• Authentication: The integration authenticates using the vendor integration key and Eaglesoft provider credentials.</p>
+<p>• Third-party Integration: The external application accesses only the data and operations permitted by the API and authenticated provider.</p>
+<p>Important: Architecture concept only. The exact Adit deployment and data flow must be confirmed with its Development team.</p>
+<h3 id="eaglesoft-authentication-mechanism">Authentication mechanism</h3>
+<p>Patterson&#x27;s sample application documentation describes authentication using three parameters:</p>
+<p>Parameter | Description<br>Integration Key | Vendor authorization key provided by Patterson.<br>Provider ID | Eaglesoft provider ID used for authentication.<br>Password | Password associated with the Eaglesoft provider.</p>
+<p>After successful authentication, the API returns a session token that can be used for subsequent API calls. The authenticated provider must have the appropriate privileges for the API method being accessed.</p>
+<p>Source: pattersonsupport.custhelp.com</p>
+<h3 id="eaglesoft-important-technical-considerations">Important technical considerations</h3>
+<p>• Innovation Connection is an authorized vendor API, not an unrestricted public API.</p>
+<p>• API access depends on vendor authorization and the applicable license.</p>
+<p>• Provider permissions can affect which API methods are accessible.</p>
+<p>• API installation and activation depend on the Eaglesoft version.</p>
+<p>• Patterson&#x27;s installation documentation covers Eaglesoft versions 18 and above, with installation steps differing by version.</p>
+<p>• Exact API methods, supported CRUD operations, data fields, rate limits, and event behavior must be verified with the licensed vendor documentation.</p>
+<p>Source: pattersonsupport.custhelp.com+2</p>
+<h2 id="eaglesoft-eaglesoft-integration-with-adit">Eaglesoft Integration with Adit</h2>
+<p>Patterson provides an authorized vendor integration program to allow third-party software to connect with Eaglesoft.</p>
+<p>The Innovation Connection sample documentation demonstrates provider authentication, provider data access, and patient update capabilities. It does not establish that every Eaglesoft module or every CRUD operation is available to every vendor.</p>
+<p>Source: pattersonsupport.custhelp.com</p>
+<h3 id="eaglesoft-integration-communication">Integration communication</h3>
+<p>Direction | Integration purpose | QA validation<br>Eaglesoft → Adit | Retrieve supported patient and practice information. | Verify patient identity, field mapping, and record accuracy.<br>Eaglesoft → Adit | Retrieve supported appointment information. | Verify appointment date, time, provider, and status where available.<br>Eaglesoft → Adit | Retrieve supported clinical or financial information. | Confirm API resource availability and field-level mapping.<br>Adit → Eaglesoft | Create or update supported information. | Validate write permissions, duplicate prevention, and correct field updates.<br>Adit ↔ Eaglesoft | Maintain synchronization between both systems. | Verify conflict handling, retry behavior, and reconciliation.</p>
+<p>Important: This table describes integration areas to investigate. It does not confirm that Adit currently supports all these operations in Eaglesoft.</p>
+<h3 id="eaglesoft-api-operations-to-verify">API operations to verify</h3>
+<p>For every required data object, Development should confirm whether the licensed Eaglesoft API supports:</p>
+<p>• Retrieve / Read</p>
+<p>• Create</p>
+<p>• Update</p>
+<p>• Delete or Deactivate</p>
+<p>• Search / Lookup</p>
+<p>• Pagination or batch retrieval</p>
+<p>• Change notifications or another synchronization trigger</p>
+<p>Do not assume that an operation is supported merely because the API exposes the corresponding data object.</p>
+<h3 id="eaglesoft-how-is-the-eaglesoft-integration-activated">How is the Eaglesoft integration activated?</h3>
+<p>There are two important sides to setup:</p>
+<p>1. Eaglesoft / Patterson side</p>
+<p>Patterson&#x27;s installation documentation describes the following general process:</p>
+<p>• Verify the installed Eaglesoft version from Help → About Eaglesoft.</p>
+<p>• Confirm that the required Eaglesoft API is installed.</p>
+<p>• For supported versions, verify the Patterson API Server status.</p>
+<p>• Coordinate with the authorized third-party vendor for its integration installation.</p>
+<p>• Establish the initial connection from the third-party application.</p>
+<p>• Open Eaglesoft.</p>
+<p>• Navigate to Utilities → Manage Integrated Applications .</p>
+<p>• Locate the third-party application after it establishes a connection.</p>
+<p>• Select the application and click Activate .</p>
+<p>• Verify that the integration is activated successfully.</p>
+<p>Navigation Path: Utilities → Manage Integrated Applications → Activate</p>
+<p>The exact installation process differs between Eaglesoft versions.</p>
+<p>Source: pattersonsupport.custhelp.com</p>
+<p>2. Provider authentication</p>
+<p>The vendor integration may require:</p>
+<p>• Patterson-issued Integration Key.</p>
+<p>• Eaglesoft Provider ID.</p>
+<p>• Eaglesoft Provider Password.</p>
+<p>• Correct provider permissions.</p>
+<p>• Successful session-token generation.</p>
+<p>The provider must have the appropriate access privileges for the requested API method.</p>
+<p>Source: pattersonsupport.custhelp.com+1</p>
+<p>3. Adit side</p>
+<p>The following are recommended integration setup checks. They should be confirmed against the current Adit implementation:</p>
+<p>• Configure the customer&#x27;s Eaglesoft integration.</p>
+<p>• Establish the authorized connection.</p>
+<p>• Verify authentication.</p>
+<p>• Map the Eaglesoft location to the corresponding Adit location.</p>
+<p>• Fetch supported master data.</p>
+<p>• Perform initial synchronization for supported data objects.</p>
+<p>• Enable ongoing synchronization.</p>
+<p>• Monitor synchronization failures and recovery.</p>
+<h2 id="eaglesoft-eaglesoft-sync-overview">Eaglesoft - Sync Overview</h2>
+<h3 id="eaglesoft-how-data-flows-between-eaglesoft-and-adit">How data flows between Eaglesoft and Adit</h3>
+<p>The following is a proposed QA investigation matrix. Actual Adit data direction and supported fields must be confirmed with the Development team.</p>
+<p>Adit module | Data to investigate from Eaglesoft | Data to investigate from Adit to Eaglesoft<br>Patient Management | Patient demographics, contact details, patient identifiers, account details. | Patient creation and supported demographic updates.<br>Scheduler | Appointments, provider, date/time, appointment status. | Appointment creation, rescheduling, cancellation, if supported.<br>Practice Analytics | Patient, appointment, provider, procedure and financial data. | Usually not applicable; confirm implementation.<br>Insurance Verification | Payer, policy holder, plan, member ID and coverage details. | Supported insurance updates, if available.<br>Ledger | Payments, adjustments and account balances. | Payment or ledger updates, if supported.<br>Patient Notes | Existing patient or clinical notes. | New or updated notes, if supported.<br>Recall | Recall types, due dates and recall status. | Recall creation or updates, if supported.<br>Treatment Plans | Planned procedures, codes, fees and status. | Treatment plan updates, if supported.</p>
+<p>Important: A data object appearing in Eaglesoft does not prove that the Innovation Connection API exposes it. Each object and operation must be validated separately.</p>
+<h2 id="eaglesoft-appointment-sync">Appointment Sync</h2>
+<p>Appointment synchronization is a critical integration area because incorrect appointment data can affect scheduling and patient communication.</p>
+<h3 id="eaglesoft-appointment-synchronization-adit-eaglesoft">Appointment Synchronization (Adit → Eaglesoft)</h3>
+<p>Scenario 1: Patient books an appointment through Adit.</p>
+<p>• Patient selects the appointment date and time in Adit.</p>
+<p>• Adit checks availability using its configured Eaglesoft integration.</p>
+<p>• Adit attempts to create the appointment using the supported integration operation.</p>
+<p>• Eaglesoft processes the request, if the operation is supported and authorized.</p>
+<p>• The resulting Eaglesoft appointment ID should be stored in the integration for future mapping.</p>
+<p>• QA verifies the appointment details in both systems.</p>
+<p>Expected result:</p>
+<p>• Correct patient mapping.</p>
+<p>• Correct appointment date and time.</p>
+<p>• Correct provider and location.</p>
+<p>• No duplicate appointment.</p>
+<p>• Correct appointment status.</p>
+<h3 id="eaglesoft-appointment-synchronization-eaglesoft-adit">Appointment Synchronization (Eaglesoft → Adit)</h3>
+<p>Scenario 2: Practice staff modifies an appointment in Eaglesoft.</p>
+<p>• Staff reschedules or cancels the appointment in Eaglesoft.</p>
+<p>• The integration detects the change through its configured synchronization mechanism.</p>
+<p>• Adit receives or retrieves the updated appointment information.</p>
+<p>• Adit updates the corresponding appointment.</p>
+<p>• QA verifies that the latest appointment details are displayed correctly.</p>
+<p>Important: The exact event, webhook, or polling mechanism used by the integration must be confirmed. Patterson&#x27;s public references reviewed here do not establish the exact Adit synchronization trigger.</p>
+<h2 id="eaglesoft-important-qa-scenarios">Important QA scenarios</h2>
+<h3 id="eaglesoft-development-and-qa-investigation-checklist">Development and QA investigation checklist</h3>
+<p>Area | What Development should investigate | What QA should validate<br>Authentication | Integration key, Provider ID, password, session token. | Valid/invalid credentials, expired session, permission failure.<br>Installation | Eaglesoft API installation and version compatibility. | Fresh setup, upgrade, restart and recovery.<br>Integrated Application | Application activation and connection status. | Activation, deactivation and reconnection.<br>Initial Sync | Supported data objects and retrieval process. | Missing records, duplicate records and interrupted sync.<br>Patient Sync | Patient ID and field mapping. | Demographic updates and duplicate patient handling.<br>Appointment Sync | Supported appointment methods and field mapping. | Create, update, cancel, reschedule and time-zone cases.<br>Provider Mapping | Provider identifiers and permissions. | Correct provider association.<br>Location Mapping | nSite and location-specific behavior. | Correct location and data isolation.<br>Clinical Data | Procedure, treatment plan, notes and document coverage. | Field accuracy and status mapping.<br>Insurance | Payer, Employer Plan, coverage and eligibility mapping. | Payer ID, member ID, plan changes and effective dates.<br>Ledger | Payment, adjustment and transaction methods. | Duplicate payment prevention and correct balances.<br>Sync Trigger | Event, polling or scheduled synchronization mechanism. | Sync latency and missed updates.<br>Backup Sync | Retry and reconciliation approach. | Recovery after downtime.<br>Performance | API limits, request volume and batching. | High-volume synchronization.<br>Security | Credential storage and provider access control. | No credentials or PHI exposed in logs.</p>
+<h3 id="eaglesoft-eaglesoft-adit-development-and-qa-corner-cases">Eaglesoft + Adit: Development and QA Corner Cases</h3>
+<p>For Eaglesoft integration, testing should not be limited to basic patient and appointment synchronization. The major risks are incorrect patient mapping, duplicate records, provider/location mismatches, unsupported API operations, failed synchronization, financial inconsistencies, and recovery after downtime.</p>
+<p>The scenarios below are QA recommendations. They should be executed only after confirming the relevant API capability.</p>
+<h3 id="eaglesoft-patient-synchronization">Patient Synchronization</h3>
+<p># | Corner case / scenario | Development consideration | QA validation<br>1 | Duplicate patient creation | Use a stable Eaglesoft patient identifier. | Same patient should not be created twice.<br>2 | Same patient name | Do not use name alone as a unique key. | Different patients should remain separate.<br>3 | Duplicate phone number | Define matching rules. | Patients sharing a phone number should not be incorrectly merged.<br>4 | Patient demographic update | Define field mapping and source of truth. | Updated fields should sync correctly.<br>5 | Missing email/mobile | Handle optional fields. | Sync should not fail unnecessarily.<br>6 | Special characters in names | Support Unicode and punctuation. | Names should remain correct.<br>7 | Patient inactive or archived | Define inactive-record behavior. | Adit should reflect the expected status.<br>8 | Family members sharing contact details | Maintain unique patient identifiers. | Family members should not be merged.<br>9 | Patient update in both systems | Define conflict resolution. | Correct update should prevail.<br>10 | Initial sync repeated | Use idempotent processing. | No duplicate patient records.</p>
+<h3 id="eaglesoft-appointment-synchronization">Appointment Synchronization</h3>
+<p># | Corner case / scenario | Development consideration | QA validation<br>1 | Appointment created in both systems | Duplicate prevention. | Only one intended appointment should exist.<br>2 | Appointment rescheduled multiple times | Handle successive updates. | Latest appointment time should prevail.<br>3 | Appointment cancelled | Map cancellation status. | Adit should reflect cancellation correctly.<br>4 | Appointment deleted instead of cancelled | Define deletion behavior. | Verify removal or inactivation behavior.<br>5 | Provider changed | Maintain provider mapping. | Correct provider should appear.<br>6 | Location changed | Maintain location mapping. | Correct location should sync.<br>7 | Appointment duration changed | Validate duration calculation. | Correct duration should display.<br>8 | Double booking | Validate availability and conflict rules. | No unintended duplicate booking.<br>9 | Appointment overlaps midnight | Handle date/time conversion. | Correct local date and time should display.<br>10 | Appointment updated during downtime | Queue and retry safely. | Update should sync after recovery.<br>11 | Missing provider mapping | Handle unmapped master data. | Appropriate exception should be generated.<br>12 | Duplicate update received | Use idempotent processing. | Same update should not be processed incorrectly twice.</p>
+<h3 id="eaglesoft-api-and-synchronization-failure-scenarios">API and Synchronization Failure Scenarios</h3>
+<p># | Corner case | Development consideration | QA validation<br>1 | Invalid credentials | Authentication error handling. | Connection should fail with a clear error.<br>2 | Invalid integration key | Validate vendor authorization. | Unauthorized access should be blocked.<br>3 | Provider permission missing | Validate provider access privileges. | Restricted operation should fail safely.<br>4 | API unavailable | Retry and error handling. | No silent data loss.<br>5 | Session token expired | Token renewal or reauthentication. | Sync should recover correctly.<br>6 | Empty API response | Handle empty datasets. | No false deletion of existing records.<br>7 | Null fields in response | Null-safe parsing. | Existing valid values should not be overwritten incorrectly.<br>8 | API response timeout | Timeout management. | Retry should not create duplicates.<br>9 | Network interruption | Persistent queue and recovery. | Sync should resume correctly.<br>10 | Partial sync failure | Checkpoint handling. | Already processed records should not duplicate.<br>11 | API version change | Version compatibility. | Unsupported fields should not break the integration.<br>12 | Initial sync interrupted | Resume strategy. | No missing or duplicate records.</p>
+<h3 id="eaglesoft-initial-sync-and-master-data-mapping">Initial Sync and Master Data Mapping</h3>
+<p># | Corner case | Development consideration | QA validation<br>1 | No providers available | Handle empty provider response. | Show a meaningful error.<br>2 | Duplicate provider names | Use provider IDs. | Correct provider mapping.<br>3 | Provider inactive | Define inactive provider behavior. | Inactive provider should not be assigned incorrectly.<br>4 | Location mapping missing | Validate location setup. | Appointment should not map to the wrong location.<br>5 | Missing appointment type mapping | Define mapping behavior. | Show a mapping exception.<br>6 | Location mapping changed | Validate mapping changes. | Prevent inconsistent data mapping.<br>7 | Initial sync interrupted | Save checkpoints. | Resume without duplication.<br>8 | Initial sync executed twice | Idempotent processing. | No duplicate records.<br>9 | Different time zones | Correct date/time conversion. | Validate each location&#x27;s local time.<br>10 | Large patient database | Batch and pagination handling. | No missing records.</p>
+<h3 id="eaglesoft-treatment-plans-and-clinical-procedures">Treatment Plans and Clinical Procedures</h3>
+<p># | Corner case | Development consideration | QA validation<br>1 | Treatment plan created but not accepted | Maintain treatment status. | Should not be treated as completed treatment.<br>2 | Treatment plan modified | Track supported changes. | Updated procedures should sync correctly.<br>3 | Treatment plan deleted | Define deletion/history behavior. | Correct status in Adit.<br>4 | Multiple treatment plans | Maintain individual IDs. | No mixing of treatment plans.<br>5 | Procedure attached to incorrect tooth | Validate tooth mapping. | Correct tooth should display.<br>6 | Multi-surface procedure | Support surface-level details. | All applicable surfaces should be retained.<br>7 | Procedure partially completed | Define completion behavior. | Correct procedure status.<br>8 | Procedure code changed | Validate code mapping. | Updated code should sync.<br>9 | Same procedure added twice | Use stable procedure IDs. | Avoid duplicate procedures.<br>10 | Procedure reversed or corrected | Handle historical changes. | Current and historical statuses remain accurate.</p>
+<p>Dependency: First confirm which clinical resources and operations the Eaglesoft API exposes.</p>
+<h3 id="eaglesoft-ledger-and-insurance-synchronization">Ledger and Insurance Synchronization</h3>
+<p># | Corner case | Development consideration | QA validation<br>1 | Same payment synced twice | Idempotency using payment identifiers. | No duplicate payment.<br>2 | Partial payment | Support payment splits where available. | Correct outstanding balance.<br>3 | Payment reversal | Handle reversal/refund transactions. | Ledger reflects reversal.<br>4 | Negative adjustment | Support credit and debit adjustments. | Correct balance calculation.<br>5 | Insurance claim pending | Distinguish pending from completed claims. | Correct claim status.<br>6 | Insurance plan changed | Maintain historical and current plan details. | Correct active plan.<br>7 | Insurance payment after patient payment | Handle allocation changes. | No incorrect patient balance.<br>8 | Multiple insurance policies | Maintain primary and secondary policy sequence. | Correct policy association.<br>9 | Claim rejected | Map rejection status. | Rejected claim should not be treated as paid.<br>10 | Ledger update in both systems | Define source of truth and conflict rules. | No overwritten financial transactions.</p>
+<p>Important development dependency: Financial synchronization must be validated at transaction level. Do not rely only on patient balance values to verify payment correctness.</p>
+<h3 id="eaglesoft-recall-and-reminder-scenarios">Recall and Reminder Scenarios</h3>
+<p># | Corner case | Development consideration | QA validation<br>1 | Recall date changed | Update existing recall. | Latest due date should sync.<br>2 | Recall completed | Update recall status. | Patient should no longer appear overdue.<br>3 | Multiple recall types | Maintain recall type mapping. | Correct recall category.<br>4 | Patient has multiple recalls | Maintain separate recall records. | No overwriting of other recalls.<br>5 | Patient has upcoming appointment | Check reminder rules. | Avoid unnecessary reminders.<br>6 | Recall interval changed | Recalculate due date where appropriate. | Correct due date.<br>7 | Recall deleted in EHR | Handle deletion/inactivation. | Adit should not retain an invalid active recall.<br>8 | Patient marked inactive | Apply eligibility rules. | No unwanted reminders.<br>9 | Recall date in past | Handle overdue status. | Correct overdue classification.<br>10 | Recall sync fails | Retry without duplicate reminders. | No repeated reminder campaigns.</p>
+<p>Note: Recall API coverage is not confirmed by the supplied Eaglesoft RCM guide. These scenarios are conditional on API support.</p>
+<h3 id="eaglesoft-multi-location-and-deployment-specific-corner-case">Multi-location and Deployment-specific Corner Cases</h3>
+<p># | Scenario | Expected behavior<br>1 | Same patient visits two locations | Patient identity and location relationship remain correct.<br>2 | Different providers with identical names | Provider IDs distinguish them.<br>3 | Same operatory number at different locations | Mapping remains location-specific.<br>4 | Different time zones | Appointment time is correct for each location.<br>5 | One location becomes unavailable | Other locations continue syncing where architecture allows.<br>6 | Location disabled in Adit | No unintended synchronization continues.<br>7 | New location added after initial sync | New location has its own master-data setup.<br>8 | API credentials changed | Reconnection does not duplicate existing data.<br>9 | Practice changes deployment setup | Integration is reconfigured without data loss.<br>10 | One location has different API permissions | Failure is isolated to the affected location.</p>
+<p>The supplied RCM guide specifically mentions nSite databases serving multiple locations and the need to confirm the correct location before posting charges, claims, or adjustments.</p>
+<p>Source: d4cpracticedevelopment.com</p>
+<h3 id="eaglesoft-non-functional-and-behavioral-testing">Non-functional and behavioral testing</h3>
+<p>These scenarios should be considered during production-readiness testing.</p>
+<p># | Test scenario | Expected behavior<br>1 | Eaglesoft application closed | Verify whether the API integration continues to operate under the installed architecture.<br>2 | Eaglesoft API Server stopped | Integration should fail safely and recover after the service restarts.<br>3 | Workstation restarted | Integration should recover without manual data correction.<br>4 | Internet/network disconnected | Pending changes should be retained or recovered through reconciliation.<br>5 | High-volume patient sync | No unexplained timeout-related data loss.<br>6 | Duplicate request received | Duplicate processing should be prevented.<br>7 | Synchronization trigger missed | Reconciliation should identify missing changes.<br>8 | Out-of-order updates | Older data should not overwrite newer data incorrectly.<br>9 | Off-hours synchronization | Jobs should execute according to configured schedules.<br>10 | Client integration disabled | No unnecessary API requests or updates should continue.<br>11 | API requests during peak hours | No unacceptable impact on practice operations.<br>12 | Sensitive patient information in logs | Credentials and PHI should not be exposed.</p>
+<h3 id="eaglesoft-recommended-qa-execution-priority">Recommended QA execution priority</h3>
+<p>I would divide Eaglesoft integration testing into four phases.</p>
+<p>Phase 1 - Critical Integration Flows (P0)</p>
+<p>• Authentication and connection.</p>
+<p>• API installation and activation.</p>
+<p>• Patient creation and updates.</p>
+<p>• Appointment creation, updates, and cancellations, if supported.</p>
+<p>• Duplicate synchronization.</p>
+<p>• Initial sync and recovery.</p>
+<p>• Provider and location mapping.</p>
+<p>Phase 2 - Business Workflows (P1)</p>
+<p>• Treatment plans and procedures.</p>
+<p>• Insurance updates.</p>
+<p>• Claims information.</p>
+<p>• Ledger and payment posting.</p>
+<p>• Patient notes.</p>
+<p>• Recall and reminders, if supported.</p>
+<p>Phase 3 - Integration Reliability (P1)</p>
+<p>• API connection failures.</p>
+<p>• Session expiration.</p>
+<p>• Retry and recovery.</p>
+<p>• Missing synchronization triggers.</p>
+<p>• Multi-location mapping.</p>
+<p>• Time-zone and data conflicts.</p>
+<p>• Duplicate and out-of-order updates.</p>
+<p>Phase 4 - Production Readiness (P2)</p>
+<p>• Performance and load testing.</p>
+<p>• Security and PHI protection.</p>
+<p>• Provider permissions.</p>
+<p>• Version compatibility.</p>
+<p>• Server and workstation impact.</p>
+<p>• Off-hours API traffic.</p>
+<p>• Client disconnection and integration deactivation.</p>
+<h2 id="eaglesoft-most-important-issues-for-support-qa">Most important issues for Support/QA</h2>
+<h3 id="eaglesoft-top-10-risks-to-prioritize">Top 10 risks to prioritize</h3>
+<p>Priority | Risk | Why it matters<br>1 | Incorrect patient ID mapping | Can associate clinical or financial data with the wrong patient.<br>2 | Duplicate appointment creation | Can cause actual scheduling conflicts.<br>3 | Unsupported or misunderstood API operation | Can result in incorrect integration assumptions.<br>4 | Incorrect provider mapping | Can misattribute clinical or financial information.<br>5 | Incorrect location mapping | Can associate data with the wrong practice location.<br>6 | Duplicate payment posting | Can directly impact financial balances.<br>7 | Missed synchronization updates | Creates inconsistency between Eaglesoft and Adit.<br>8 | Incorrect appointment timezone | Can result in missed appointments.<br>9 | Incorrect insurance plan or fee schedule mapping | Can produce inaccurate treatment estimates and claims.<br>10 | Eaglesoft version incompatibility | Can affect API connectivity and integration behavior.</p>
+<h2 id="eaglesoft-information-required-from-development-patterson-ad">Information required from Development / Patterson / Adit</h2>
+<p>Before finalizing the integration scope, the following information should be collected:</p>
+<p>• Which Eaglesoft versions are currently supported?</p>
+<p>• Which Innovation Connection API version is being used?</p>
+<p>• Is Adit using the official Patterson-authorized API?</p>
+<p>• Which API methods/resources are available?</p>
+<p>• Which resources support Read, Create, Update, and Delete?</p>
+<p>• What authentication and session-token mechanism is used?</p>
+<p>• Which Eaglesoft provider permissions are required?</p>
+<p>• Does the integration support event-based synchronization, polling, or scheduled sync?</p>
+<p>• What is the configured synchronization frequency?</p>
+<p>• What is the retry and reconciliation strategy?</p>
+<p>• Which patient, appointment, provider, operatory, location, procedure, treatment plan, insurance, claim, payment, and note fields are mapped?</p>
+<p>• Are there API limitations, rate limits, pagination rules, or request timeouts?</p>
+<p>• What are the actual Eaglesoft API error codes?</p>
+<p>• How is nSite / multi-location mapping handled?</p>
+<p>• What is the supported Eaglesoft upgrade process?</p>
+<p>• Which test client and test data can QA use for CRUD validation?</p>
+<p>Patterson&#x27;s vendor information page provides additional vendor and API documentation references, including API methods, fields, and a vendor method matrix. Access to the detailed vendor documentation may be restricted.</p>
+<h2 id="eaglesoft-team-info">Team info:</h2>
+<p>• Dev POC: Rishiraj Kukreja</p>
+<p>• QA POC: Krutik Gabani</p>
+<p>• Dev Lead: Kaushal Pitolwala</p>
+<p>• QA EHR Lead: Krupa Patel QA Jalpa Jogi QA</p>
 <h1 id="cloud9">Cloud 9 (ortho) integration</h1>
 <h2 id="cloud9-cloud-9-ehr-adit-integration-technical-documentati">Cloud 9 EHR - Adit Integration Technical Documentation</h2>
 <h2 id="cloud9-1-overview">1. Overview</h2>
