@@ -2663,7 +2663,8 @@ app.get('/api/admin/ai-keys', requireAdmin, rateLimit(6, 60000), async (req, res
     const fw = await require('./lib/ai').fireworksStatus();
     const P = require('./lib/expert-plan');
     let aria = { keySet: !!process.env.ARIA_API_KEY, valid: P.ariaOn() };
-    if (aria.valid) { try { const r = await P.aria('list_tables', {}, { timeoutMs: 15000, maxChars: 4000 }); aria.ok = !r.isError; aria.tablesChars = String(r.text || '').length; if (r.isError) aria.error = String(r.text || '').slice(0, 200); } catch (e) { aria.ok = false; aria.error = String(e.message || e).slice(0, 160); } }
+    if (aria.valid) { try { const r = await P.aria('list_tables', {}, { timeoutMs: 20000, maxChars: req.query.detail ? 12000 : 4000 }); aria.ok = !r.isError; aria.tablesChars = String(r.text || '').length; if (r.isError) aria.error = String(r.text || '').slice(0, 200);
+      if (req.query.detail) { aria.tables = String(r.text || '').slice(0, 12000); try { aria.tools = await P.ariaTools(); } catch (e) { aria.toolsError = String(e.message || e).slice(0, 160); } } } catch (e) { aria.ok = false; aria.error = String(e.message || e).slice(0, 160); } }
     res.json({ success: true, fireworks: fw, aria, lookupMode: String(process.env.EXPERT_LOOKUP_MODE || 'loop') });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
