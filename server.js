@@ -2656,6 +2656,16 @@ app.get('/api/admin/ai-usage', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/ai-usage').report({ days: Number(req.query.days) || 14 }), { light: { provider: require('./lib/ai').LIGHT_PROVIDER(), features: [...require('./lib/ai').LIGHT_FEATURES] }, workHours: inWorkHours() })); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 402: which AI keys the tool can use (never the keys themselves): Fireworks models and a test call, and Aria's data key
+app.get('/api/admin/ai-keys', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try {
+    const fw = await require('./lib/ai').fireworksStatus();
+    const P = require('./lib/expert-plan');
+    let aria = { keySet: !!process.env.ARIA_API_KEY, valid: P.ariaOn() };
+    if (aria.valid) { try { const r = await P.aria('list_tables', {}, { timeoutMs: 15000, maxChars: 4000 }); aria.ok = !r.isError; aria.tablesChars = String(r.text || '').length; if (r.isError) aria.error = String(r.text || '').slice(0, 200); } catch (e) { aria.ok = false; aria.error = String(e.message || e).slice(0, 160); } }
+    res.json({ success: true, fireworks: fw, aria, lookupMode: String(process.env.EXPERT_LOOKUP_MODE || 'loop') });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/busy', requireAdmin, async (req, res) => {
   try {
     const now = Date.now(), slow = [..._reqLive.values()].filter(x => now - x.at > 3000 && !/admin\/busy/.test(x.key));
