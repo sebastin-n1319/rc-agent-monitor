@@ -2551,7 +2551,7 @@ app.get('/api/admin/expert-eval', requireAdmin, async (req, res) => {
   try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').latest())); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/admin/expert-eval/run', requireAdmin, rateLimit(2, 60000), async (req, res) => {
-  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks', 'plan'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', tickets: !!(req.body || {}).tickets, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+  try { res.json(Object.assign({ success: true }, await require('./lib/expert-eval').start({ n: (req.body || {}).n, compare: ['cost', 'fireworks', 'plan', 'aria'].includes((req.body || {}).compare) ? (req.body || {}).compare : '', tickets: !!(req.body || {}).tickets, by: (req.session && req.session.email) || '' }))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 // Batch 339: a lead answers a knowledge gap once (saved as an Expert team note), or dismisses it
 app.post('/api/admin/expert-eval/gap', requireAdmin, rateLimit(20, 60000), async (req, res) => {
@@ -2676,6 +2676,10 @@ app.post('/api/admin/fireworks-trial/grade', requireAdmin, rateLimit(4, 60000), 
   try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/fw-trial').grade({ feature: String(b.feature || ''), n: Number(b.n) || 20 }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 405: read-only look at one Aria table's columns, or Aria's glossary and rules, to plan how Expert uses Aria's data
+// Batch 406: preview the Aria facts Expert would get for one ticket (read-only)
+app.get('/api/admin/aria/facts', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try { const r = await require('./lib/aria-facts').forTicket(String(req.query.ticket || '')); res.json({ success: true, on: String(process.env.EXPERT_ARIA_FACTS || 'off'), facts: r }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/aria/describe', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try { const P = require('./lib/expert-plan'); if (!P.ariaOn()) throw new Error('Aria key not set'); res.json(Object.assign({ success: true }, req.query.table ? await P.ariaDescribe(String(req.query.table)) : await P.ariaContext(String(req.query.topic || '')))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
