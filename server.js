@@ -2517,6 +2517,15 @@ app.post('/api/admin/desk-drafts/run', requireAdmin, rateLimit(10, 60000), async
   try { const xd = expertDraft(); const r = await xd.start({ ticketNumber: (req.body || {}).ticketNumber, mode: xd.canWrite() ? 'save' : 'text', source: 'manual' }); res.json(Object.assign({ success: true }, r)); }
   catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
 });
+// Batch 415: Expert's drafts next to what agents sent instead, and the drafts agents deleted, to find what to fix
+app.get('/api/admin/desk-drafts/lessons', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const D_ = require('./lib/expert-desk-draft'), days = Number(req.query.days) || 3;
+    const scrub = (t) => String(t || '').replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[contact]').replace(/\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g, '[contact]');
+    const [lessons, deleted] = await Promise.all([D_.lessonList({ days }), D_.deletedList({ days })]);
+    res.json({ success: true, lessons, deleted: deleted.map((d) => Object.assign({}, d, { reply: scrub(d.reply) })) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/desk-drafts/list', requireAdmin, async (req, res) => {
   try { const q = req.query || {}; res.json(Object.assign({ success: true }, await expertDraft().list({ status: String(q.status || ''), owner: String(q.owner || ''), q: String(q.q || '').slice(0, 100), account: String(q.account || '').slice(0, 100), deal: String(q.deal || '').slice(0, 100), source: String(q.source || ''), days: q.days, offset: q.offset, limit: q.limit }))); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
