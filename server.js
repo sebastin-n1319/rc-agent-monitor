@@ -2675,6 +2675,10 @@ app.get('/api/admin/fireworks-trial', requireAdmin, async (req, res) => {
 app.post('/api/admin/fireworks-trial/grade', requireAdmin, rateLimit(4, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json(Object.assign({ success: true }, await require('./lib/fw-trial').grade({ feature: String(b.feature || ''), n: Number(b.n) || 20 }))); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
+// Batch 405: read-only look at one Aria table's columns, or Aria's glossary and rules, to plan how Expert uses Aria's data
+app.get('/api/admin/aria/describe', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try { const P = require('./lib/expert-plan'); if (!P.ariaOn()) throw new Error('Aria key not set'); res.json(Object.assign({ success: true }, req.query.table ? await P.ariaDescribe(String(req.query.table)) : await P.ariaContext(String(req.query.topic || '')))); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/busy', requireAdmin, async (req, res) => {
   try {
     const now = Date.now(), slow = [..._reqLive.values()].filter(x => now - x.at > 3000 && !/admin\/busy/.test(x.key));
