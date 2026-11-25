@@ -3408,6 +3408,15 @@ app.post('/api/assess/admin/retest', ...RV, rateLimit(20, 60000), assessWrap(asy
   insertAuditLog(req.session.email, 'assess_retest', String(b.testId || (b.attemptIds || []).join(',')).slice(0, 200), `reset:${out.reset}${out.notified ? ' chat' : ''}`).catch(() => {});
   res.json({ success: true, ...out });
 }));
+// Batch 418: quick assign people to one or more assessments (with extra days if the window closed)
+app.post('/api/assess/admin/quick-assign', ...RV, rateLimit(30, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  let ids = b.testIds;
+  if (req.scopedReviewer) { const ok = new Set((await assessments.scopedTests(req.session.email)).map(t => t.id)); ids = (ids || []).filter(id => ok.has(Number(id))); }
+  const out = await assessments.quickAssign({ testIds: ids, emails: b.emails, extendDays: b.extendDays, by: req.session.email });
+  insertAuditLog(req.session.email, 'assess_quick_assign', (ids || []).join(',').slice(0, 200), `people:${(b.emails || []).length}`).catch(() => {});
+  res.json({ success: true, ...out });
+}));
 // Archive list, restore, permanent delete
 app.get('/api/assess/admin/tests-archived', ...RV, assessWrap(async (req, res) => res.json({ success: true, tests: await assessments.archivedTests() })));
 app.post('/api/assess/admin/tests/:id/restore', ...RV, assessWrap(async (req, res) => { await assessments.restoreTest(req.params.id); res.json({ success: true }); }));

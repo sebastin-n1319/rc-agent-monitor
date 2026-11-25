@@ -1880,9 +1880,117 @@
     api('/api/assess/admin/tests').then(function (j) { tests = fixedTests(j.tests); draw(); upd(); }).catch(function (e) { clear(list); list.appendChild(errBox(e.message)); });
   }
 
+  // Batch 418: quick assign. Pick people (search or a whole team) and one or more assessments, in one step.
+  // If a test's window has closed, the people picked get extra days of their own; nobody else's window changes.
+  function quickAssignDialog(preId, onDone) {
+    var dlg = h('dialog', { class: 'confirm wide qa-dlg', 'aria-labelledby': 'qa-t' });
+    var people = [], tests = [], selP = {}, selT = {}, team = '';
+    if (preId) selT[preId] = true;
+    var q = h('input', { class: 'inp', id: 'qa-q', type: 'search', placeholder: 'Search name or email', 'aria-label': 'Search people', autocomplete: 'off' });
+    var teamBox = h('div', { class: 'chips', style: 'margin:8px 0' });
+    var plist = h('div', { class: 'at-list qa-list', role: 'group', 'aria-label': 'People' });
+    var tlist = h('div', { class: 'at-list qa-list', role: 'group', 'aria-label': 'Assessments' });
+    var allBtn = h('button', { class: 'btn sm ghost', type: 'button' });
+    var ext = h('input', { type: 'checkbox', id: 'qa-ext', checked: true });
+    var days = h('input', { class: 'inp', id: 'qa-days', type: 'number', min: '1', max: '60', value: '7', style: 'width:70px;display:inline-block;margin:0 6px', 'aria-label': 'Extra days' });
+    var sum = h('p', { class: 'small muted', 'aria-live': 'polite', style: 'margin:10px 0 0' });
+    var go2 = h('button', { class: 'btn primary', type: 'button', disabled: true }, [icon('check', 'sm'), 'Assign']);
+    function count(o) { return Object.keys(o).filter(function (k) { return o[k]; }).length; }
+    function shown() {
+      var s = q.value.trim().toLowerCase();
+      return people.filter(function (p) { return (!team || p.team === team) && (!s || (p.name + ' ' + p.email).toLowerCase().indexOf(s) >= 0); });
+    }
+    function upd() {
+      var np = count(selP), nt = count(selT);
+      sum.textContent = (np ? np + (np === 1 ? ' person' : ' people') : 'No one picked') + ' · ' + (nt ? nt + (nt === 1 ? ' assessment' : ' assessments') : 'no assessment picked') + '.';
+      go2.disabled = !np || !nt;
+      var vis = shown(), allOn = vis.length && vis.every(function (p) { return selP[p.email]; });
+      allBtn.textContent = allOn ? 'Clear the ' + vis.length + ' shown' : 'Select the ' + vis.length + ' shown';
+      allBtn.disabled = !vis.length;
+    }
+    function drawPeople() {
+      clear(plist);
+      var vis = shown();
+      vis.slice(0, 200).forEach(function (p) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': p.name || p.email, checked: selP[p.email] ? true : null });
+        cb.addEventListener('change', function () { selP[p.email] = cb.checked; upd(); });
+        plist.appendChild(h('label', { class: 'at-row chk' }, [cb, h('span', { class: 'at-t', text: p.name || p.email }), h('span', { class: 'small muted', text: p.team || (p.kind === 'guest' ? 'Guest' : '') })]));
+      });
+      if (!vis.length) plist.appendChild(h('p', { class: 'small muted', style: 'padding:10px', text: 'No one matches.' }));
+      upd();
+    }
+    function drawTeams() {
+      clear(teamBox);
+      var teams = {}; people.forEach(function (p) { if (p.team) teams[p.team] = (teams[p.team] || 0) + 1; });
+      [''].concat(Object.keys(teams).sort()).forEach(function (tm) {
+        teamBox.appendChild(h('button', { class: 'chip ' + (team === tm ? 'sel' : 'off'), type: 'button', 'aria-pressed': String(team === tm), text: tm ? tm + ' (' + teams[tm] + ')' : 'All teams', onclick: function () { team = tm; drawTeams(); drawPeople(); } }));
+      });
+    }
+    function closedNow(t) { return t.settings.closesAt && Date.now() > Date.parse(t.settings.closesAt); }
+    function drawTests() {
+      clear(tlist);
+      tests.forEach(function (t) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': t.title, checked: selT[t.id] ? true : null });
+        cb.addEventListener('change', function () { selT[t.id] = cb.checked; upd(); });
+        var sib = t.settings.series ? tests.filter(function (x) { return x.settings.series && x.settings.series.id === t.settings.series.id; }) : [];
+        var allParts = sib.length > 1 && t.settings.series.part === 1 ? h('button', { class: 'btn sm ghost', type: 'button', text: 'All ' + sib.length + ' parts', onclick: function (e) { e.preventDefault(); sib.forEach(function (x) { selT[x.id] = true; }); drawTests(); upd(); } }) : null;
+        tlist.appendChild(h('label', { class: 'at-row chk' }, [cb, h('span', { class: 'at-t', text: t.title }),
+          t.assign.everyone ? pill('Everyone', '', true) : null,
+          t.status !== 'published' ? pill('Draft', '', true) : closedNow(t) ? pill('Closed', 'bad', true) : null, allParts]));
+      });
+      if (!tests.length) tlist.appendChild(h('p', { class: 'small muted', style: 'padding:10px', text: 'No assessments yet.' }));
+    }
+    q.addEventListener('input', drawPeople);
+    allBtn.addEventListener('click', function () { var vis = shown(), allOn = vis.every(function (p) { return selP[p.email]; }); vis.forEach(function (p) { selP[p.email] = !allOn; }); drawPeople(); });
+    ext.addEventListener('change', function () { days.disabled = !ext.checked; });
+    go2.addEventListener('click', function () {
+      go2.disabled = true; go2.classList.add('busy');
+      var emails = Object.keys(selP).filter(function (k) { return selP[k]; }), ids = Object.keys(selT).filter(function (k) { return selT[k]; }).map(Number);
+      api('/api/assess/admin/quick-assign', { method: 'POST', body: { emails: emails, testIds: ids, extendDays: ext.checked ? Number(days.value) || 7 : 0 } }).then(function (r) {
+        var added = 0, extd = 0, used = [];
+        r.results.forEach(function (x) { added += x.added || 0; extd += x.extended || 0; if (x.usedUp && x.usedUp.length) used.push(x.title + ' (' + x.usedUp.length + ')'); });
+        clear(dlg);
+        var nameOf = {}; people.forEach(function (p) { nameOf[p.email] = p.name || p.email; });
+        dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'qa-t', text: 'Assigned' }),
+          h('div', { class: 'at-list' }, r.results.map(function (x) {
+            var bits = [];
+            if (x.skipped) bits.push('Skipped: ' + x.skipped);
+            else {
+              if (x.everyone) bits.push('Already open to everyone');
+              else bits.push(x.added + ' added' + (x.already ? ', ' + x.already + ' already assigned' : ''));
+              if (x.extended) bits.push(x.extended + ' given time until ' + new Date(r.until).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+              if (x.draft) bits.push('Still a draft, so they see it once it is published');
+              if (x.usedUp && x.usedUp.length) bits.push('No attempts left for ' + x.usedUp.map(function (e) { return nameOf[e] || e; }).join(', ') + '. Send a retest from Results');
+            }
+            return h('div', { class: 'at-row' }, [h('span', { class: 'at-t', text: x.title }), h('span', { class: 'small muted', text: bits.join(' · ') })]);
+          })),
+          h('p', { class: 'small muted', style: 'margin:10px 0 0', text: added ? 'New people were notified in the app.' : extd ? 'They were told it is open for them again.' : 'Nothing new to notify.' }),
+          h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn primary', type: 'button', text: 'Done', onclick: function () { dlg.close(); } })])]));
+        if (onDone) onDone(r);
+      }).catch(function (e) { go2.disabled = false; go2.classList.remove('busy'); toast(e.message); });
+    });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'qa-t', text: 'Quick assign' }),
+      h('p', { class: 'small muted', style: 'margin:0 0 10px', text: 'Pick people and assessments. They get a notification in the app and see the test on their Tests page.' }),
+      h('div', { class: 'qa-cols' }, [
+        h('div', { class: 'qa-col' }, [h('b', { text: 'People' }), q, teamBox, plist, h('div', { class: 'row', style: 'margin-top:6px' }, [allBtn])]),
+        h('div', { class: 'qa-col' }, [h('b', { text: 'Assessments' }), tlist])]),
+      h('label', { class: 'chk', for: 'qa-ext', style: 'margin-top:12px' }, [ext, h('span', null, ['If an assessment has already closed, keep it open for these people for', days, 'days'])]),
+      sum,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), go2])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
+    plist.appendChild(skeleton()); tlist.appendChild(skeleton());
+    Promise.all([api('/api/assess/admin/people'), api('/api/assess/admin/tests')]).then(function (r) {
+      people = (r[0].people || []).filter(function (p) { return /@adit\.com$/i.test(p.email); }).sort(function (a, b) { return (a.name || a.email).localeCompare(b.name || b.email); });
+      tests = (r[1].tests || []).filter(function (t) { return !(t.settings.repeat && t.settings.repeat.mode && t.settings.repeat.mode !== 'none'); });
+      drawTeams(); drawPeople(); drawTests(); upd(); q.focus();
+    }).catch(function (e) { clear(plist); plist.appendChild(errBox(e.message)); });
+  }
+
   function viewManage() {
     main.appendChild(pageHead('Assessments', me.reviewer ? 'Build assessments from the question bank, choose who takes them, and review results.' : 'You review these assessments. Open one to see results and mark answers.',
       !me.reviewer ? null : [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
+       h('button', { class: 'btn', type: 'button', onclick: function () { quickAssignDialog(null, function () { go('manage'); }); } }, [icon('users', 'sm'), 'Quick assign']),
        h('button', { class: 'btn', type: 'button', onclick: function () { combineDialog(); } }, [icon('layers', 'sm'), 'Combine']),
        h('button', { class: 'btn', type: 'button', onclick: function () { go('build'); } }, [icon('spark', 'sm'), 'Build from a document']),
        h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
@@ -1921,6 +2029,7 @@
           h('div', { class: 'row' }, [
             h('button', { class: 'btn primary sm', type: 'button', onclick: function () { go('results/' + t.id); } }, [icon('chart', 'sm'), 'Results']),
             !me.reviewer ? null : h('button', { class: 'btn sm', type: 'button', onclick: function () { go('edit/' + t.id); } }, [icon('edit', 'sm'), 'Edit']),
+            !me.reviewer ? null : h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { quickAssignDialog(t.id, function () { go('manage'); }); } }, [icon('users', 'sm'), 'Assign']),
             t.submitted && me.reviewer ? h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { go('results/' + t.id + '?retest=1'); } }, [icon('retest', 'sm'), 'Retest']) : null,
           ]),
         ]));

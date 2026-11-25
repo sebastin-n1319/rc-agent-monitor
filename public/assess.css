@@ -1370,3 +1370,10 @@ ol.bld-opts li{display:list-item}
 .rl-opt input{margin-top:3px;width:16px;height:16px;flex:none}
 .rl-opt span{display:flex;flex-direction:column;gap:2px}
 .rl-opt b{font-size:13.5px;font-weight:600}
+/* Batch 418: quick assign dialog */
+.qa-dlg{width:min(980px,96vw)}
+.qa-cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+.qa-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.qa-list{max-height:330px}
+.qa-dlg .chips{max-height:78px;overflow:auto}
+@media (max-width:720px){.qa-cols{grid-template-columns:1fr}.qa-list{max-height:220px}}
