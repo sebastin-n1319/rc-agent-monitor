@@ -64,7 +64,8 @@
 <script src="/stg-charts.js?v=1.1.0" defer></script>
 <script src="/settings-admin.js?v=1.4.1" defer></script>
 <script src="/ai-usage-admin.js?v=1.1.0" defer></script>
-<script src="/desk-drafts-admin.js?v=1.7.0" defer></script>
+<script src="/desk-drafts-admin.js?v=1.8.0" defer></script>
+<script src="/roster-check.js?v=1.0.0" defer></script>
 <script src="/expert-library-admin.js?v=1.5.0" defer></script>
 <script src="/storage-admin.js?v=1.1.2" defer></script>
 <script src="/desk-lifecycle-admin.js?v=1.12.7" defer></script>
@@ -1313,6 +1314,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           </button>
         </div>
       </div>
+      <div id="rosterCheck" style="margin:0 0 12px"></div>
       <div id="agentGrid" class="agent-grid"><div class="no-data">No agents yet.</div></div>
     </div>
   </div>
@@ -10720,6 +10722,7 @@ async function addSelectedAgents(){
 }
 
 async function loadAgents(){
+  try{ if(window.renderRosterCheck && window.__ws!=='aditpay') window.renderRosterCheck(document.getElementById('rosterCheck'),{cls:''}); }catch(e){}
   // SVG icons, explicit width/height so they never default to 300px
   const icoSave='<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 7,12 13,4"/></svg>';
   const icoAuto='<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.5 1.5 6 7h4.5L7.5 14.5l6.5-8H9.5z"/></svg>';

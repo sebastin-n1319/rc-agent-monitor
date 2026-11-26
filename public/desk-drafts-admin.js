@@ -115,6 +115,7 @@
           <button type="button" class="stg-btn ${S.paused ? 'stg-btn-ghost' : 'stg-btn-warning'} ddm-pause">${S.paused ? 'Resume drafts' : 'Pause drafts'}</button></div>
         <div class="ddm-pills">${state} ${st.canSave ? pill('ok', 'Saves drafts itself') : pill('', 'Text mode only (no Desk write token)')} ${who} ${pill('', 'Last 24 hours: ' + num(st.stats.today))} ${pill('', '7 days: ' + num(done.n) + ' done, ' + num(failed.n) + ' failed')}</div>
       </div>
+      <div class="ddm-rck"></div>
       ${reportView(rp, rd)}
       ${rp && !rp.error ? learnCard(rp.learning) : ''}
       <div class="sc-grid sc-g3">
@@ -163,6 +164,7 @@
       renderDrafts(root);
     });
     root.querySelectorAll('.ddm-rdays button').forEach((b) => b.addEventListener('click', () => { store.set('rdays', b.dataset.d); renderDrafts(root); }));
+    if (window.renderRosterCheck) window.renderRosterCheck(root.querySelector('.ddm-rck'), { cls: 'stg-card' }); // Batch 420
     root.querySelector('.ddm-pause').addEventListener('click', async (e) => { e.target.disabled = true; try { await api('/api/admin/desk-drafts/settings', { paused: !S.paused }); toast(S.paused ? 'Drafts resumed' : 'Drafts paused', 'success'); } catch (x) { toast(x.message, 'error'); } renderDrafts(root); });
     // Batch 348: the agent picker is a grid of selectable cards with a count, Select all and Clear
     const agentsBox = root.querySelector('.ddm-pick');

@@ -60,6 +60,12 @@ describe('Expert drafts follow the roster (Batch 419)', () => {
     tags = { data: [] }; t.teamId = ''; t.team = { name: 'TechOB POD 7' };
     expect((await xd.decide(ev, { assignWaitMs: 0 })).skip).toMatch(/TechOB ticket/);
   });
+  it('treats a monitored agent missing from the sheet as T1 but gives no draft (Batch 420)', async () => {
+    xd.setDeps({ monitoredT1: async () => [{ id: '888', name: 'New Hire' }] });
+    t.assigneeId = '888'; expect((await xd.decide(ev, { assignWaitMs: 0 })).skip).toMatch(/not in the pilot \(monitored T1 agent/);
+    t.assigneeId = '777'; expect((await xd.decide(ev, { assignWaitMs: 0 })).skip).toMatch(/not on the T1 roster \(not T1\)/);
+    xd.setDeps({ monitoredT1: null });
+  });
   it('uses the old pilot list when the sheet is unreadable', async () => {
     R.setDeps({ readValues: async () => { throw new Error('not shared'); } });
     process.env.EXPERT_PILOT_OWNERS = '333';

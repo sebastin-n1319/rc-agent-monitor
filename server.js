@@ -826,7 +826,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
       { const xs = require('./lib/expert-sheet'); xs.setDB(db); await xs.initSchema().catch((e) => console.warn('expert sheet schema:', e.message));
         setTimeout(() => { const t = () => xs.syncAll().then((r) => { if (r && (r.addedTotal || r.error)) console.log('📒 Expert log sheet:', JSON.stringify(r)); }).catch((e) => console.warn('expert sheet:', e.message)); t(); setInterval(t, 10 * 60 * 1000); }, 2 * 60 * 1000); }
-      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai'), t1Agents: async () => { const base = await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()); const sh = await require('./lib/t1-roster').activeAgents().catch(() => null); if (!sh) return base; const out = sh.slice(); for (const a of base) if (!out.some((x) => x.id === a.id)) out.push(a); return out; } }); // Batch 419: T1 roster sheet names first
+      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai'), t1Agents: async () => { const base = await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()); const sh = await require('./lib/t1-roster').activeAgents().catch(() => null); if (!sh) return base; const out = sh.slice(); for (const a of base) if (!out.some((x) => x.id === a.id)) out.push(a); return out; }, monitoredT1: () => cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()) }); // Batch 419: T1 roster sheet names first; Batch 420: monitored agents count as T1
         // Batch 319: drafts for tickets already waiting on the drafting agents (new, reassigned, web or chat), every 10 minutes in work hours.
         setTimeout(() => { const aw = async () => { if (!inWorkHours()) return; try { const owners = await expertDraftOwners(); const r = await xd.autoWaiting({ ownerIds: owners }); if (r && r.started && r.started.length) console.log('📝 Expert drafts for waiting tickets:', r.started.map((x) => x.number).join(', ')); } catch (e) { console.warn('expert auto waiting:', e.message); } }; setInterval(aw, 10 * 60 * 1000); setTimeout(aw, 60 * 1000); }, 3 * 60 * 1000);
         setTimeout(() => xd.recover().then((r) => { if (r.requeued || r.closed) console.log('♻️ Expert drafts after restart:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft recover:', e.message)), 30 * 1000);
@@ -2502,6 +2502,30 @@ async function expertDraftOwners() {
   if (g.source === 'sheet') return [...g.ids];
   return g.ids.size ? [...g.ids] : (await deskT1Agents()).map((a) => a.id);
 }
+// Batch 420: roster check. The T1 roster sheet next to the monitored agents (Manage Agents) and tool access. Read only.
+app.get('/api/admin/t1-roster/check', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const R = require('./lib/t1-roster'), r = await R.load({ force: req.query.refresh === '1' });
+    const norm = (n) => String(n || '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const mon = await WSX.run('t1', () => getMonitoredAgents()).catch(() => []);
+    const access = await toolMemberSet().catch(() => new Set());
+    const deskIds = await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()).catch(() => []);
+    const idByName = new Map(deskIds.map((a) => [norm(a.name), String(a.id)]));
+    const monKey = mon.map((m) => ({ name: m.name, email: String(m.email || '').toLowerCase(), n: norm(m.name), id: idByName.get(norm(m.name)) || '' }));
+    const onSheet = (m) => r.rows.find((x) => (m.id && x.deskId === m.id) || (m.email && x.email === m.email) || x.name && norm(x.name) === m.n);
+    const isMon = (x) => monKey.some((m) => (m.id && m.id === x.deskId) || (x.email && m.email === x.email) || (x.name && m.n === norm(x.name)));
+    const brief = (x) => ({ name: x.name, deskId: x.deskId || x.id || '', email: x.email || '' });
+    const out = {
+      inactiveMonitored: r.rows.filter((x) => !x.active && isMon(x)).map(brief),
+      inactiveWithAccess: r.rows.filter((x) => !x.active && x.email && access.has(x.email)).map(brief),
+      activeNotMonitored: r.rows.filter((x) => x.active && !isMon(x)).map(brief),
+      monitoredNotOnSheet: monKey.filter((m) => !onSheet(m)).map(brief),
+      activeNoEmail: r.rows.filter((x) => x.active && !x.email).map(brief),
+    };
+    res.json({ success: true, ok: r.ok, error: r.error, at: r.at, serviceAccount: R.serviceEmail(), sheet: { rows: r.rows.length, active: r.rows.filter((x) => x.active).length }, monitored: mon.length, ...out,
+      issues: out.inactiveMonitored.length + out.inactiveWithAccess.length + out.activeNotMonitored.length + out.monitoredNotOnSheet.length });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.get('/api/admin/desk-drafts/state', requireAdmin, async (req, res) => {
   try {
     const xd = expertDraft(), st = xd.settings(), agents = await deskT1Agents();
