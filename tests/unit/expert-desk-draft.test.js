@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 const sqlite3 = require('sqlite3');
 const xd = require('../../lib/expert-desk-draft');
+process.env.EXPERT_DRAFT_WAIT_MIN = '0'; // Batch 423: the 15-minute wait is tested in expert-draft-wait.test.js
 const env = { ...process.env };
 const brief = { bottom_line: 'T1 can answer this.', found: ['Client asked about texts'], reply_label: 'Reply to the client', reply: 'Hi Dr. A, here is how...', replies: [], unknown: [] };
 

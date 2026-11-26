@@ -75,7 +75,8 @@
       <div class="stg-card"><div class="stg-card-title">What Expert is learning from agents</div>
         <div class="stg-card-sub">Every edited draft, and every reply an agent writes instead, is saved. The latest guide the tone of new drafts at once. The learning run (daily with 5+ new lessons, else weekly) turns patterns seen 3+ times into Expert team rules used by every Expert answer. Last run: ${lr && lr.at ? esc(ct(lr.at)) + (lr.added ? ', ' + num(lr.added.length) + ' new rules' : '') : 'not yet'}.</div>
         ${L.last.length ? `<table class="aiu-tbl ddm-mini"><tbody>${L.last.map((x) => `<tr><td>${esc(ct(x.created_at))}</td><td>#${esc(x.number)}</td><td>${esc(x.agent || '')}</td><td>${kind(x.kind)}</td><td class="r">${Math.round(100 - 100 * (Number(x.similarity) || 0))}% changed</td></tr>`).join('')}</tbody></table>` : '<p class="aiu-empty">No lessons yet.</p>'}
-        ${lr && lr.added && lr.added.length ? `<div class="aiu-sub-h">Rules from the last run</div><ul class="ddm-fails">${lr.added.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}</div></div>`;
+        ${lr && lr.added && lr.added.length ? `<div class="aiu-sub-h">Rules from the last run</div><ul class="ddm-fails">${lr.added.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+        ${L.style ? `<div class="aiu-sub-h">Draft rules in use (learned daily from T1 agents' replies${L.style.at ? ', ' + esc(ct(L.style.at)) : ''})</div>${L.style.rules && L.style.rules.length ? `<ul class="ddm-fails">${L.style.rules.map((x) => `<li>${esc(x.rule)} <span class="aiu-muted">(${esc(x.count)} replies, e.g. #${esc((x.examples || []).join(', #'))})</span></li>`).join('')}</ul>` : '<p class="aiu-empty">No rule yet: they appear after the first daily run with 10+ agent replies.</p>'}` : ''}</div></div>`;
   }
 
   // Batch 364: Adit Pay drafts card. Tickets in the Adit Pay Desk team get drafts from Adit Pay Expert when switched on.
