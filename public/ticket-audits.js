@@ -53,7 +53,7 @@
     return pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat');
   }
   function tabs() {
-    var t = [['review', 'Pending review'], ['history', 'History'], ['hygiene', 'Ticket hygiene']];
+    var t = [['review', 'Pending review'], ['history', 'History'], ['hygiene', 'Ticket hygiene'], ['pf', 'Patient forms']];
     if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['escalations', 'Escalation watch'], ['spocs', 'SPOC management'], ['reviewSettings', 'Settings']]);
     return t;
   }
@@ -81,7 +81,12 @@
       h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer review' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
-    ({ hygiene: viewHygiene, review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, reviewSettings: viewReviewSettings, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+    ({ pf: viewPf, hygiene: viewHygiene, review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, reviewSettings: viewReviewSettings, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+  }
+  // Batch 421: Patient forms requests (watch only), labelled by SPOCs and admins
+  function viewPf(body) {
+    TA.root.classList.add('tka-wide'); var r = h('div'); body.appendChild(r);
+    if (window.PFCases) window.PFCases.mount(r); else r.appendChild(h('p', { class: 'tka-empty', text: 'Patient forms is still loading. Refresh the page.' }));
   }
   // Batch 260: T1 CS ticket hygiene, for SPOCs as well as admins.
   function viewHygiene(body) {

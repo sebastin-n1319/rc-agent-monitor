@@ -2454,6 +2454,9 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
 // x-expert-key header. "save" answers at once and saves a draft reply plus a private note in the ticket; "text" returns
 // Expert's quick reply for the automation to save. Nothing is ever sent to the client.
 const expertDraft = () => require('./lib/expert-desk-draft');
+// Batch 421: Patient Forms requests, watch only (nothing is written to Desk or Asana)
+let _pfReady = null;
+const pfCases = () => { const m = require('./lib/pf-cases'); if (!_pfReady) { const { db } = require('./database'); m.setDB(db); _pfReady = m.initSchema().catch((e) => console.warn('pf schema:', e.message)); } return m; };
 function draftKey(req, res) {
   if (!expertDraft().enabled()) { res.status(503).json({ success: false, error: 'Expert drafts are off (EXPERT_DESK_KEY is not set)' }); return false; }
   if (!expertDraft().keyOk(req.get('x-expert-key'))) { res.status(401).json({ success: false, error: 'Wrong or missing key' }); return false; }
@@ -2473,6 +2476,7 @@ app.all('/api/expert/desk-webhook', rateLimit(120, 60000), (req, res) => {
   if (!expertDraft().enabled() || !expertDraft().keyOk(req.query.key)) return res.status(401).json({ success: false });
   res.status(200).json({ success: true });
   expertDraft().handleWebhook(req.body).catch((e) => console.warn('expert desk webhook:', e.message));
+  pfCases().onDeskEvent(req.body).catch((e) => console.warn('pf watch:', e.message)); // Batch 421: watch only
 });
 app.get('/api/expert/desk-draft/:id', rateLimit(120, 60000), async (req, res) => {
   if (!draftKey(req, res)) return;
@@ -10641,6 +10645,13 @@ app.get('/api/ticket-hygiene', requireAuth, requireAuditAccess, auditWrap(async 
   if (rep && since && rep.at <= since) return res.json({ success: true, running: th.isRunning(), error: th.lastError(), unchanged: true, at: rep.at });
   res.json({ success: true, running: th.isRunning(), error: th.lastError(), report: rep, trend: await th.trend(30) });
 }));
+// Batch 421: Patient forms (watch only). SPOCs and admins label cases; admins run the replay and switch it off.
+const pfWrap = (fn) => async (req, res) => { try { const m = pfCases(); await _pfReady; await fn(m, req, res); } catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); } };
+app.get('/api/pf/stats', requireAuth, requireAuditAccess, pfWrap(async (m, req, res) => res.json({ success: true, admin: !!req.audit.admin, ...(await m.stats()) })));
+app.get('/api/pf/cases', requireAuth, requireAuditAccess, pfWrap(async (m, req, res) => { const q = req.query || {}; res.json({ success: true, ...(await m.list({ view: String(q.view || 'tolabel'), q: String(q.q || '').slice(0, 80), limit: q.limit, offset: q.offset })) }); }));
+app.post('/api/pf/cases/:id/label', requireAuth, requireAuditAccess, rateLimit(120, 60000), pfWrap(async (m, req, res) => { const b = req.body || {}; res.json({ success: true, row: await m.label(String(req.params.id).replace(/\D/g, ''), { label: String(b.label || ''), type: b.type, note: b.note, by: req.session.email }) }); }));
+app.post('/api/pf/replay', requireAuth, requireAuditAccess, rateLimit(4, 60000), pfWrap(async (m, req, res) => { if (!req.audit.admin) return res.status(403).json({ success: false, error: 'Admins only' }); res.json({ success: true, replay: await m.replay({ days: Number((req.body || {}).days) || 90, by: req.session.email }) }); }));
+app.post('/api/pf/mode', requireAuth, requireAuditAccess, pfWrap(async (m, req, res) => { if (!req.audit.admin) return res.status(403).json({ success: false, error: 'Admins only' }); const v = (req.body || {}).mode === 'off' ? 'off' : 'watch'; await m.setSetting('mode', v); insertAuditLog(req.session.email, 'pf_mode', v, '').catch(() => {}); res.json({ success: true, mode: v }); }));
 app.post('/api/ticket-hygiene/run', requireAuth, requireAuditAccess, rateLimit(6, 60000), auditWrap(async (req, res) => {
   const th = require('./lib/ticket-hygiene');
   if (!require('./lib/aditkb-service').isConfigured()) return res.status(503).json({ success: false, error: 'Desk and CRM data is not set up' });
