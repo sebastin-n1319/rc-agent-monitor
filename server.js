@@ -826,9 +826,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       // Batch 287: outage watch, every 5 minutes in business hours (it skips itself outside them).
       { const xs = require('./lib/expert-sheet'); xs.setDB(db); await xs.initSchema().catch((e) => console.warn('expert sheet schema:', e.message));
         setTimeout(() => { const t = () => xs.syncAll().then((r) => { if (r && (r.addedTotal || r.error)) console.log('📒 Expert log sheet:', JSON.stringify(r)); }).catch((e) => console.warn('expert sheet:', e.message)); t(); setInterval(t, 10 * 60 * 1000); }, 2 * 60 * 1000); }
-      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai'), t1Agents: () => cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()) });
+      { const xd = require('./lib/expert-desk-draft'); xd.setDB(db); await xd.initSchema().catch((e) => console.warn('expert drafts schema:', e.message)); xd.setDeps({ expert: require('./lib/expert'), ai: require('./lib/ai'), t1Agents: async () => { const base = await cacheWrap('desk-t1-agents', 10 * 60 * 1000, () => deskT1Agents()); const sh = await require('./lib/t1-roster').activeAgents().catch(() => null); if (!sh) return base; const out = sh.slice(); for (const a of base) if (!out.some((x) => x.id === a.id)) out.push(a); return out; } }); // Batch 419: T1 roster sheet names first
         // Batch 319: drafts for tickets already waiting on the drafting agents (new, reassigned, web or chat), every 10 minutes in work hours.
-        setTimeout(() => { const aw = async () => { if (!inWorkHours()) return; try { const st = xd.settings(); const pilot = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean); const owners = pilot.length ? pilot : (await deskT1Agents()).map((a) => a.id); const r = await xd.autoWaiting({ ownerIds: owners }); if (r && r.started && r.started.length) console.log('📝 Expert drafts for waiting tickets:', r.started.map((x) => x.number).join(', ')); } catch (e) { console.warn('expert auto waiting:', e.message); } }; setInterval(aw, 10 * 60 * 1000); setTimeout(aw, 60 * 1000); }, 3 * 60 * 1000);
+        setTimeout(() => { const aw = async () => { if (!inWorkHours()) return; try { const owners = await expertDraftOwners(); const r = await xd.autoWaiting({ ownerIds: owners }); if (r && r.started && r.started.length) console.log('📝 Expert drafts for waiting tickets:', r.started.map((x) => x.number).join(', ')); } catch (e) { console.warn('expert auto waiting:', e.message); } }; setInterval(aw, 10 * 60 * 1000); setTimeout(aw, 60 * 1000); }, 3 * 60 * 1000);
         setTimeout(() => xd.recover().then((r) => { if (r.requeued || r.closed) console.log('♻️ Expert drafts after restart:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft recover:', e.message)), 30 * 1000);
         setTimeout(() => { const sw = () => xd.sweep().then((r) => { if (r && (r.removed || r.failed)) console.log('🧹 Expert drafts:', JSON.stringify(r)); }).catch((e) => console.warn('expert draft sweep:', e.message)); sw(); setInterval(sw, 5 * 60 * 1000); }, 2 * 60 * 1000); }
       // Batch 335: the Expert library (maintained topic pages). Built and refreshed once a day outside work hours (a first
@@ -2494,13 +2494,22 @@ async function deskT1Agents() {
   for (const a of await getMonitoredAgents().catch(() => [])) { const id = byName.get(String(a.name || '').trim().toLowerCase()); if (id && !out.some((x) => x.id === id)) out.push({ id, name: a.name }); }
   return out.sort((x, y) => x.name.localeCompare(y.name));
 }
+// Batch 419: whose tickets Expert drafts for. The T1 roster sheet (Active + Expert drafts Yes) when it can be used,
+// else the Settings pilot list, else EXPERT_PILOT_OWNERS, else every T1 agent (as before).
+function legacyPilot() { const st = expertDraft().settings(); return st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean); }
+async function expertDraftOwners() {
+  const g = await require('./lib/t1-roster').group({ fallback: legacyPilot() });
+  if (g.source === 'sheet') return [...g.ids];
+  return g.ids.size ? [...g.ids] : (await deskT1Agents()).map((a) => a.id);
+}
 app.get('/api/admin/desk-drafts/state', requireAdmin, async (req, res) => {
   try {
     const xd = expertDraft(), st = xd.settings(), agents = await deskT1Agents();
-    const pilotIds = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean);
-    const name = (id) => (agents.find((a) => a.id === id) || {}).name || ('Desk ID ' + id);
+    const R = require('./lib/t1-roster'), g = await R.group({ fallback: legacyPilot() });
+    const pilotIds = [...g.ids];
+    const name = (id) => g.names.get(String(id)) || (agents.find((a) => a.id === id) || {}).name || ('Desk ID ' + id);
     res.json({ success: true, enabled: xd.enabled(), canSave: xd.canWrite(), separateWriter: !!process.env.ZOHO_DESK_WRITE_CLIENT_ID, settings: st,
-      pilot: pilotIds.map((id) => ({ id, name: name(id) })), agents, stats: await xd.stats(), team: xd.T1_TEAM(),
+      pilot: pilotIds.map((id) => ({ id, name: name(id) })), pilotSource: g.source, pilotReason: g.reason || null, roster: await R.status(), agents, stats: await xd.stats(), team: xd.T1_TEAM(),
       // Batch 364: Adit Pay drafts (tickets in the Adit Pay Desk team), with their own switch and pilot
       pay: await (async () => { const pa = await WSX.run('aditpay', () => deskT1Agents()).catch(() => []); return { on: !!st.payOn, team: xd.PAY_TEAM(), agents: pa, pilot: (st.payPilot || []).map((id) => ({ id, name: (pa.find((a) => a.id === id) || {}).name || ('Desk ID ' + id) })) }; })(), skipSenders: xd.SKIP_SENDERS, skipSubjects: xd.SKIP_SUBJECTS,
       webhookPath: '/api/expert/desk-webhook?key=' + (process.env.EXPERT_DESK_KEY ? '\u2022\u2022\u2022\u2022' + String(process.env.EXPERT_DESK_KEY).slice(-4) : '(set EXPERT_DESK_KEY)') });
@@ -2536,9 +2545,8 @@ app.get('/api/admin/desk-drafts/list', requireAdmin, async (req, res) => {
 });
 app.post('/api/admin/desk-drafts/backlog', requireAdmin, rateLimit(6, 60000), async (req, res) => {
   try {
-    const xd = expertDraft(), st = xd.settings(), b = req.body || {};
-    const pilot = st.pilot || String(process.env.EXPERT_PILOT_OWNERS || '').split(',').map((x) => x.trim()).filter(Boolean);
-    const owners = pilot.length ? pilot : (await deskT1Agents()).map((a) => a.id);
+    const xd = expertDraft(), b = req.body || {};
+    const owners = await expertDraftOwners();
     res.json(Object.assign({ success: true, owners: owners.length }, await xd.backlog({ ownerIds: owners, days: b.days, max: b.max, dry: b.dry !== false })));
   } catch (e) { res.status(e.status && e.status < 600 ? e.status : 500).json({ success: false, error: e.message }); }
 });

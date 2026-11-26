@@ -100,27 +100,33 @@
     try { [st, jl, rp] = await Promise.all([api('/api/admin/desk-drafts/state'), api('/api/admin/desk-drafts/jobs?limit=10' + (filter ? '&status=' + filter : '')), api('/api/admin/desk-drafts/report?days=' + rd).catch((e) => ({ error: e.message }))]); }
     catch (e) { root.innerHTML = `<div class="stg-error">Could not load Desk drafts: ${esc(e.message)}</div>`; return; }
     const S = st.settings, w = st.stats.week || {}, done = (w.done || {}), failed = (w.failed || {});
-    const pilotOn = st.pilot.length > 0, pilotSet = new Set(st.pilot.map((p) => p.id));
+    const fromSheet = st.pilotSource === 'sheet'; // Batch 419: the T1 roster sheet decides; the picker below is only the fallback list
+    const fb = Array.isArray(S.pilot) ? S.pilot.map(String) : (fromSheet ? [] : st.pilot.map((p) => p.id));
+    const pilotOn = fromSheet ? fb.length > 0 : st.pilot.length > 0, pilotSet = new Set(fromSheet ? fb : st.pilot.map((p) => p.id));
+    const who = fromSheet ? (st.pilot.length ? pill('ok', 'From T1 roster: ' + st.pilot.map((p) => p.name).join(', ')) : pill('warn', 'T1 roster: no one has Expert drafts = Yes')) : pilotOn ? pill('', 'Pilot: ' + st.pilot.map((p) => p.name.split(' ')[0]).join(', ')) : pill('ok', 'All T1 agents');
+    const rosterNote = fromSheet ? 'Set by the T1 roster Google Sheet: Status Active and Expert drafts Yes, matched on the Desk agent ID, read every 10 minutes. TechOB tickets and owners not on the sheet are skipped. The list below is used only if the sheet cannot be read.'
+      : st.roster && !st.roster.ok ? 'The T1 roster sheet could not be read (' + (st.pilotReason || st.roster.error || '') + '), so this list is used. Share the sheet with ' + (st.roster.serviceAccount || 'the service account') + ' as Viewer.'
+      : st.pilotReason ? 'The T1 roster sheet has no Active row, so this list is used.' : '';
     const state = !st.enabled ? pill('warn', 'Off: EXPERT_DESK_KEY is not set on Railway') : S.paused ? pill('warn', 'Paused') : pill('ok', 'On');
     root.innerHTML = `
       <div class="stg-card ddm-hero">
         <div class="aiu-head"><div><div class="stg-card-title">Expert drafts in Zoho Desk</div>
           <div class="stg-card-sub">Adit Expert reads each T1 ticket where the client is waiting and saves a draft reply and a private note in Desk. It never sends: the agent reviews, edits and sends.</div></div>
           <button type="button" class="stg-btn ${S.paused ? 'stg-btn-ghost' : 'stg-btn-warning'} ddm-pause">${S.paused ? 'Resume drafts' : 'Pause drafts'}</button></div>
-        <div class="ddm-pills">${state} ${st.canSave ? pill('ok', 'Saves drafts itself') : pill('', 'Text mode only (no Desk write token)')} ${pilotOn ? pill('', 'Pilot: ' + st.pilot.map((p) => p.name.split(' ')[0]).join(', ')) : pill('ok', 'All T1 agents')} ${pill('', 'Last 24 hours: ' + num(st.stats.today))} ${pill('', '7 days: ' + num(done.n) + ' done, ' + num(failed.n) + ' failed')}</div>
+        <div class="ddm-pills">${state} ${st.canSave ? pill('ok', 'Saves drafts itself') : pill('', 'Text mode only (no Desk write token)')} ${who} ${pill('', 'Last 24 hours: ' + num(st.stats.today))} ${pill('', '7 days: ' + num(done.n) + ' done, ' + num(failed.n) + ' failed')}</div>
       </div>
       ${reportView(rp, rd)}
       ${rp && !rp.error ? learnCard(rp.learning) : ''}
       <div class="sc-grid sc-g3">
       <div class="stg-card">
         <div class="stg-card-title">Who gets drafts</div>
-        <div class="stg-card-sub">${S.pilotFromEnv && pilotOn ? 'Now set by EXPERT_PILOT_OWNERS on Railway. Saving here takes over from it.' : 'A ticket gets a draft only when its owner is in this list, or every T1 ticket when "All T1 agents" is chosen.'}</div>
+        <div class="stg-card-sub">${rosterNote ? esc(rosterNote) : S.pilotFromEnv && pilotOn ? 'Now set by EXPERT_PILOT_OWNERS on Railway. Saving here takes over from it.' : 'A ticket gets a draft only when its owner is in this list, or every T1 ticket when "All T1 agents" is chosen.'}</div>
         <div class="ddm-seg" role="radiogroup" aria-label="Who gets drafts">
           <label class="ddm-seg-opt"><input type="radio" name="ddm-who" value="all" ${pilotOn ? '' : 'checked'}><span>All T1 agents</span></label>
           <label class="ddm-seg-opt"><input type="radio" name="ddm-who" value="pilot" ${pilotOn ? 'checked' : ''}><span>Only selected agents</span></label></div>
         <div class="ddm-pick" ${pilotOn ? '' : 'hidden'}>
           <div class="ddm-pick-bar"><span class="ddm-pick-count" aria-live="polite"></span><span class="ddm-pick-acts"><button type="button" class="ddm-link" data-pick="all">Select all</button><button type="button" class="ddm-link" data-pick="none">Clear</button></span></div>
-          <div class="ddm-agents">${(() => { const list = st.agents.concat(st.pilot.filter((p) => !st.agents.some((a) => a.id === p.id))); if (!list.length) return '<p class="aiu-empty">No agents with a matching Desk name were found.</p>';
+          <div class="ddm-agents">${(() => { const list = st.agents.concat((fromSheet ? [] : st.pilot).filter((p) => !st.agents.some((a) => a.id === p.id))); if (!list.length) return '<p class="aiu-empty">No agents with a matching Desk name were found.</p>';
             const ini = (n) => String(n || '?').split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase();
             return list.map((a) => `<label class="ddm-agent"><input type="checkbox" value="${esc(a.id)}" ${pilotSet.has(a.id) ? 'checked' : ''}><span class="ddm-av" aria-hidden="true">${esc(ini(a.name))}</span><span class="ddm-nm">${esc(a.name)}</span><svg class="ddm-tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></label>`).join(''); })()}</div>
         </div>

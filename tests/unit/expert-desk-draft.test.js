@@ -92,8 +92,9 @@ describe('desk webhook', () => {
     reads.threads = { data: [] };
     process.env.EXPERT_PILOT_OWNERS = '222'; expect((await xd.decide(ev({}))).skip).toMatch(/pilot/);
     process.env.EXPERT_PILOT_OWNERS = '111,222'; expect((await xd.decide(ev({}))).skip).toBeUndefined();
-    let n = 0; xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : (n++ ? T : Object.assign({}, T, { assigneeId: '' })) });
+    let n = 0; xd.setDeps({ deskRead: async (p) => /threads|tags/.test(p) ? { data: [] } : (n++ ? T : Object.assign({}, T, { assigneeId: '' })) });
     expect((await xd.decide(ev({}), { assignWaitMs: 5 })).skip).toBeUndefined(); expect(n).toBe(2);
+
     n = 0; xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? { data: [] } : Object.assign({}, T, { assigneeId: '' }) });
     expect((await xd.decide(ev({}), { assignWaitMs: 5 })).skip).toMatch(/no owner/);
     xd.setDeps({ deskRead: async (p) => /threads/.test(p) ? reads.threads : reads.t });
