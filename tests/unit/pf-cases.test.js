@@ -10,6 +10,11 @@ const no = () => ({ pf: false, type: null, confidence: 0.9, reason: 'A form is n
 describe('Patient forms detection, watch only (Batch 421)', () => {
   beforeEach(async () => { const db = new sqlite3.Database(':memory:'); PF.setDB(db); await PF.initSchema(); aiCalls = []; PF.setDeps({ ai: ai(yes), waitMs: 0 }); });
 
+  it('cleans Desk HTML, entities and cut-off tags from what the page and the AI see (Batch 422)', async () => {
+    expect(PF.plain('Hello,&nbsp; Can we add this form? <br>Thanks &quot;OM&quot; <div style="color: rgb(0,0,0); font-family: &quot;Segoe')).toBe('Hello, Can we add this form?\nThanks "OM"');
+    const r = await PF.classify({ id: '50', number: '1', subject: 'Form', body: '<p>Can we add this form?&nbsp;</p><style>.x{color:red}</style>' });
+    expect(r.snippet).toBe('Can we add this form?');
+  });
   it('keyword rules follow the old Desk detector', () => {
     expect(PF.keywords({ subject: 'New consent forms to add', body: '' }).hit).toBe(true);
     expect(PF.keywords({ subject: 'New patient forms not being uploaded', body: '' }).hit).toBe(true); // keywords alone get this wrong

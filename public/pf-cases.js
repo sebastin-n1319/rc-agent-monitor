@@ -88,7 +88,7 @@
       h('span', { class: 'pfc-muted', text: (S.offset + 1) + ' to ' + Math.min(S.offset + 40, list.total) + ' of ' + list.total }),
       h('button', { type: 'button', class: 'pfc-btn ghost', disabled: S.offset + 40 < list.total ? null : true, text: 'Next', onclick: function () { S.offset += 40; draw(); } })]);
   }
-  var css = document.createElement('style');
+  var css = document.createElement('style'); css.id = 'pfc-css';
   css.textContent = '.pfc{display:grid;gap:14px}.pfc-head{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}.pfc-head h3{margin:0 0 4px;font-size:18px}.pfc-side{display:flex;gap:8px;align-items:center;flex-wrap:wrap}'
     + '.pfc-muted{color:var(--text3,var(--t3,#8a94a6));font-size:12.5px;margin:0}.pfc-err{color:#d33}.pfc-empty{padding:28px;text-align:center;color:var(--text3,#8a94a6)}'
     + '.pfc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.pfc-kpi,.pfc-gate{border:1px solid var(--border,#d6dce6);border-radius:12px;padding:12px 14px;display:grid;gap:2px}.pfc-kpi b{font-size:24px;font-variant-numeric:tabular-nums}.pfc-kpi span{font-size:12.5px}.pfc-kpi small,.pfc-gate span{font-size:11.5px;color:var(--text3,#8a94a6)}'
