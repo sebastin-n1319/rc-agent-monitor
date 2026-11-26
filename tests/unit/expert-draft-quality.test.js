@@ -60,4 +60,8 @@ describe('Expert draft quality fixes (Batch 424)', () => {
     const sim = await xd.similarReplies('Appointment sync details not matching the schedule');
     expect(sim.length).toBeGreaterThan(0);
   });
+  it('learns again only when due: daily, or after 6 hours with 25+ new replies (Batch 425)', async () => {
+    const r = await xd.learnDraftRulesIfDue();
+    expect(r.skipped).toBe(true); // a run just happened in the test above
+  });
 });
