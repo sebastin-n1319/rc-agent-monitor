@@ -197,7 +197,7 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
 .ring{--p:70;width:190px;height:190px;margin:0 auto;border-radius:50%;background:conic-gradient(var(--ok) calc(var(--p)*1%),var(--team-soft) 0);display:grid;place-items:center;animation:spin .9s ease}
 .ring>div{width:136px;height:136px;border-radius:50%;background:var(--card);display:grid;place-content:center}
 .ring b{font-size:32px;font-weight:800;color:var(--ok)}.ring span{font-size:12px;color:var(--t3)}
-@keyframes spin{from{transform:rotate(-90deg) scale(.9);opacity:.3}}
+@keyframes spin{from{transform:scale(.85);opacity:.2}}
 .hsteps{display:grid;grid-template-columns:1.3fr 28px 1fr 28px 1.1fr;gap:8px;align-items:stretch}
 .hs{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);font-size:13.5px}
 .hs .k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:12px;margin-bottom:6px}
@@ -212,7 +212,7 @@ details.full>summary{list-style:none;cursor:pointer;display:flex;flex-direction:
 details.full>summary::-webkit-details-marker{display:none}
 details.full>summary b{font-size:17px}details.full>summary b::before{content:'▸ ';color:var(--acc)}details.full[open]>summary b::before{content:'▾ '}
 details.full>summary span{font-size:13px;color:var(--t3)}
-@media (max-width:900px){.track{grid-template-columns:repeat(5,minmax(64px,1fr));overflow-x:auto}.stop small,.stop b{display:none}.track{overflow:visible}.stop .ic{width:52px;height:52px}.tline{top:24px}
+@media (max-width:900px){.track{grid-template-columns:repeat(5,1fr);gap:0}.stop small,.stop b{display:none}.stop{padding:0}.stop .ic{width:46px;height:46px}.stop svg{width:22px;height:22px}.stop.on .ic{transform:scale(1.04)}.tline{top:21px}
   .barrow{grid-template-columns:1fr}.barrow p{grid-column:1}.ticks{grid-template-columns:1fr}.outg{grid-template-columns:1fr}.hsteps{grid-template-columns:1fr}.harrow{transform:rotate(90deg)}
   .lrow{grid-template-columns:30px 1fr 18px}.lrow .lgo{grid-column:2;justify-self:start;white-space:normal}.lrow.last{grid-template-columns:30px 1fr}}
 
