@@ -706,6 +706,8 @@ T1 flow page, automation and live numbers (Batch 433): /t1-flow now shows curren
 
 T1 flow page, FCR and CSAT hidden (Batch 435): the FCR and CSAT tiles on /t1-flow are hidden until the right figures are confirmed. They used the Ticket Lifecycle rules (T1-owned tickets closed in 30 days, solved within 24 business hours and not reopened; Desk survey replies matched to T1 owners). Setting T1_FLOW_METRICS=1 on the server shows them again.
 
+AI Studio prompt tile (Batch 436): the AI Studio home now has a "Build from a prompt" tile first, which opens the planner with the prompt option ready. The planner is also still reachable from "Document planner".
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.

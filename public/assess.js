@@ -3461,13 +3461,14 @@
     main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'What do you want to make?' }),
       h('p', { text: 'Pick a tool. Each one ends the same way: you review the questions part by part, then release them as one assessment or several.' })]), h('div', { class: 'hero-art' }, [art('radar', 170)])]));
     var TOOLS = [
+      { ic: 'spark', t: 'Build from a prompt', d: 'Say what to test. The AI uses the latest updates, where agents went wrong and team rules to plan and write the assessment.', cta: 'Write a prompt', fn: function () { go('studio/plan'); }, main: true }, // Batch 436
       { ic: 'doc', t: 'Build from a document', d: 'Upload KB articles or an SOP, pick who it is for and how many questions. Split into parts released a day or an hour apart.', cta: 'Start', fn: function () { go('build'); }, main: true },
       { ic: 'headphones', t: 'Real scenarios', d: 'From the team\'s own solved tickets, calls, chats, escalations and reviewer decisions. Tracks for new joinees, existing agents, mistakes and leads.', cta: 'Pick real cases', fn: function () { go('real'); }, main: true },
       { ic: 'chat', t: 'Customer case sets', d: 'A realistic call or chat with 3 to 5 linked questions, from the first reply to the right transfer.', cta: 'Write cases', fn: function () { go('scenario'); } },
       { ic: 'chart', t: 'Fix weak topics', d: 'The topics your team scores lowest on, from real results. Write fresh questions that target the mistakes.', cta: 'See weak topics', fn: function () { go('weak'); } },
       { ic: 'shield', t: 'Quality check', d: 'AI reviews questions for unclear wording, giveaway answers and wrong keys, and suggests a fix you apply in one click.', cta: 'Check the bank', fn: function () { bankFilter.queue = 'quality'; go('bank'); } },
       { ic: 'copy', t: 'Variants', d: 'Reworded versions that test the same point, so shared answers stop working. Random pools draw one per family.', cta: 'Pick questions', fn: function () { bankFilter.queue = ''; go('bank'); setTimeout(function () { toast('Tick some questions, then choose Write variants'); }, 400); } },
-      { ic: 'layers', t: 'Document planner', d: 'The original studio: plan several assessments from one long document and chat with the AI about each.', cta: 'Open planner', fn: function () { go('studio/plan'); }, adv: true },
+      { ic: 'layers', t: 'Document planner', d: 'Plan several assessments from one long document, a web page or a prompt, and chat with the AI about each.', cta: 'Open planner', fn: function () { go('studio/plan'); }, adv: true },
     ];
     var grid = h('div', { class: 'hub-grid stagger' });
     TOOLS.forEach(function (t, i) {
