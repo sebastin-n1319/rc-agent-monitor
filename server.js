@@ -3660,7 +3660,16 @@ app.get('/api/t1-flow', rateLimit(60, 60000), async (req, res) => {
     const email = await sheetViewer(req);
     if (!email || !String(email).toLowerCase().endsWith('@adit.com')) return res.status(401).json({ success: false, signIn: true, clientId: GOOGLE_CLIENT_ID });
     insertAuditLog(email, 't1_flow_viewed', 't1-flow', '').catch(() => {});
-    res.set('Cache-Control', 'no-store'); res.json({ success: true, viewer: email, flow: require('./lib/t1-flow').FLOW });
+    // Batch 433: current FCR and CSAT for T1 (last 30 days), the same numbers as the Ticket Lifecycle summary, kept an hour.
+    const metrics = await cacheWrap('t1-flow-metrics', 60 * 60 * 1000, async () => {
+      const to = new Date().toISOString(), from = new Date(Date.now() - 30 * 864e5).toISOString();
+      const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+      const rows = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q: null, agentNames, rosterNames: Object.values(agentNames) }), { from, to, agentNames, byEmail, q: null });
+      let fy = 0, ft = 0, cg = 0, ct = 0;
+      for (const r of rows) { fy += r.fcr_yes || 0; ft += r.fcr_total || 0; cg += r.csat_good || 0; ct += r.csat_total || 0; }
+      return { days: 30, fcr: ft ? Math.round(fy / ft * 100) : null, fcrN: ft, csat: ct ? Math.round(cg / ct * 100) : null, csatN: ct, asOf: to.slice(0, 10) };
+    }).catch(() => null);
+    res.set('Cache-Control', 'no-store'); res.json({ success: true, viewer: email, flow: require('./lib/t1-flow').FLOW, metrics });
   } catch (e) { res.status(500).json({ success: false, error: 'Could not load the flow' }); }
 });
 app.post('/api/t1-flow/signin', rateLimit(20, 60000), async (req, res) => {

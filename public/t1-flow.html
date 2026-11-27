@@ -29,7 +29,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
 .hero h1{margin:8px 0 6px;font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.1;max-width:720px}
 .hero p{margin:0;color:var(--hero-sub);font-size:17px;max-width:620px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:-56px;position:relative;z-index:1}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-top:-56px;position:relative;z-index:1}
+.stat{position:relative}.livedot{position:absolute;right:14px;top:14px;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ok);display:flex;align-items:center;gap:5px}.livedot::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse2 2s infinite}
+@keyframes pulse2{50%{opacity:.35}}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;box-shadow:var(--shadow)}
 .stat b{display:block;font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--t1)}
 .stat span{color:var(--t3);font-size:13px}
@@ -226,6 +228,37 @@ details.full>summary span{font-size:13px;color:var(--t3)}
 .oc.team{background:var(--team-soft);border:1px solid color-mix(in srgb,var(--team) 35%,transparent);animation-delay:.15s}.oc.team .tag{color:var(--team)}
 .dchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.dchips span{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
 @media (max-width:900px){.chgrid{grid-template-columns:1fr 1fr}.outg2{grid-template-columns:1fr}}
+
+/* Batch 433: automation */
+.loopcard{padding:18px 20px;margin-bottom:22px}
+.loop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lp{flex:1 1 150px;display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;column-gap:10px;text-align:left;align-items:center;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lp:hover{transform:translateY(-2px)}
+.lp .lpn{grid-row:1/3;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--kc)}
+.lp b{font-size:15px}.lp small{color:var(--t3);font-size:12px}
+.lp[aria-pressed="true"]{border-color:var(--kc);box-shadow:0 0 0 4px color-mix(in srgb,var(--kc) 18%,transparent)}
+.lparrow{color:var(--t3);font-weight:800;font-size:18px}
+.k-capture{--kc:#1E5FA8}.k-assist{--kc:#E07A12}.k-check{--kc:#0E7C52}.k-learn{--kc:#7C5CD6}
+@media (prefers-color-scheme:dark){.k-capture{--kc:#5E9BE0}.k-assist{--kc:#F59A3C}.k-check{--kc:#42CF97}.k-learn{--kc:#A78BFA}}
+.loopnote{margin:12px 0 0;font-size:14px;color:var(--t2);min-height:21px}
+.tl{position:relative;display:grid;gap:22px}
+.tl::before{content:'';position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:var(--line2);border-radius:2px}
+.tlrow{display:grid;grid-template-columns:190px 1fr;gap:16px;position:relative}
+.tlwhen{display:flex;gap:12px;align-items:flex-start;padding-top:4px}
+.tldot{flex:0 0 20px;height:20px;border-radius:50%;background:var(--card);border:4px solid var(--acc);position:relative;z-index:1}
+.tlwhen b{font-size:14px;line-height:1.35}
+.tlcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.acard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--kc);display:flex;flex-direction:column;gap:6px;transition:opacity .25s,transform .25s;animation:rise .45s ease backwards}
+.acard.dim{opacity:.28;transform:scale(.98)}
+.ahead{display:flex;justify-content:space-between;align-items:center}
+.aic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--kc);background:color-mix(in srgb,var(--kc) 12%,transparent)}
+.aic svg,.smi svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.atag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--kc)}
+.acard h4{margin:4px 0 0;font-size:15.5px}
+.acard p{margin:0;font-size:13.5px;color:var(--t2)}
+.smart{margin-top:auto;display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--t1);background:var(--soft);border-radius:10px;padding:9px 10px}
+.smart b{color:var(--kc)}.smi{flex:0 0 18px;color:var(--kc);margin-top:1px}.smi svg{width:18px;height:18px}
+@media (max-width:900px){.tlrow{grid-template-columns:1fr}.tlcards{grid-template-columns:1fr}.tl::before{display:none}.lparrow{display:none}.lp{flex:1 1 45%}}
 /* sign in */
 .center{max-width:440px;margin:14vh auto 0;padding:28px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:center}
 .center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:var(--t3);font-size:13px}
@@ -242,7 +275,7 @@ details.full>summary span{font-size:13px;color:var(--t3)}
 <script>
 (function () {
   var app = document.getElementById('app');
-  var F = null, ans = [], pick = -1;
+  var F = null, M = null, ans = [], pick = -1;
   function el(tag, a, kids) {
     var n = document.createElement(tag);
     for (var k in (a || {})) { if (a[k] == null) continue; if (k === 'text') n.textContent = a[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), a[k]); else n.setAttribute(k, a[k]); }
@@ -285,7 +318,7 @@ details.full>summary span{font-size:13px;color:var(--t3)}
       .then(function (x) {
         if (x.status === 401 && x.j.signIn) return signIn(x.j.clientId);
         if (!x.j.success) throw new Error(x.j.error || 'Could not load');
-        F = x.j.flow; render();
+        F = x.j.flow; M = x.j.metrics || null; render();
       }).catch(function (e) { app.replaceChildren(el('div', { class: 'center' }, [el('h2', { text: 'Could not load the flow' }), el('p', { class: 'err', text: e.message })])); });
   }
 
@@ -295,8 +328,11 @@ details.full>summary span{font-size:13px;color:var(--t3)}
     var hero = el('header', { class: 'hero' }, [el('div', { class: 'wrap' }, [
       el('div', { class: 'eyebrow', text: 'Adit T1 Customer Support · ' + F.updated }),
       el('h1', { text: F.title }), el('p', { text: F.takeaway })])]);
-    var stats = el('div', { class: 'wrap' }, [el('div', { class: 'stats' }, F.stats.map(function (s) { return el('div', { class: 'stat' }, [el('b', { text: s.n }), el('span', { text: s.l })]); }))]);
-    app.replaceChildren(hero, stats, el('main', null, [journeySec(), tryIt(), rulesSec(), glossarySec(), fullFlow()]),
+    var tiles = F.stats.slice();
+    if (M && M.fcr != null) tiles.splice(1, 0, { n: '~' + M.fcr + '%', l: 'first contact resolution, last ' + M.days + ' days', live: true });
+    if (M && M.csat != null) tiles.splice(2, 0, { n: '~' + M.csat + '%', l: 'client satisfaction (CSAT), last ' + M.days + ' days, ' + M.csatN + ' survey replies', live: true });
+    var stats = el('div', { class: 'wrap' }, [el('div', { class: 'stats' }, tiles.map(function (s) { return el('div', { class: 'stat' + (s.live ? ' live' : '') }, [s.live ? el('i', { class: 'livedot', text: 'Live' }) : null, el('b', { text: s.n }), el('span', { text: s.l })]); }))]);
+    app.replaceChildren(hero, stats, el('main', null, [journeySec(), autoSec(), tryIt(), rulesSec(), glossarySec(), fullFlow()]),
       el('footer', { class: 'wrap', text: 'Adit T1 Customer Support, ' + F.updated + '. Shares are approximate. For Adit teams only.' }));
     light(); go(0);
   }
@@ -334,7 +370,8 @@ details.full>summary span{font-size:13px;color:var(--t3)}
     },
     setup: function () {
       return el('div', null, [el('div', { class: 'ticks' }, F.setup.map(function (t, i) { return el('div', { class: 'tick', style: 'animation-delay:' + (i * 120) + 'ms' }, [el('span', { class: 'ok', text: '✓' }), el('span', { text: t })]); })),
-        el('div', { class: 'agentline' }, [el('span', { class: 'dot', text: 'T1' }), el('span', { text: F.agent })])]);
+        el('div', { class: 'agentline' }, [el('span', { class: 'dot', text: 'T1' }), el('span', { text: F.agent })]),
+        el('button', { type: 'button', class: 'btn', style: 'margin-top:12px', text: 'See every automation and how the AI learns ↓', onclick: function () { stop(); var a = document.getElementById('s-auto'); if (a) a.scrollIntoView(); } })]);
     },
     checks: function () {
       var box = el('div', { class: 'ladder' });
@@ -367,6 +404,41 @@ details.full>summary span{font-size:13px;color:var(--t3)}
         el('div', { class: 'hs' }, [el('span', { class: 'k', text: '3' }), el('div', { class: 'fork' }, [el('div', { class: 'y', text: '✓ ' + h.yes }), el('div', { class: 'n', text: '↺ ' + h.no })])])]);
     },
   };
+
+  // ── Batch 433: automation and AI ──
+  var AICON = { phone: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z', link: 'M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1', route: 'M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 17V9a3 3 0 0 1 3-3h7', user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0', card: 'M3 6h18v12H3zM7 10h6M7 14h10', spark: 'M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z', chat: 'M4 5h16v11H9l-5 4z', bell: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0', alert: 'M12 3 2 20h20zM12 10v4M12 17v.01', shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4', flag: 'M5 21V4h11l-2 4 2 4H5', mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3', brain: 'M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3z', grad: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5' };
+  function aicon(k) { var ns = 'http://www.w3.org/2000/svg'; var sv = document.createElementNS(ns, 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); var pa = document.createElementNS(ns, 'path'); pa.setAttribute('d', AICON[k] || AICON.spark); sv.appendChild(pa); return sv; }
+  function autoSec() {
+    var A = F.automation; if (!A) return null;
+    var cards = [], loopBtns = [], sel = '';
+    function apply() {
+      loopBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-k') === sel)); });
+      cards.forEach(function (c) { c.classList.toggle('dim', !!sel && c.getAttribute('data-k') !== sel); });
+      note.textContent = sel ? A.loop.filter(function (l) { return l.k === sel; })[0].text : 'Tap a stage of the loop to see the automations behind it.';
+    }
+    var note = el('p', { class: 'loopnote', 'aria-live': 'polite' });
+    var ring = el('div', { class: 'loop' });
+    A.loop.forEach(function (l, i) {
+      var n = A.moments.reduce(function (t, m) { return t + m.items.filter(function (x) { return x.loop === l.k; }).length; }, 0);
+      var b = el('button', { type: 'button', class: 'lp k-' + l.k, 'data-k': l.k, 'aria-pressed': 'false', onclick: function () { sel = sel === l.k ? '' : l.k; apply(); } }, [el('span', { class: 'lpn', text: String(i + 1) }), el('b', { text: l.name }), el('small', { text: n + ' automation' + (n === 1 ? '' : 's') })]);
+      loopBtns.push(b); ring.appendChild(b);
+      ring.appendChild(el('span', { class: 'lparrow', 'aria-hidden': 'true', text: i < A.loop.length - 1 ? '→' : '↺' }));
+    });
+    var tl = el('div', { class: 'tl' });
+    A.moments.forEach(function (m, mi) {
+      var grid = el('div', { class: 'tlcards' });
+      m.items.forEach(function (it, k) {
+        var c = el('article', { class: 'acard k-' + it.loop, 'data-k': it.loop, style: 'animation-delay:' + ((mi * 3 + k) * 60) + 'ms' }, [
+          el('div', { class: 'ahead' }, [el('span', { class: 'aic' }, [aicon(it.icon)]), el('span', { class: 'atag', text: A.loop.filter(function (l) { return l.k === it.loop; })[0].name })]),
+          el('h4', { text: it.title }), el('p', { text: it.text }), el('div', { class: 'smart' }, [el('span', { class: 'smi', 'aria-hidden': 'true' }, [aicon('spark')]), el('span', null, [el('b', { text: 'Why it is smart: ' }), it.smart])])]);
+        cards.push(c); grid.appendChild(c);
+      });
+      tl.appendChild(el('div', { class: 'tlrow' }, [el('div', { class: 'tlwhen' }, [el('span', { class: 'tldot', 'aria-hidden': 'true' }), el('b', { text: m.when })]), grid]));
+    });
+    apply();
+    return el('section', { class: 'wrap', id: 's-auto' }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: 'AI' }), el('h2', { text: 'How automation and AI help' })]),
+      el('p', { class: 'lede', text: A.intro }), el('div', { class: 'card loopcard' }, [ring, note]), tl]);
+  }
   function glossarySec() {
     var out = el('p', { class: 'gdef', 'aria-live': 'polite', text: 'Tap a word to see what it means.' });
     var chips = F.glossary.map(function (g) {
