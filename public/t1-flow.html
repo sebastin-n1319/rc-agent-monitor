@@ -23,7 +23,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
 /* hero */
 .hero{background:var(--hero);color:var(--hero-ink);padding:44px 0 92px;position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;border:56px solid rgba(244,137,31,.14)}
+.hero::after{content:'';position:absolute;right:-160px;top:-160px;width:400px;height:400px;border-radius:50%;border:56px solid rgba(244,137,31,.14);z-index:0;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+@media (max-width:1400px){.hero::after{right:-240px;top:-220px}}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
 .hero h1{margin:8px 0 6px;font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1.1;max-width:720px}
 .hero p{margin:0;color:var(--hero-sub);font-size:17px;max-width:620px}
@@ -129,7 +131,7 @@ footer.wrap{padding-top:56px;padding-bottom:48px}
 .spine.lit .row{opacity:.38}
 .spine.lit .row.on{opacity:1}
 .spine.lit .row.on .node{border-color:var(--acc);box-shadow:0 0 0 4px var(--acc-soft)}
-.spine.lit .row.end .out{box-shadow:0 0 0 3px var(--acc),var(--shadow);transform:translateX(4px)}
+.spine.lit .row.end .out{box-shadow:0 0 0 3px var(--acc),var(--shadow)}
 .lane{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px;align-items:stretch}
 .step{padding:16px;position:relative}
 .step .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc-ink)}
@@ -151,13 +153,13 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
 .lede-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.lede-row .lede{margin:0}
 .journey{padding:24px 20px 20px}
 .track{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.tline{position:absolute;left:10%;right:10%;top:33px;height:4px;border-radius:4px;background:var(--line)}
+.tline{position:absolute;left:10%;right:10%;top:33px;height:4px;border-radius:4px;background:var(--line);z-index:0}
 .tfill{height:100%;width:0;border-radius:4px;background:var(--acc);transition:width .6s ease}
-.stop{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:none;border:0;cursor:pointer;padding:0 4px 6px;color:var(--t2)}
+.stop{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:none;border:0;cursor:pointer;padding:0 4px 6px;color:var(--t2)}
 .stop .ic{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2px solid var(--line2);transition:all .3s}
 .stop svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .stop b{font-size:14px;color:var(--t1)}.stop small{font-size:12px;color:var(--t3);max-width:190px}
-.stop.done .ic{border-color:var(--acc);color:var(--acc-ink);background:var(--acc-soft)}
+.stop.done .ic{border-color:var(--acc);color:var(--acc-ink);background:linear-gradient(var(--acc-soft),var(--acc-soft)),var(--card)}
 .stop.on .ic{border-color:var(--acc);background:var(--acc);color:#fff;transform:scale(1.08);box-shadow:0 0 0 8px var(--acc-soft)}
 .stop.on .ic{animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 6px var(--acc-soft)}50%{box-shadow:0 0 0 12px rgba(244,137,31,.06)}}
@@ -415,7 +417,7 @@ details.full>summary span{font-size:13px;color:var(--t3)}
       el('div', { class: 'card step' }, [el('span', { class: 'k', text: 'Step 1' }), el('b', { text: 'Before handing over' }), el('ol', null, h.checklist.map(function (t) { return el('li', { text: t }); }))]),
       el('div', { class: 'card step' }, [el('span', { class: 'k', text: 'Step 2' }), el('b', { text: 'Sent for review' }), el('p', { text: h.review })]),
       el('div', { class: 'card step' }, [el('span', { class: 'k', text: 'Step 3' }), el('b', { text: h.question }), el('div', { class: 'fork' }, [el('div', { class: 'y', text: 'Yes: ' + h.yes }), el('div', { class: 'n', text: 'Not yet: ' + h.no })])]),
-      el('div', { class: 'card step' }, [el('span', { class: 'k', text: 'After' }), el('b', { text: 'Quality checks' }), el('p', { text: h.after.replace(/^Quality checks:\s*/, '') })])])]);
+      el('div', { class: 'card step' }, [el('span', { class: 'k', text: 'After' }), el('b', { text: 'Quality checks' }), el('p', { text: (function (t) { t = t.replace(/^Quality checks:\s*/, ''); return t.charAt(0).toUpperCase() + t.slice(1); })(h.after) })])])]);
   }
   function rulesSec() {
     return el('section', { class: 'wrap' }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: '★' }), el('h2', { text: 'Ground rules for every ticket' })]), el('p', { class: 'lede', text: 'These apply at every step.' }),
