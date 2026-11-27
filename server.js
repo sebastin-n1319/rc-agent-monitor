@@ -3661,7 +3661,8 @@ app.get('/api/t1-flow', rateLimit(60, 60000), async (req, res) => {
     if (!email || !String(email).toLowerCase().endsWith('@adit.com')) return res.status(401).json({ success: false, signIn: true, clientId: GOOGLE_CLIENT_ID });
     insertAuditLog(email, 't1_flow_viewed', 't1-flow', '').catch(() => {});
     // Batch 433: current FCR and CSAT for T1 (last 30 days), the same numbers as the Ticket Lifecycle summary, kept an hour.
-    const metrics = await cacheWrap('t1-flow-metrics', 60 * 60 * 1000, async () => {
+    // Batch 435: hidden until the right FCR and CSAT figures are confirmed; set T1_FLOW_METRICS=1 to show them again.
+    const metrics = process.env.T1_FLOW_METRICS !== '1' ? null : await cacheWrap('t1-flow-metrics', 60 * 60 * 1000, async () => {
       const to = new Date().toISOString(), from = new Date(Date.now() - 30 * 864e5).toISOString();
       const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
       const rows = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q: null, agentNames, rosterNames: Object.values(agentNames) }), { from, to, agentNames, byEmail, q: null });
