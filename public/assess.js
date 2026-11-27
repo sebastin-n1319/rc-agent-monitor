@@ -3866,16 +3866,24 @@
   }
 
   function viewStudioPlanner() {
-    main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'Turn a document into assessments' }), h('p', { text: 'Upload an SOP, a guide or any long document, paste text, or give a web link. The AI reads it, splits it into sections, suggests how many assessments to make, writes the questions, and works through them with you. Nothing reaches agents until you publish.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)])]));
+    main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'Build assessments with AI' }), h('p', { text: 'Write a prompt to test agents on the latest updates and the mistakes they made, or upload an SOP, a guide or any long document, paste text, or give a web link. The AI reads it, splits it into sections, suggests how many assessments to make, writes the questions, and works through them with you. Nothing reaches agents until you publish.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)])]));
     var grid = h('div', { class: 'studio-start' });
     main.appendChild(grid);
     // source card
-    var mode = 'file', file = null;
+    var mode = 'prompt', file = null;
     var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Source' });
-    var panes = {};
-    [['file', 'Upload a file', 'upload'], ['text', 'Paste text', 'doc'], ['url', 'Web link', 'link']].forEach(function (o) {
-      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(mode === o[0]), onclick: function () { mode = o[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); Object.keys(panes).forEach(function (k) { panes[k].hidden = k !== mode; }); } }, [icon(o[2], 'sm'), o[1]]));
+    var panes = {}, focusField = null;
+    [['prompt', 'From a prompt', 'spark'], ['file', 'Upload a file', 'upload'], ['text', 'Paste text', 'doc'], ['url', 'Web link', 'link']].forEach(function (o) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(mode === o[0]), onclick: function () { mode = o[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); Object.keys(panes).forEach(function (k) { panes[k].hidden = k !== mode; }); if (focusField) focusField.hidden = mode === 'prompt'; } }, [icon(o[2], 'sm'), o[1]]));
     });
+    // Batch 432: build from a prompt. The facts come from the latest updates, where agents went wrong, and team rules.
+    var pr = h('textarea', { class: 'ta', style: 'min-height:110px', maxlength: '600', placeholder: 'What should agents be tested on? e.g. "The new appointment reminder changes from this month, and the routing mistakes agents made with phones-down tickets"' });
+    var srcBox = h('div', { class: 'stack', style: 'gap:6px' });
+    var SRC = [['updates', 'Latest Adit Updates', 'Product and process updates in the period'], ['misses', 'Where agents went wrong', 'Transfers sent back, ticket audits that needed a fix, call reviews (names left out)'], ['rules', 'Team rules', 'The rules Expert follows that match your prompt']];
+    var srcIn = {};
+    SRC.forEach(function (s) { srcIn[s[0]] = h('input', { type: 'checkbox', checked: true }); srcBox.appendChild(h('label', { class: 'row', style: 'gap:8px;align-items:flex-start' }, [srcIn[s[0]], h('span', null, [h('b', { text: s[1] }), h('span', { class: 'small muted', style: 'display:block', text: s[2] })])])); });
+    var daysSel = h('select', { class: 'inp' }, [[7, 'Last 7 days'], [14, 'Last 14 days'], [30, 'Last 30 days'], [60, 'Last 60 days'], [90, 'Last 90 days']].map(function (d) { var o = h('option', { value: String(d[0]), text: d[1] }); if (d[0] === 30) o.selected = true; return o; }));
+    panes.prompt = h('div', { class: 'stack' }, [field('What to test', pr, 'The AI writes questions only from the records it finds, so every answer is backed by an update, a rule or a real miss.'), field('Take the facts from', srcBox), field('Period', daysSel)]);
     var fin = h('input', { type: 'file', accept: '.pdf,.docx,.txt,.md,.html,.htm', hidden: true });
     var fname = h('span', { class: 'small muted', text: 'PDF, Word (.docx), text or HTML, up to 25 MB' });
     var drop = h('label', { class: 'drop' }, [art('pending', 140), h('b', { text: 'Drop a document here or choose a file' }), fname, fin]);
@@ -3883,7 +3891,7 @@
     ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('over'); }); });
     drop.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) { file = e.dataTransfer.files[0]; fname.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB'; } });
     fin.addEventListener('change', function () { file = fin.files[0] || null; if (file) fname.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB'; });
-    panes.file = h('div', null, [drop]);
+    panes.file = h('div', { hidden: true }, [drop]);
     var ta = h('textarea', { class: 'ta', style: 'min-height:200px', placeholder: 'Paste the text of an SOP, a policy, a product guide or training notes. Headings help the AI split it into sections.' });
     var taName = h('input', { class: 'inp', placeholder: 'Name for this source, e.g. "Refund policy v3"' });
     panes.text = h('div', { hidden: true }, [field('Name', taName), field('Text', ta)]);
@@ -3893,9 +3901,22 @@
     var err = h('div');
     var goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Read it and plan assessments']);
     var progress = h('div', { class: 'studio-prog', hidden: true }, [art('radar', 150), h('ol', { class: 'sp-steps' }, ['Reading the document', 'Finding sections', 'Planning assessments'].map(function (t) { return h('li', { text: t }); }))]);
-    grid.appendChild(h('div', { class: 'card pad stack' }, [h('h2', { text: 'Start with a source' }), seg, panes.file, panes.text, panes.url, field('Focus (optional)', focus), err, h('div', { class: 'row' }, [h('span', { class: 'spacer' }), goBtn]), progress]));
+    focusField = h('div', { hidden: true }, [field('Focus (optional)', focus)]);
+    grid.appendChild(h('div', { class: 'card pad stack' }, [h('h2', { text: 'Start with a source' }), seg, panes.prompt, panes.file, panes.text, panes.url, focusField, err, h('div', { class: 'row' }, [h('span', { class: 'spacer' }), goBtn]), progress]));
     goBtn.addEventListener('click', function () {
       clear(err);
+      if (mode === 'prompt') {
+        var srcs = Object.keys(srcIn).filter(function (k) { return srcIn[k].checked; });
+        if (pr.value.trim().length < 10) { err.appendChild(errBox('Describe what the assessment should test, in a sentence or two')); return; }
+        if (!srcs.length) { err.appendChild(errBox('Pick at least one place to take the facts from')); return; }
+        goBtn.disabled = true; progress.hidden = false;
+        var psteps = progress.querySelectorAll('li'), pi = 0; psteps[0].className = 'on';
+        var ptm = setInterval(function () { if (pi < psteps.length - 1) { psteps[pi].className = 'done'; pi++; psteps[pi].className = 'on'; } }, 4500);
+        api('/api/assess/admin/studio-prompt', { method: 'POST', body: { prompt: pr.value.trim(), sources: srcs, days: Number(daysSel.value) } })
+          .then(function (j) { clearInterval(ptm); var c = j.counts || {}; toast('Found ' + [c.updates != null ? c.updates + ' updates' : '', c.misses != null ? c.misses + ' agent misses' : '', c.rules != null ? c.rules + ' rules' : ''].filter(Boolean).join(', ') + '.'); go('studio/' + j.studio.id); })
+          .catch(function (e) { clearInterval(ptm); progress.hidden = true; goBtn.disabled = false; err.appendChild(errBox(e.message)); });
+        return;
+      }
       var qs = new URLSearchParams({ kind: mode }), body;
       if (focus.value.trim()) qs.set('focus', focus.value.trim());
       if (mode === 'file') { if (!file) { err.appendChild(errBox('Choose a file first')); return; } qs.set('name', file.name); body = file; }

@@ -684,6 +684,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     assessments.startAliveBeat();
     assessments.purgePreviews().catch(() => {});
     const studio = require('./lib/assess-studio'); studio.setDB(db, assessments); await studio.initSchema();
+    { const ap = require('./lib/assess-prompt'); ap.setDB(db); ap.setDeps({ productUpdates: require('./lib/product-updates') }); } // Batch 432
     const builder = require('./lib/assess-builder'); builder.setDB(db, assessments, studio); await builder.initSchema(); // Batch 180
     const quality = require('./lib/assess-quality'); quality.setDB(db, assessments, builder, studio); await quality.initSchema(); // Batch 181
     console.log('📝 Assessments schema ready');
@@ -3415,6 +3416,13 @@ app.post('/api/assess/admin/studio', ...RV, rateLimit(10, 60000), express.raw({ 
   else text = await assessExtractText(req.body, q.name);
   const view = await assessStudio.create({ text, sourceName: name, sourceKind: kind, focus: q.focus, by: req.session.email, ai: AI() });
   res.json({ success: true, studio: view });
+}));
+// Batch 432: start a Studio session from a prompt; the facts come from Adit Updates, agent misses and team rules.
+app.post('/api/assess/admin/studio-prompt', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  const src = await require('./lib/assess-prompt').build({ prompt: b.prompt, sources: b.sources, days: b.days });
+  const view = await assessStudio.create({ text: src.text, sourceName: src.sourceName, sourceKind: 'prompt', focus: src.focus, by: req.session.email, ai: AI() });
+  res.json({ success: true, studio: view, counts: src.counts, days: src.days });
 }));
 app.get('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.getView(req.params.id) })));
 app.put('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.update(req.params.id, req.body || {}) })));
