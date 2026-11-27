@@ -17,6 +17,7 @@ describe('T1 ticket flow page data (Batch 427)', () => {
   });
   it('stays generic for other departments: no internal names or policies', () => {
     const text = JSON.stringify(FLOW);
+    expect(FLOW.channels.every((c) => !/%/.test(c.share + c.detail))).toBe(true); // no incoming volume by channel
     expect(text).not.toMatch(/SPOC|strike|Pending Review|Kushal|Ronnie|Expert|RingCentral|SalesIQ|#4\d{5}|—|–/);
   });
 });

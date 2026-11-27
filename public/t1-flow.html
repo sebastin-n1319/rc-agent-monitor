@@ -40,8 +40,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset
 .rail button[aria-current="true"]{border-color:var(--line);background:var(--card);color:var(--t1)}
 .rail button[aria-current="true"] i{background:var(--acc);color:#fff}
 .rail .sep{flex:0 0 18px;align-self:center;height:2px;background:var(--line2);border-radius:2px}
-section{padding:40px 0 8px;scroll-margin-top:64px}
-.sh{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+section{scroll-margin-top:64px}
+main section.wrap{padding-top:64px;padding-bottom:8px}
+#s-journey{padding-top:72px}
+details.full section{padding-top:48px}
+footer.wrap{padding-top:56px;padding-bottom:48px}
+.sh{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
 .sh .num{font-weight:800;color:var(--acc);font-size:15px}
 .sh h2{margin:0;font-size:24px;font-weight:700;letter-spacing:-.01em}
 .lede{margin:0 0 20px;color:var(--t3)}
@@ -144,7 +148,7 @@ section{padding:40px 0 8px;scroll-margin-top:64px}
 footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
 
 /* Batch 428: journey */
-.lede-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.lede-row .lede{margin:0}
+.lede-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.lede-row .lede{margin:0}
 .journey{padding:24px 20px 20px}
 .track{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .tline{position:absolute;left:10%;right:10%;top:33px;height:4px;border-radius:4px;background:var(--line)}
@@ -209,6 +213,17 @@ details.full>summary span{font-size:13px;color:var(--t3)}
 @media (max-width:900px){.track{grid-template-columns:repeat(5,minmax(64px,1fr));overflow-x:auto}.stop small,.stop b{display:none}.track{overflow:visible}.stop .ic{width:52px;height:52px}.tline{top:24px}
   .barrow{grid-template-columns:1fr}.barrow p{grid-column:1}.ticks{grid-template-columns:1fr}.outg{grid-template-columns:1fr}.hsteps{grid-template-columns:1fr}.harrow{transform:rotate(90deg)}
   .lrow{grid-template-columns:30px 1fr 18px}.lrow .lgo{grid-column:2;justify-self:start;white-space:normal}.lrow.last{grid-template-columns:30px 1fr}}
+
+.chgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.chc{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);animation:rise .4s ease both}
+.chc b{display:block;font-size:14px}.chc .auto{display:inline-block;margin:4px 0 2px;font-size:11px;font-weight:700;color:var(--acc-ink);background:var(--acc-soft);padding:2px 8px;border-radius:999px}.chc p{margin:4px 0 0;font-size:13px;color:var(--t3)}
+.outg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.oc{border-radius:14px;padding:18px;animation:rise .4s ease both}.oc b{display:block;font-size:19px;margin:2px 0 4px}.oc p{margin:0;color:var(--t2);font-size:14px}
+.oc .tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.oc.t1{background:var(--ok-soft);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}.oc.t1 .tag{color:var(--ok)}
+.oc.team{background:var(--team-soft);border:1px solid color-mix(in srgb,var(--team) 35%,transparent);animation-delay:.15s}.oc.team .tag{color:var(--team)}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.dchips span{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+@media (max-width:900px){.chgrid{grid-template-columns:1fr 1fr}.outg2{grid-template-columns:1fr}}
 /* sign in */
 .center{max-width:440px;margin:14vh auto 0;padding:28px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:center}
 .center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:var(--t3);font-size:13px}
@@ -313,11 +328,7 @@ details.full>summary span{font-size:13px;color:var(--t3)}
   function stop() { if (timer) clearInterval(timer); timer = null; if (playBtn) playBtn.textContent = '▶ Play the journey'; }
   var PANEL = {
     contact: function () {
-      return el('div', { class: 'bars' }, F.channels.map(function (c) {
-        var pct = parseInt(String(c.share).replace(/\D/g, ''), 10);
-        return el('div', { class: 'barrow' }, [el('div', { class: 'bl' }, [el('b', { text: c.name }), el('span', { text: c.share || 'Automatic' })]),
-          el('div', { class: 'bt' }, [pct ? el('div', { class: 'bf', style: 'width:' + pct + '%' }) : el('div', { class: 'bf auto' })]), el('p', { text: c.detail })]);
-      }));
+      return el('div', { class: 'chgrid' }, F.channels.map(function (c, i) { return el('div', { class: 'chc', style: 'animation-delay:' + (i * 90) + 'ms' }, [el('b', { text: c.name }), c.auto ? el('span', { class: 'auto', text: 'Automatic' }) : null, el('p', { text: c.detail })]); }));
     },
     setup: function () {
       return el('div', null, [el('div', { class: 'ticks' }, F.setup.map(function (t, i) { return el('div', { class: 'tick', style: 'animation-delay:' + (i * 120) + 'ms' }, [el('span', { class: 'ok', text: '✓' }), el('span', { text: t })]); })),
@@ -375,7 +386,7 @@ details.full>summary span{font-size:13px;color:var(--t3)}
       el('p', { class: 'lede', text: id === 'checks' ? s.blurb + ' The first "yes" (or "no" on the first check) decides where the ticket goes.' : s.blurb }), body]);
   }
   function intake() {
-    return el('div', null, [el('div', { class: 'intake' }, F.channels.map(function (c) { return el('div', { class: 'card ch' }, [el('b', { text: c.name }), c.share ? el('span', { class: 'sh2', text: c.share + ' of tickets' }) : el('span', { class: 'sh2', text: 'Automatic' }), el('p', { text: c.detail })]); }))]);
+    return el('div', null, [el('div', { class: 'intake' }, F.channels.map(function (c) { return el('div', { class: 'card ch' }, [el('b', { text: c.name }), c.auto ? el('span', { class: 'sh2', text: 'Automatic' }) : null, el('p', { text: c.detail })]); }))]);
   }
   function setup() {
     return el('div', { class: 'setup' }, [el('div', { class: 'card' }, [el('ul', null, F.setup.map(function (t) { return el('li', { text: t }); }))]),
