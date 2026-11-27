@@ -3645,6 +3645,26 @@ async function sheetViewer(req) {
   return creports().viewerEmail(req.cookies[SHEET_VIEWER_COOKIE]);
 }
 app.get('/sheet/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'report-sheet.html')));
+// Batch 427: the T1 ticket handling flow, for anyone with an Adit Google account (same sign-in as the ticket sheets).
+app.get('/t1-flow', (req, res) => res.sendFile(path.join(__dirname, 'public', 't1-flow.html')));
+app.get('/api/t1-flow', rateLimit(60, 60000), async (req, res) => {
+  try {
+    const email = await sheetViewer(req);
+    if (!email || !String(email).toLowerCase().endsWith('@adit.com')) return res.status(401).json({ success: false, signIn: true, clientId: GOOGLE_CLIENT_ID });
+    insertAuditLog(email, 't1_flow_viewed', 't1-flow', '').catch(() => {});
+    res.set('Cache-Control', 'no-store'); res.json({ success: true, viewer: email, flow: require('./lib/t1-flow').FLOW });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not load the flow' }); }
+});
+app.post('/api/t1-flow/signin', rateLimit(20, 60000), async (req, res) => {
+  try {
+    const { email } = await verifyGoogleIdentity({ credential: (req.body || {}).credential });
+    if (!String(email).toLowerCase().endsWith('@' + (process.env.ALLOWED_DOMAIN || 'adit.com'))) return res.status(403).json({ success: false, error: 'Sign in with your Adit Google account.' });
+    const t = await creports().createViewer(email);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    res.cookie(SHEET_VIEWER_COOKIE, t, { maxAge: 12 * 3600e3, httpOnly: true, secure: !!isProduction, sameSite: 'lax', path: '/api/t1-flow' });
+    res.json({ success: true });
+  } catch (e) { res.status(401).json({ success: false, error: 'Could not verify Google sign-in' }); }
+});
 app.get('/api/report-sheet/:token', rateLimit(60, 60000), async (req, res) => {
   try {
     const email = await sheetViewer(req);
