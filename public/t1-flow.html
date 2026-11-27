@@ -142,6 +142,73 @@ section{padding:40px 0 8px;scroll-margin-top:64px}
 .rule b{display:block;margin-bottom:4px;font-size:14.5px}
 .rule span{font-size:13px;color:var(--t2)}
 footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
+
+/* Batch 428: journey */
+.lede-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.lede-row .lede{margin:0}
+.journey{padding:24px 20px 20px}
+.track{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tline{position:absolute;left:10%;right:10%;top:33px;height:4px;border-radius:4px;background:var(--line)}
+.tfill{height:100%;width:0;border-radius:4px;background:var(--acc);transition:width .6s ease}
+.stop{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:none;border:0;cursor:pointer;padding:0 4px 6px;color:var(--t2)}
+.stop .ic{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2px solid var(--line2);transition:all .3s}
+.stop svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stop b{font-size:14px;color:var(--t1)}.stop small{font-size:12px;color:var(--t3);max-width:190px}
+.stop.done .ic{border-color:var(--acc);color:var(--acc-ink);background:var(--acc-soft)}
+.stop.on .ic{border-color:var(--acc);background:var(--acc);color:#fff;transform:scale(1.08);box-shadow:0 0 0 8px var(--acc-soft)}
+.stop.on .ic{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 6px var(--acc-soft)}50%{box-shadow:0 0 0 12px rgba(244,137,31,.06)}}
+.jpanel{margin-top:22px;border-top:1px solid var(--line);padding-top:20px}
+.jbody{animation:rise .35s ease}.jbody h3{margin:0;font-size:20px}.jbody>.lede{margin:2px 0 16px}
+.jnav{display:flex;justify-content:space-between;align-items:center;margin-top:18px}.jcount{font-size:12.5px;color:var(--t3);font-weight:600}
+.btn[disabled]{opacity:.4;cursor:default}
+.bars{display:grid;gap:12px}
+.barrow{display:grid;grid-template-columns:220px 1fr;gap:4px 16px;align-items:center}
+.barrow p{grid-column:2;margin:0;font-size:13px;color:var(--t3)}
+.bl{display:flex;justify-content:space-between;gap:8px;font-size:14px}.bl span{color:var(--acc-ink);font-weight:700}
+.bt{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}
+.bf{height:100%;border-radius:6px;background:var(--acc);animation:grow .8s ease}.bf.team{background:var(--team)}
+.bf.auto{width:100%;background:repeating-linear-gradient(45deg,var(--line2) 0 6px,transparent 6px 12px)}
+@keyframes grow{from{width:0}}
+.ticks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tick{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:13.5px;animation:rise .4s ease both}
+.tick .ok{flex:0 0 22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+.agentline{display:flex;gap:12px;align-items:center;margin-top:12px;font-size:14px;color:var(--t2)}
+.agentline .dot{flex:0 0 40px;height:40px;border-radius:12px;background:var(--acc-soft);display:grid;place-items:center;color:var(--acc-ink);font-weight:800}
+.note{margin:0 0 12px;font-size:13.5px;color:var(--t3)}
+.ladder{display:grid;gap:8px}
+.litem{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden}
+.lrow{width:100%;display:grid;grid-template-columns:34px 1fr auto 18px;gap:12px;align-items:center;padding:10px 14px;background:none;border:0;text-align:left;cursor:pointer}
+.lrow.last{cursor:default;grid-template-columns:34px 1fr auto}
+.lrow:hover .lq b{color:var(--acc-ink)}
+.lno{width:30px;height:30px;border-radius:8px;background:#F7D33C;color:#072B40;display:grid;place-items:center;font-weight:800;font-size:13px}
+.lq b{display:block;font-size:14.5px}.lq small{color:var(--t3);font-size:12.5px}
+.lgo{font-size:12.5px;padding:4px 10px;border-radius:999px;white-space:nowrap;color:var(--t2);background:var(--soft)}
+.lgo.t1{background:var(--ok-soft);color:var(--ok)}.lgo.team{background:var(--team-soft);color:var(--team)}
+.chev{color:var(--t3);transition:transform .2s}.lrow[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.ldet{padding:0 16px 14px 60px;font-size:13.5px;color:var(--t2);animation:rise .25s ease}.ldet p{margin:0}.ldet ol{margin:6px 0 0;padding-left:18px}.ldet ol ol{list-style:lower-alpha}
+.outg{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:center}.outg h4{margin:0 0 12px;font-size:15px}
+.ringbox{text-align:center}.ringbox p{font-size:13px;color:var(--t3);margin:10px 0 0}
+.ring{--p:70;width:190px;height:190px;margin:0 auto;border-radius:50%;background:conic-gradient(var(--ok) calc(var(--p)*1%),var(--team-soft) 0);display:grid;place-items:center;animation:spin .9s ease}
+.ring>div{width:136px;height:136px;border-radius:50%;background:var(--card);display:grid;place-content:center}
+.ring b{font-size:32px;font-weight:800;color:var(--ok)}.ring span{font-size:12px;color:var(--t3)}
+@keyframes spin{from{transform:rotate(-90deg) scale(.9);opacity:.3}}
+.hsteps{display:grid;grid-template-columns:1.3fr 28px 1fr 28px 1.1fr;gap:8px;align-items:stretch}
+.hs{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);font-size:13.5px}
+.hs .k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:12px;margin-bottom:6px}
+.hs b{display:block;margin-bottom:4px}.hs ol{margin:0;padding-left:18px;color:var(--t2)}.hs p{margin:0;color:var(--t2)}
+.harrow{display:grid;place-items:center;color:var(--acc);font-weight:800;font-size:20px}
+.gloss{padding:16px}.gchips{display:flex;flex-wrap:wrap;gap:8px}
+.gchip{border:1px solid var(--line2);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:600;font-size:13.5px;cursor:pointer}
+.gchip[aria-pressed="true"]{background:var(--t1);color:var(--card);border-color:var(--t1)}
+.gdef{margin:12px 0 0;font-size:14px;color:var(--t2);min-height:22px}
+details.full{margin-top:36px}
+details.full>summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:18px 20px;border:1px dashed var(--line2);border-radius:14px;background:var(--card)}
+details.full>summary::-webkit-details-marker{display:none}
+details.full>summary b{font-size:17px}details.full>summary b::before{content:'▸ ';color:var(--acc)}details.full[open]>summary b::before{content:'▾ '}
+details.full>summary span{font-size:13px;color:var(--t3)}
+@media (max-width:900px){.track{grid-template-columns:repeat(5,minmax(64px,1fr));overflow-x:auto}.stop small,.stop b{display:none}.track{overflow:visible}.stop .ic{width:52px;height:52px}.tline{top:24px}
+  .barrow{grid-template-columns:1fr}.barrow p{grid-column:1}.ticks{grid-template-columns:1fr}.outg{grid-template-columns:1fr}.hsteps{grid-template-columns:1fr}.harrow{transform:rotate(90deg)}
+  .lrow{grid-template-columns:30px 1fr 18px}.lrow .lgo{grid-column:2;justify-self:start;white-space:normal}.lrow.last{grid-template-columns:30px 1fr}}
 /* sign in */
 .center{max-width:440px;margin:14vh auto 0;padding:28px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:center}
 .center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:var(--t3);font-size:13px}
@@ -150,7 +217,7 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
 @media (max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.try{grid-template-columns:1fr}.intake{grid-template-columns:repeat(2,1fr)}.setup{grid-template-columns:1fr}.setup ul{columns:1}
   .row,.final{grid-template-columns:1fr}.link{height:24px;width:2px;margin:0 auto}.link span{top:2px;left:10px;transform:none}.link::after{display:none}
   .ncol::before,.ncol::after,.dl{display:none}.lane{grid-template-columns:1fr}.rules{grid-template-columns:1fr 1fr}}
-@media print{.rail,.try{display:none}.hero{padding-bottom:70px}}
+@media print{.try,.journey .jnav,#s-journey .btn{display:none}.hero{padding-bottom:70px}}
 </style>
 </head>
 <body>
@@ -161,7 +228,7 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
   var F = null, ans = [], pick = -1;
   function el(tag, a, kids) {
     var n = document.createElement(tag);
-    for (var k in (a || {})) { if (k === 'text') n.textContent = a[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), a[k]); else n.setAttribute(k, a[k]); }
+    for (var k in (a || {})) { if (a[k] == null) continue; if (k === 'text') n.textContent = a[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), a[k]); else n.setAttribute(k, a[k]); }
     (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
     return n;
   }
@@ -212,20 +279,99 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
       el('div', { class: 'eyebrow', text: 'Adit T1 Customer Support · ' + F.updated }),
       el('h1', { text: F.title }), el('p', { text: F.takeaway })])]);
     var stats = el('div', { class: 'wrap' }, [el('div', { class: 'stats' }, F.stats.map(function (s) { return el('div', { class: 'stat' }, [el('b', { text: s.n }), el('span', { text: s.l })]); }))]);
-    var railItems = [];
-    F.stages.forEach(function (s, i) {
-      if (i) railItems.push(el('li', { class: 'sep', 'aria-hidden': 'true' }));
-      railItems.push(el('li', null, [el('button', { type: 'button', 'data-s': s.id, onclick: function () { document.getElementById('s-' + s.id).scrollIntoView(); } }, [el('i', { text: String(s.n) }), s.name])]));
-    });
-    var rail = el('nav', { class: 'rail', 'aria-label': 'Stages' }, [el('ol', null, railItems)]);
-    app.replaceChildren(hero, stats, rail, el('main', null, [tryIt(), stage('contact', intake()), stage('setup', setup()), stage('checks', spine()), stage('handover', lane()), rulesSec()]),
+    app.replaceChildren(hero, stats, el('main', null, [journeySec(), tryIt(), rulesSec(), glossarySec(), fullFlow()]),
       el('footer', { class: 'wrap', text: 'Adit T1 Customer Support, ' + F.updated + '. Shares are approximate. For Adit teams only.' }));
-    spy(); light();
+    light(); go(0);
+  }
+  // ── Batch 428: the journey in 5 steps, one stage at a time ──
+  var ICON = { contact: 'M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4z', setup: 'M13 2 4 14h7l-1 8 9-12h-7z', checks: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2', outcome: 'M5 21V4h11l-2 4 2 4H5', handover: 'M4 8h13l-3-3M20 16H7l3 3' };
+  function icon(id) { var ns = 'http://www.w3.org/2000/svg'; var sv = document.createElementNS(ns, 'svg'); sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('aria-hidden', 'true'); var pa = document.createElementNS(ns, 'path'); pa.setAttribute('d', ICON[id]); sv.appendChild(pa); return sv; }
+  var cur = 0, timer = null, stops = [], fillEl, panelEl, playBtn;
+  function journeySec() {
+    fillEl = el('div', { class: 'tfill' });
+    stops = F.stages.map(function (s, i) {
+      return el('button', { type: 'button', class: 'stop', 'aria-controls': 'jpanel', onclick: function () { stop(); go(i); } }, [el('span', { class: 'ic' }, [icon(s.id)]), el('b', { text: s.n + '. ' + s.name }), el('small', { text: s.blurb })]);
+    });
+    panelEl = el('div', { class: 'jpanel', id: 'jpanel', 'aria-live': 'polite' });
+    playBtn = el('button', { type: 'button', class: 'btn pri', text: '▶ Play the journey', onclick: togglePlay });
+    return el('section', { class: 'wrap', id: 's-journey' }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: '5 steps' }), el('h2', { text: 'A ticket\'s journey' })]),
+      el('div', { class: 'lede-row' }, [el('p', { class: 'lede', text: 'Tap a step, or play the whole journey.' }), playBtn]),
+      el('div', { class: 'card journey' }, [el('div', { class: 'track' }, [el('div', { class: 'tline' }, [fillEl])].concat(stops)), panelEl])]);
+  }
+  function go(i) {
+    cur = Math.max(0, Math.min(F.stages.length - 1, i));
+    stops.forEach(function (b, k) { b.classList.toggle('on', k === cur); b.classList.toggle('done', k < cur); b.setAttribute('aria-current', String(k === cur)); });
+    fillEl.style.width = (cur / (F.stages.length - 1) * 100) + '%';
+    var s = F.stages[cur];
+    var nav = el('div', { class: 'jnav' }, [
+      el('button', { type: 'button', class: 'btn', text: '← Back', disabled: cur === 0 ? 'disabled' : null, onclick: function () { stop(); go(cur - 1); } }),
+      el('span', { class: 'jcount', text: 'Step ' + s.n + ' of ' + F.stages.length }),
+      cur < F.stages.length - 1 ? el('button', { type: 'button', class: 'btn', text: 'Next →', onclick: function () { stop(); go(cur + 1); } }) : el('button', { type: 'button', class: 'btn', text: 'Try an example ↓', onclick: function () { document.getElementById('s-try').scrollIntoView(); } })]);
+    panelEl.replaceChildren(el('div', { class: 'jbody' }, [el('h3', { text: s.name }), el('p', { class: 'lede', text: s.blurb }), PANEL[s.id]()]), nav);
+  }
+  function togglePlay() { if (timer) return stop(); if (cur >= F.stages.length - 1) go(0); playBtn.textContent = '❚❚ Pause'; timer = setInterval(function () { if (cur >= F.stages.length - 1) return stop(); go(cur + 1); }, 4500); }
+  function stop() { if (timer) clearInterval(timer); timer = null; if (playBtn) playBtn.textContent = '▶ Play the journey'; }
+  var PANEL = {
+    contact: function () {
+      return el('div', { class: 'bars' }, F.channels.map(function (c) {
+        var pct = parseInt(String(c.share).replace(/\D/g, ''), 10);
+        return el('div', { class: 'barrow' }, [el('div', { class: 'bl' }, [el('b', { text: c.name }), el('span', { text: c.share || 'Automatic' })]),
+          el('div', { class: 'bt' }, [pct ? el('div', { class: 'bf', style: 'width:' + pct + '%' }) : el('div', { class: 'bf auto' })]), el('p', { text: c.detail })]);
+      }));
+    },
+    setup: function () {
+      return el('div', null, [el('div', { class: 'ticks' }, F.setup.map(function (t, i) { return el('div', { class: 'tick', style: 'animation-delay:' + (i * 120) + 'ms' }, [el('span', { class: 'ok', text: '✓' }), el('span', { text: t })]); })),
+        el('div', { class: 'agentline' }, [el('span', { class: 'dot', text: 'T1' }), el('span', { text: F.agent })])]);
+    },
+    checks: function () {
+      var box = el('div', { class: 'ladder' });
+      F.checks.forEach(function (c, i) {
+        var o = c.outcome, det = el('div', { class: 'ldet', hidden: 'hidden' }, [el('p', { text: o.body }), o.steps ? steps(o.steps) : null]);
+        var b = el('button', { type: 'button', class: 'lrow', 'aria-expanded': 'false', onclick: function () { var open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', String(open)); if (open) det.removeAttribute('hidden'); else det.setAttribute('hidden', 'hidden'); } },
+          [el('span', { class: 'lno', text: String(i + 1) }), el('span', { class: 'lq' }, [el('b', { text: c.q }), c.hint ? el('small', { text: c.hint }) : null]),
+           el('span', { class: 'lgo ' + o.kind }, [(c.leaveOn === 'yes' ? 'Yes' : 'No') + ' → ', el('b', { text: o.title })]), el('span', { class: 'chev', 'aria-hidden': 'true', text: '▾' })]);
+        box.appendChild(el('div', { class: 'litem' }, [b, det]));
+      });
+      box.appendChild(el('div', { class: 'litem' }, [el('div', { class: 'lrow last' }, [el('span', { class: 'lno', text: '→' }), el('span', { class: 'lq' }, [el('b', { text: 'No to all of them' })]), el('span', { class: 'lgo team' }, ['→ ', el('b', { text: F.final.title })])])]));
+      return el('div', null, [el('p', { class: 'note', text: 'The first match decides where the ticket goes. Tap a question to see what happens.' }), box]);
+    },
+    outcome: function () {
+      var r = F.resolved;
+      return el('div', { class: 'outg' }, [
+        el('div', { class: 'ringbox' }, [el('div', { class: 'ring', style: '--p:' + r }, [el('div', null, [el('b', { text: '~' + r + '%' }), el('span', { text: 'resolved in T1' })])]),
+          el('p', { text: 'The rest, about ' + (100 - r) + '%, is handed over after a review.' })]),
+        el('div', null, [el('h4', { text: 'Where handed-over tickets go' }), el('div', { class: 'bars' }, F.handoverSplit.map(function (h) {
+          return el('div', { class: 'barrow' }, [el('div', { class: 'bl' }, [el('b', { text: h.name }), el('span', { text: '~' + h.pct + '%' })]), el('div', { class: 'bt' }, [el('div', { class: 'bf team', style: 'width:' + h.pct + '%' })])]);
+        }))])]);
+    },
+    handover: function () {
+      var h = F.handover;
+      return el('div', { class: 'hsteps' }, [
+        el('div', { class: 'hs' }, [el('span', { class: 'k', text: '1' }), el('b', { text: 'Before handing over' }), el('ol', null, h.checklist.map(function (t) { return el('li', { text: t }); }))]),
+        el('div', { class: 'harrow', 'aria-hidden': 'true', text: '→' }),
+        el('div', { class: 'hs' }, [el('span', { class: 'k', text: '2' }), el('b', { text: 'Reviewed within 15 min' }), el('p', { text: h.question })]),
+        el('div', { class: 'harrow', 'aria-hidden': 'true', text: '→' }),
+        el('div', { class: 'hs' }, [el('span', { class: 'k', text: '3' }), el('div', { class: 'fork' }, [el('div', { class: 'y', text: '✓ ' + h.yes }), el('div', { class: 'n', text: '↺ ' + h.no })])])]);
+    },
+  };
+  function glossarySec() {
+    var out = el('p', { class: 'gdef', 'aria-live': 'polite', text: 'Tap a word to see what it means.' });
+    var chips = F.glossary.map(function (g) {
+      var b = el('button', { type: 'button', class: 'gchip', 'aria-pressed': 'false', text: g.t, onclick: function () { chips.forEach(function (x) { x.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); out.replaceChildren(el('b', { text: g.t + ': ' }), g.d); } });
+      return b;
+    });
+    return el('section', { class: 'wrap' }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: 'Aa' }), el('h2', { text: 'Words used here' })]), el('div', { class: 'card gloss' }, [el('div', { class: 'gchips' }, chips), out])]);
+  }
+  var fullEl;
+  function fullFlow() {
+    fullEl = el('details', { class: 'full wrap', id: 's-full' }, [el('summary', null, [el('b', { text: 'See the full flowchart' }), el('span', { text: 'Every step and decision on one page' })]),
+      stage('contact', intake()), stage('setup', setup()), stage('checks', spine()), stage('handover', lane())]);
+    return fullEl;
   }
   function stage(id, body) {
     var s = F.stages.filter(function (x) { return x.id === id; })[0];
     var title = id === 'checks' ? [s.n + ' and 4', s.name + ' and outcomes'] : [String(s.n), s.name];
-    return el('section', { id: 's-' + id, class: 'wrap', 'data-s': id }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: title[0] }), el('h2', { text: title[1] })]),
+    return el('section', { id: 's-' + id, 'data-s': id }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: title[0] }), el('h2', { text: title[1] })]),
       el('p', { class: 'lede', text: id === 'checks' ? s.blurb + ' The first "yes" (or "no" on the first check) decides where the ticket goes.' : s.blurb }), body]);
   }
   function intake() {
@@ -272,7 +418,7 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
     walkBox = el('div', { class: 'card walk', 'aria-live': 'polite' });
     drawScen(); drawWalk();
     return el('section', { class: 'wrap', id: 's-try' }, [el('div', { class: 'sh' }, [el('span', { class: 'num', text: 'Try it' }), el('h2', { text: 'Where does a ticket go?' })]),
-      el('p', { class: 'lede', text: 'Pick an example, or answer the questions yourself. The flow below lights up the path.' }), el('div', { class: 'try' }, [scenBox, walkBox])]);
+      el('p', { class: 'lede', text: 'Pick an example, or answer the questions yourself, and see where the ticket ends up.' }), el('div', { class: 'try' }, [scenBox, walkBox])]);
   }
   function drawScen() {
     scenBox.replaceChildren(el('h3', { text: 'Examples' }));
@@ -301,7 +447,7 @@ footer{padding:48px 16px 48px;color:var(--t3);font-size:12.5px}
     var next = el('div', { class: 'next' }, [
       ans.length ? el('button', { type: 'button', class: 'btn', text: 'Back', onclick: function () { ans.pop(); pick = -1; drawScen(); drawWalk(); light(); } }) : null,
       ans.length ? el('button', { type: 'button', class: 'btn', text: 'Start over', onclick: function () { ans = []; pick = -1; drawScen(); drawWalk(); light(); } }) : null,
-      w.outcome ? el('button', { type: 'button', class: 'btn pri', text: 'See it on the flow', onclick: function () { var r = document.querySelector('.row.end'); (r || document.getElementById('spine')).scrollIntoView({ block: 'center' }); } }) : null]);
+      w.outcome ? el('button', { type: 'button', class: 'btn pri', text: 'See it on the flow', onclick: function () { if (fullEl) fullEl.open = true; var r = document.querySelector('.row.end'); (r || document.getElementById('spine')).scrollIntoView({ block: 'center' }); } }) : null]);
     walkBox.replaceChildren(el('h3', { text: 'Ticket path' }), trail, body, next);
   }
   function answer(a) { ans.push(a); pick = -1; drawScen(); drawWalk(); light(); }
